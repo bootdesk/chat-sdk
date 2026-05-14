@@ -1340,7 +1340,6 @@ class ChatTest extends TestCase
 
         // Set slots to capacity directly
         $ref = new \ReflectionProperty(Chat::class, 'concurrentSlots');
-        $ref->setAccessible(true);
         $ref->setValue($chat, ['mock:C:conc' => 3]);
 
         $called = false;
@@ -1363,7 +1362,6 @@ class ChatTest extends TestCase
     public function test_drain_all_queued_early_return_when_empty(): void
     {
         $ref = new \ReflectionMethod(Chat::class, 'drainAllQueued');
-        $ref->setAccessible(true);
         $handler = new Handler(
             new MemoryStateAdapter,
         );

@@ -1,8 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         failOnRisky="true"
+         failOnWarning="true"
          displayDetailsOnTestsThatTriggerWarnings="true"
          displayDetailsOnTestsThatTriggerErrors="true">
+    <testsuites>
+        <testsuite name="Core">
+            <directory>packages/core/tests</directory>
+        </testsuite>
+        <testsuite name="Laravel">
+            <directory>packages/laravel/tests</directory>
+        </testsuite>
+        <testsuite name="Slack">
+            <directory>packages/adapter-slack/tests</directory>
+        </testsuite>
+        <testsuite name="Telegram">
+            <directory>packages/adapter-telegram/tests</directory>
+        </testsuite>
+        <testsuite name="WhatsApp">
+            <directory>packages/adapter-whatsapp/tests</directory>
+        </testsuite>
+        <testsuite name="Discord">
+            <directory>packages/adapter-discord/tests</directory>
+        </testsuite>
+        <testsuite name="Web">
+            <directory>packages/adapter-web/tests</directory>
+        </testsuite>
+        <testsuite name="Messenger">
+            <directory>packages/adapter-messenger/tests</directory>
+        </testsuite>
+        <testsuite name="GitHub">
+            <directory>packages/adapter-github/tests</directory>
+        </testsuite>
+        <testsuite name="Linear">
+            <directory>packages/adapter-linear/tests</directory>
+        </testsuite>
+        <testsuite name="BotmanCompat">
+            <directory>packages/botman-compat/tests</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>packages/core/src</directory>
+            <directory>packages/laravel/src</directory>
+            <directory>packages/adapter-slack/src</directory>
+            <directory>packages/adapter-telegram/src</directory>
+            <directory>packages/adapter-whatsapp/src</directory>
+            <directory>packages/adapter-discord/src</directory>
+            <directory>packages/adapter-web/src</directory>
+            <directory>packages/adapter-messenger/src</directory>
+            <directory>packages/adapter-github/src</directory>
+            <directory>packages/adapter-linear/src</directory>
+            <directory>packages/botman-compat/src</directory>
+        </include>
+    </source>
     <coverage ignoreDeprecatedCodeUnits="true">
         <report>
             <clover outputFile="coverage/clover.xml"/>

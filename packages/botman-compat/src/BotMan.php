@@ -5,6 +5,7 @@ namespace BotMan\BotMan;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\MessageContext;
 use BootDesk\ChatSDK\Core\Thread;
+use BotMan\BotMan\Attachments\Location;
 use BotMan\BotMan\Conversations\Conversation;
 use BotMan\BotMan\Messages\Incoming\Answer;
 use BotMan\BotMan\Messages\Incoming\IncomingMessage;
@@ -255,7 +256,7 @@ class BotMan
             }
         }
 
-        if ($incoming->getLocation() instanceof \BotMan\BotMan\Attachments\Location && $this->locationHandlers !== []) {
+        if ($incoming->getLocation() instanceof Location && $this->locationHandlers !== []) {
             foreach ($this->locationHandlers as $handler) {
                 $handler($incoming, $this);
             }

@@ -8,6 +8,8 @@ use Orchestra\Testbench\TestCase;
 
 class ChatMakeAdapterCommandTest extends TestCase
 {
+    private string $base;
+
     protected function getPackageProviders($app): array
     {
         return [ChatServiceProvider::class];
@@ -16,12 +18,13 @@ class ChatMakeAdapterCommandTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        File::deleteDirectory(app_path('Chat'));
+        $this->base = app_path('Chat/Adapters');
+        File::deleteDirectory($this->base);
     }
 
     protected function tearDown(): void
     {
-        File::deleteDirectory(app_path('Chat'));
+        File::deleteDirectory($this->base);
         parent::tearDown();
     }
 
@@ -30,7 +33,7 @@ class ChatMakeAdapterCommandTest extends TestCase
         $this->artisan('chat:make-adapter', ['name' => 'my-custom'])
             ->assertSuccessful();
 
-        $dir = app_path('Chat/Adapters/MyCustom');
+        $dir = "{$this->base}/MyCustom";
         $this->assertDirectoryExists($dir);
         $this->assertFileExists("{$dir}/MyCustomAdapter.php");
         $this->assertFileExists("{$dir}/MyCustomFormatConverter.php");
@@ -44,7 +47,7 @@ class ChatMakeAdapterCommandTest extends TestCase
 
     public function test_command_fails_when_adapter_exists(): void
     {
-        mkdir(app_path('Chat/Adapters/MyCustom'), 0755, true);
+        mkdir("{$this->base}/MyCustom", 0755, true);
 
         $this->artisan('chat:make-adapter', ['name' => 'my-custom'])
             ->assertFailed();
@@ -52,13 +55,13 @@ class ChatMakeAdapterCommandTest extends TestCase
 
     public function test_command_overwrites_with_force(): void
     {
-        mkdir(app_path('Chat/Adapters/MyCustom'), 0755, true);
-        file_put_contents(app_path('Chat/Adapters/MyCustom/MyCustomAdapter.php'), 'old');
+        mkdir("{$this->base}/MyCustom", 0755, true);
+        file_put_contents("{$this->base}/MyCustom/MyCustomAdapter.php", 'old');
 
         $this->artisan('chat:make-adapter', ['name' => 'my-custom', '--force' => true])
             ->assertSuccessful();
 
-        $content = file_get_contents(app_path('Chat/Adapters/MyCustom/MyCustomAdapter.php'));
+        $content = file_get_contents("{$this->base}/MyCustom/MyCustomAdapter.php");
         $this->assertStringContainsString('class MyCustomAdapter implements Adapter', $content);
     }
 
@@ -67,7 +70,7 @@ class ChatMakeAdapterCommandTest extends TestCase
         $this->artisan('chat:make-adapter', ['name' => 'CustomAPI'])
             ->assertSuccessful();
 
-        $this->assertDirectoryExists(app_path('Chat/Adapters/CustomApi'));
-        $this->assertFileExists(app_path('Chat/Adapters/CustomApi/CustomApiAdapter.php'));
+        $this->assertDirectoryExists("{$this->base}/CustomApi");
+        $this->assertFileExists("{$this->base}/CustomApi/CustomApiAdapter.php");
     }
 }

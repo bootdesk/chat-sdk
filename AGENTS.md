@@ -47,4 +47,4 @@ CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> forma
 - PHP 8.2+ features (readonly properties, enums, match, etc.)
 - `declare(strict_types=1)` in contracts and adapters (inconsistent across codebase)
 - Pint enforces Laravel preset
-- `composer all` checks lint, analysis, and tests before committing
+- pre-commit hook (`captainhook`) runs `format:check` → `lint` → `analyse` → `test`

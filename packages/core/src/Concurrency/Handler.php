@@ -25,7 +25,7 @@ class Handler
         return match ($this->strategy) {
             Strategy::Drop => $this->state->acquireLock($lockKey, $this->lockTtlMs),
             Strategy::Queue => $this->state->acquireLock($lockKey, $this->lockTtlMs),
-            Strategy::Debounce => $this->acquireDebounce($threadId, $lockKey),
+            Strategy::Debounce => $this->acquireDebounce($lockKey),
             Strategy::Concurrent => null,
         };
     }
@@ -57,13 +57,8 @@ class Handler
         return $this->state->extendLock($lock, $ttlMs);
     }
 
-    private function acquireDebounce(string $threadId, string $lockKey): ?Lock
+    private function acquireDebounce(string $lockKey): ?Lock
     {
-        $existing = $this->state->acquireLock($lockKey, $this->lockTtlMs);
-        if ($existing !== null) {
-            return $existing;
-        }
-
-        return null;
+        return $this->state->acquireLock($lockKey, $this->lockTtlMs);
     }
 }

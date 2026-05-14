@@ -255,7 +255,7 @@ class BotMan
             }
         }
 
-        if ($incoming->getLocation() !== null && $this->locationHandlers !== []) {
+        if ($incoming->getLocation() instanceof \BotMan\BotMan\Attachments\Location && $this->locationHandlers !== []) {
             foreach ($this->locationHandlers as $handler) {
                 $handler($incoming, $this);
             }

@@ -652,7 +652,7 @@ class Chat
             Strategy::Drop => $this->processDrop($adapter, $threadId, $lockKey, $message, $handler),
             Strategy::Queue => $this->processQueue($adapter, $threadId, $lockKey, $message, $handler, $maxQueueSize),
             Strategy::Debounce => $this->processDebounce($adapter, $threadId, $lockKey, $message, $handler, $debounceMs, $maxQueueSize),
-            Strategy::Concurrent => $this->processConcurrent($adapter, $threadId, $lockKey, $message, $handler, $maxConcurrent),
+            Strategy::Concurrent => $this->processConcurrent($adapter, $threadId, $message, $maxConcurrent),
         };
     }
 
@@ -716,7 +716,7 @@ class Chat
         }
     }
 
-    private function processConcurrent(Adapter $adapter, string $threadId, string $lockKey, Message $message, Handler $handler, int $maxConcurrent): void
+    private function processConcurrent(Adapter $adapter, string $threadId, Message $message, int $maxConcurrent): void
     {
         $slotKey = $threadId;
 

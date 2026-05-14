@@ -50,7 +50,7 @@ class ChatMakeAdapterCommand extends Command
 
             $this->components->task(
                 "Creating {$filename}",
-                fn () => file_put_contents("{$dir}/".str_replace('{class}', $class, $filename), $content),
+                fn (): int|false => file_put_contents("{$dir}/".str_replace('{class}', $class, $filename), $content),
             );
         }
 

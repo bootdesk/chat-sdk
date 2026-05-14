@@ -3,10 +3,16 @@
         "enabled": true,
         "actions": [
             {
+                "action": "composer format:check"
+            },
+            {
                 "action": "composer lint"
             },
             {
                 "action": "composer analyse"
+            },
+            {
+                "action": "composer test"
             }
         ]
     }

@@ -1,3 +1,6 @@
 <?php
-\BootDesk\ChatSDK\Core\Support\AdapterRegistry::register('discord', \BootDesk\ChatSDK\Discord\DiscordAdapter::class);
 
+use BootDesk\ChatSDK\Core\Support\AdapterRegistry;
+use BootDesk\ChatSDK\Discord\DiscordAdapter;
+
+AdapterRegistry::register('discord', DiscordAdapter::class);

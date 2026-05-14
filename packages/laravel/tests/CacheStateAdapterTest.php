@@ -2,10 +2,10 @@
 
 namespace BootDesk\ChatSDK\Laravel\Tests;
 
-use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use BootDesk\ChatSDK\Core\Lock;
 use BootDesk\ChatSDK\Core\QueueEntry;
 use BootDesk\ChatSDK\Laravel\State\CacheStateAdapter;
+use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Orchestra\Testbench\TestCase;
 
 class CacheStateAdapterTest extends TestCase

@@ -2,24 +2,18 @@
 
 namespace BotMan\BotMan\Tests;
 
-use BotMan\BotMan\Attachments\Audio;
-use BotMan\BotMan\Attachments\File;
-use BotMan\BotMan\Attachments\Image;
-use BotMan\BotMan\Attachments\Location;
-use BotMan\BotMan\Attachments\Video;
-use BotMan\BotMan\BotMan;
-use BotMan\BotMan\BotManFactory;
-use BotMan\BotMan\Messages\Incoming\Answer;
-use BotMan\BotMan\Messages\Incoming\IncomingMessage;
-use BotMan\BotMan\Messages\Outgoing\Button;
-use BotMan\BotMan\Messages\Outgoing\OutgoingMessage;
-use BotMan\BotMan\Messages\Outgoing\Question;
-use BotMan\BotMan\User;
 use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Message as CoreMessage;
 use BootDesk\ChatSDK\Core\MessageContext;
 use BootDesk\ChatSDK\Core\Thread;
+use BotMan\BotMan\BotMan;
+use BotMan\BotMan\Conversations\Conversation;
+use BotMan\BotMan\Messages\Incoming\Answer;
+use BotMan\BotMan\Messages\Incoming\IncomingMessage;
+use BotMan\BotMan\Messages\Outgoing\Button;
+use BotMan\BotMan\Messages\Outgoing\OutgoingMessage;
+use BotMan\BotMan\Messages\Outgoing\Question;
 use PHPUnit\Framework\TestCase;
 
 class BotManTest extends TestCase
@@ -193,7 +187,7 @@ class BotManTest extends TestCase
 
     public function test_start_conversation(): void
     {
-        $conv = new class extends \BotMan\BotMan\Conversations\Conversation
+        $conv = new class extends Conversation
         {
             public bool $ran = false;
 

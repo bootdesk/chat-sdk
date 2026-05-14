@@ -2,12 +2,11 @@
 
 namespace BootDesk\ChatSDK\Laravel\Tests;
 
+use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Laravel\ChatFacade;
 use BootDesk\ChatSDK\Laravel\ChatServiceProvider;
-use BootDesk\ChatSDK\Laravel\Commands\ChatInstallCommand;
-use BootDesk\ChatSDK\Laravel\Commands\ChatListCommand;
 use BootDesk\ChatSDK\Laravel\State\CacheStateAdapter;
 use Orchestra\Testbench\TestCase;
 
@@ -70,10 +69,10 @@ class ChatServiceProviderTest extends TestCase
 
     public function test_identity_binding(): void
     {
-        $this->app->forgetInstance(\BootDesk\ChatSDK\Core\Chat::class);
-        $this->app->bind('chat.identity', fn () => fn (\BootDesk\ChatSDK\Core\Author $a) => $a->id);
-        $chat = $this->app->make(\BootDesk\ChatSDK\Core\Chat::class);
-        $this->assertNotNull($chat->resolveIdentity(new \BootDesk\ChatSDK\Core\Author(id: 'U1')));
+        $this->app->forgetInstance(Chat::class);
+        $this->app->bind('chat.identity', fn () => fn (Author $a) => $a->id);
+        $chat = $this->app->make(Chat::class);
+        $this->assertNotNull($chat->resolveIdentity(new Author(id: 'U1')));
     }
 
     public function test_install_command_is_registered(): void
@@ -101,17 +100,22 @@ class ChatServiceProviderTest extends TestCase
 
     public function test_handler_registration(): void
     {
-        $handler = new class {
+        $handler = new class
+        {
             public bool $registered = false;
-            public function register(\BootDesk\ChatSDK\Core\Chat $chat): void { $this->registered = true; }
+
+            public function register(Chat $chat): void
+            {
+                $this->registered = true;
+            }
         };
 
         $handlerClass = get_class($handler);
         $this->app->instance($handlerClass, $handler);
         $this->app['config']->set('chat.handlers', [$handlerClass]);
-        $this->app->register(\BootDesk\ChatSDK\Laravel\ChatServiceProvider::class);
+        $this->app->register(ChatServiceProvider::class);
 
-        $provider = $this->app->getProvider(\BootDesk\ChatSDK\Laravel\ChatServiceProvider::class);
+        $provider = $this->app->getProvider(ChatServiceProvider::class);
         $provider->boot();
 
         $this->assertTrue($handler->registered);

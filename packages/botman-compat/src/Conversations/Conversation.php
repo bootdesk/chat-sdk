@@ -3,7 +3,6 @@
 namespace BotMan\BotMan\Conversations;
 
 use BotMan\BotMan\BotMan;
-use BotMan\BotMan\Messages\Incoming\Answer;
 use BotMan\BotMan\Messages\Outgoing\Question;
 
 abstract class Conversation

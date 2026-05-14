@@ -2,8 +2,6 @@
 
 namespace BotMan\BotMan\Messages\Incoming;
 
-use BotMan\BotMan\Messages\Incoming\IncomingMessage;
-
 class Answer
 {
     private bool $interactiveReply = false;

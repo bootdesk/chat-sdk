@@ -4,6 +4,7 @@ namespace BootDesk\ChatSDK\Core\Tests;
 
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\FetchOptions;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;
 use BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
@@ -116,7 +117,7 @@ class ThreadTest extends TestCase
 
     public function test_fetch_messages_with_options(): void
     {
-        $options = new \BootDesk\ChatSDK\Core\FetchOptions(limit: 10);
+        $options = new FetchOptions(limit: 10);
         $result = $this->thread->fetchMessages($options);
         $this->assertEmpty($result->messages);
     }

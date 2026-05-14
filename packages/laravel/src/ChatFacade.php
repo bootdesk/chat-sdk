@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BootDesk\ChatSDK\Laravel;
 
-use Illuminate\Support\Facades\Facade;
 use BootDesk\ChatSDK\Core\Chat;
+use Illuminate\Support\Facades\Facade;
 
 /**
  * @method static \BootDesk\ChatSDK\Core\Contracts\Adapter|null resolveAdapter(string $name, ?\Psr\Http\Message\ServerRequestInterface $request = null)

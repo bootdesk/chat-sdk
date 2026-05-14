@@ -2,10 +2,10 @@
 
 namespace BotMan\BotMan\Tests;
 
+use BootDesk\ChatSDK\Core\Chat;
 use BotMan\BotMan\BotMan;
 use BotMan\BotMan\BotManFactory;
 use BotMan\BotMan\Conversations\Conversation;
-use BootDesk\ChatSDK\Core\Chat;
 use PHPUnit\Framework\TestCase;
 
 class ConversationTest extends TestCase

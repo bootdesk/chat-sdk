@@ -4,7 +4,11 @@ namespace BootDesk\ChatSDK\Telegram;
 
 use BootDesk\ChatSDK\Core\Markdown\BaseFormatConverter;
 use BootDesk\ChatSDK\Core\PostableMessage;
+use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
+use League\CommonMark\Extension\CommonMark\Node\Inline\Code;
+use League\CommonMark\Extension\CommonMark\Node\Inline\Link;
 use League\CommonMark\Node\Block\Document;
+use League\CommonMark\Node\Inline\Text;
 
 class TelegramFormatConverter extends BaseFormatConverter
 {
@@ -90,7 +94,7 @@ class TelegramFormatConverter extends BaseFormatConverter
             $class = get_class($node);
 
             if ($class === 'League\CommonMark\Node\Inline\Text') {
-                /** @var \League\CommonMark\Node\Inline\Text $node */
+                /** @var Text $node */
                 $output .= $this->escapeMarkdownV2($node->getLiteral());
             } elseif ($class === 'League\CommonMark\Extension\CommonMark\Node\Inline\Strong') {
                 $output .= '*';
@@ -99,14 +103,14 @@ class TelegramFormatConverter extends BaseFormatConverter
                 $output .= '_';
                 $stack[] = '_';
             } elseif ($class === 'League\CommonMark\Extension\CommonMark\Node\Inline\Code') {
-                /** @var \League\CommonMark\Extension\CommonMark\Node\Inline\Code $node */
+                /** @var Code $node */
                 $output .= '`'.$this->escapeCodeBlock($node->getLiteral()).'`';
             } elseif ($class === 'League\CommonMark\Extension\CommonMark\Node\Block\FencedCode') {
-                /** @var \League\CommonMark\Extension\CommonMark\Node\Block\FencedCode $node */
+                /** @var FencedCode $node */
                 $lang = $node->getInfo() ?? '';
                 $output .= "```{$lang}\n".$this->escapeCodeBlock($node->getLiteral())."\n```";
             } elseif ($class === 'League\CommonMark\Extension\CommonMark\Node\Inline\Link') {
-                /** @var \League\CommonMark\Extension\CommonMark\Node\Inline\Link $node */
+                /** @var Link $node */
                 $output .= '[';
                 $stack[] = ']('.$this->escapeLinkUrl($node->getUrl()).')';
             } elseif ($class === 'League\CommonMark\Extension\CommonMark\Node\Block\Heading') {

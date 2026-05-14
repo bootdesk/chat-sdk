@@ -14,6 +14,7 @@ class TestSendingMiddleware implements SendingMiddleware
     public function handle(string $threadId, PostableMessage $message, Adapter $adapter, string $operation, callable $next): ?SentMessage
     {
         $this->called = true;
+
         return $next($threadId, $message, $adapter, $operation);
     }
 }

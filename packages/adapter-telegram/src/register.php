@@ -1,3 +1,6 @@
 <?php
-\BootDesk\ChatSDK\Core\Support\AdapterRegistry::register('telegram', \BootDesk\ChatSDK\Telegram\TelegramAdapter::class);
 
+use BootDesk\ChatSDK\Core\Support\AdapterRegistry;
+use BootDesk\ChatSDK\Telegram\TelegramAdapter;
+
+AdapterRegistry::register('telegram', TelegramAdapter::class);

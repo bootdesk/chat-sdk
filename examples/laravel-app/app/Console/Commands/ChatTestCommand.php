@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use BootDesk\ChatSDK\Core\Chat;
+use Illuminate\Console\Command;
 
 class ChatTestCommand extends Command
 {
@@ -25,16 +25,16 @@ class ChatTestCommand extends Command
         }
 
         $this->info("Adapter: {$resolved->getName()}");
-        $this->info("Bot user ID: " . ($resolved->getBotUserId() ?? 'unknown'));
+        $this->info('Bot user ID: '.($resolved->getBotUserId() ?? 'unknown'));
 
         // List configured adapters
         $this->newLine();
         $this->info('To test webhooks, start your server and configure the platform to point to:');
-        $this->line("  POST " . url("/api/webhooks/{$adapter}"));
+        $this->line('  POST '.url("/api/webhooks/{$adapter}"));
 
         $this->newLine();
         $this->info('For local testing, use ngrok:');
-        $this->line("  ngrok http 8000");
+        $this->line('  ngrok http 8000');
         $this->line("  Then set your webhook URL to: https://<ngrok-id>.ngrok.io/api/webhooks/{$adapter}");
 
         return 0;

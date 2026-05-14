@@ -60,7 +60,7 @@ class WhatsAppAdapter implements Adapter
 
         // GET = verification challenge
         if (strtoupper($request->getMethod()) === 'GET') {
-            if ($this->webhookVerifier instanceof \BootDesk\ChatSDK\WhatsApp\WhatsAppWebhookVerifier) {
+            if ($this->webhookVerifier instanceof WhatsAppWebhookVerifier) {
                 $challenge = $this->webhookVerifier->handleVerificationChallenge($request);
                 if ($challenge !== null) {
                     return $factory->createResponse(200)
@@ -74,7 +74,7 @@ class WhatsAppAdapter implements Adapter
         // POST = verify HMAC signature
         $body = (string) $request->getBody();
 
-        if ($this->webhookVerifier instanceof \BootDesk\ChatSDK\WhatsApp\WhatsAppWebhookVerifier) {
+        if ($this->webhookVerifier instanceof WhatsAppWebhookVerifier) {
             $this->webhookVerifier->verifyWebhookSignature($request, $body);
         }
 
@@ -342,7 +342,7 @@ class WhatsAppAdapter implements Adapter
             ->withHeader('Content-Type', 'application/json')
             ->withBody($factory->createStream($body));
 
-        if ($this->httpClient instanceof \Psr\Http\Client\ClientInterface) {
+        if ($this->httpClient instanceof ClientInterface) {
             $psrResponse = $this->httpClient->sendRequest($request);
             $responseBody = (string) $psrResponse->getBody();
         } else {

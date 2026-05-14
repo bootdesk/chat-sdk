@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace BootDesk\ChatSDK\Laravel\Jobs;
 
+use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Message;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use BootDesk\ChatSDK\Core\Chat;
-use BootDesk\ChatSDK\Core\Message;
 
 class ProcessMessageJob implements ShouldQueue
 {
@@ -23,7 +24,7 @@ class ProcessMessageJob implements ShouldQueue
     {
         $adapter = $chat->resolveAdapter($this->adapterName);
 
-        if (!$adapter instanceof \BootDesk\ChatSDK\Core\Contracts\Adapter) {
+        if (! $adapter instanceof Adapter) {
             return;
         }
 

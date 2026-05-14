@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use BootDesk\ChatSDK\Laravel\Http\Controllers\WebhookController;
+use Illuminate\Support\Facades\Route;
 
 // Webhook endpoint for all adapters.
 // Each platform sends POST requests here:

@@ -69,7 +69,7 @@ class SlackAdapter implements Adapter
         }
 
         // Verify signature if signing secret is configured
-        if ($this->webhookVerifier instanceof \BootDesk\ChatSDK\Slack\SlackWebhookVerifier) {
+        if ($this->webhookVerifier instanceof SlackWebhookVerifier) {
             $this->webhookVerifier->verify($request, $body);
         }
 
@@ -362,7 +362,7 @@ class SlackAdapter implements Adapter
             ->withHeader('Content-Type', 'application/json')
             ->withBody($factory->createStream($body));
 
-        if ($this->httpClient instanceof \Psr\Http\Client\ClientInterface) {
+        if ($this->httpClient instanceof ClientInterface) {
             $psrResponse = $this->httpClient->sendRequest($request);
             $responseBody = (string) $psrResponse->getBody();
         } else {

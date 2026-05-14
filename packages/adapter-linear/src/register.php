@@ -1,3 +1,6 @@
 <?php
-\BootDesk\ChatSDK\Core\Support\AdapterRegistry::register('linear', \BootDesk\ChatSDK\Linear\LinearAdapter::class);
 
+use BootDesk\ChatSDK\Core\Support\AdapterRegistry;
+use BootDesk\ChatSDK\Linear\LinearAdapter;
+
+AdapterRegistry::register('linear', LinearAdapter::class);

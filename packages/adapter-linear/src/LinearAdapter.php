@@ -445,7 +445,7 @@ class LinearAdapter implements Adapter
             ->withHeader('Authorization', $this->apiKey)
             ->withBody($factory->createStream($body));
 
-        if ($this->httpClient instanceof \Psr\Http\Client\ClientInterface) {
+        if ($this->httpClient instanceof ClientInterface) {
             $psrResponse = $this->httpClient->sendRequest($request);
             $responseBody = (string) $psrResponse->getBody();
         } else {

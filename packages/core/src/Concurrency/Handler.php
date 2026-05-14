@@ -32,7 +32,7 @@ class Handler
 
     public function release(?Lock $lock): void
     {
-        if ($lock instanceof \BootDesk\ChatSDK\Core\Lock) {
+        if ($lock instanceof Lock) {
             $this->state->releaseLock($lock);
         }
     }

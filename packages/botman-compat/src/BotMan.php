@@ -2,16 +2,14 @@
 
 namespace BotMan\BotMan;
 
+use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\MessageContext;
+use BootDesk\ChatSDK\Core\Thread;
 use BotMan\BotMan\Conversations\Conversation;
 use BotMan\BotMan\Messages\Incoming\Answer;
 use BotMan\BotMan\Messages\Incoming\IncomingMessage;
 use BotMan\BotMan\Messages\Outgoing\OutgoingMessage;
 use BotMan\BotMan\Messages\Outgoing\Question;
-use BootDesk\ChatSDK\Core\Chat;
-use BootDesk\ChatSDK\Core\Message as CoreMessage;
-use BootDesk\ChatSDK\Core\MessageContext;
-use BootDesk\ChatSDK\Core\PostableMessage;
-use BootDesk\ChatSDK\Core\Thread;
 
 class BotMan
 {
@@ -111,7 +109,7 @@ class BotMan
 
     public function reply(string|OutgoingMessage|Question $message, array $additionalParameters = []): void
     {
-        if (!$this->currentThread instanceof \BootDesk\ChatSDK\Core\Thread) {
+        if (! $this->currentThread instanceof Thread) {
             return;
         }
 
@@ -122,7 +120,7 @@ class BotMan
         };
 
         if ($message instanceof Question && $message->getButtons() !== []) {
-            $text .= "\n" . implode(' | ', array_map(
+            $text .= "\n".implode(' | ', array_map(
                 fn (array $b): string => "[{$b['text']}]",
                 $message->getButtons(),
             ));
@@ -187,7 +185,7 @@ class BotMan
 
     public function typesAndWaits(int $seconds = 2): void
     {
-        if ($this->currentThread instanceof \BootDesk\ChatSDK\Core\Thread) {
+        if ($this->currentThread instanceof Thread) {
             $this->currentThread->startTyping();
         }
     }
@@ -290,7 +288,7 @@ class BotMan
 
         // Named params: {name} → wildcard
         $regex = preg_replace('/\{(\w+)\}/', '(?P<$1>[\w\-]+)', $pattern);
-        $regex = '/^' . $regex . '$/iu';
+        $regex = '/^'.$regex.'$/iu';
 
         return (bool) preg_match($regex, $text);
     }
@@ -307,7 +305,7 @@ class BotMan
         }
 
         $regex = preg_replace('/\{(\w+)\}/', '(?P<$1>[\w\-]+)', $pattern);
-        $regex = '/^' . $regex . '$/iu';
+        $regex = '/^'.$regex.'$/iu';
 
         if (preg_match($regex, $text, $matches)) {
             foreach ($names[1] as $name) {

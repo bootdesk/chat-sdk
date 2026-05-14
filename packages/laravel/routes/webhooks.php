@@ -11,8 +11,8 @@ declare(strict_types=1);
  *   Route::match(['get', 'post'], '/api/webhooks/{adapter}/{tenant?}', [WebhookController::class, 'handle']);
  */
 
-use Illuminate\Support\Facades\Route;
 use BootDesk\ChatSDK\Laravel\Http\Controllers\WebhookController;
+use Illuminate\Support\Facades\Route;
 
 Route::match(
     ['get', 'post'],

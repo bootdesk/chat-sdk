@@ -4,7 +4,6 @@ namespace BootDesk\ChatSDK\Core\Tests;
 
 use BootDesk\ChatSDK\Core\Concurrency\Handler;
 use BootDesk\ChatSDK\Core\Concurrency\Strategy;
-use BootDesk\ChatSDK\Core\Lock;
 use BootDesk\ChatSDK\Core\QueueEntry;
 use BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;
 use PHPUnit\Framework\TestCase;

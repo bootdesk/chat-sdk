@@ -5,6 +5,7 @@ namespace BootDesk\ChatSDK\WhatsApp\Tests;
 use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
 use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\WhatsApp\WhatsAppAdapter;
@@ -296,7 +297,7 @@ class WhatsAppAdapterTest extends TestCase
 
     public function test_parse_webhook_invalid_json_throws(): void
     {
-        $this->expectException(\BootDesk\ChatSDK\Core\Exceptions\AdapterException::class);
+        $this->expectException(AdapterException::class);
 
         $request = $this->factory->createServerRequest('POST', '/webhook')
             ->withBody($this->factory->createStream('not json'));
@@ -306,7 +307,7 @@ class WhatsAppAdapterTest extends TestCase
 
     public function test_parse_webhook_no_message_throws(): void
     {
-        $this->expectException(\BootDesk\ChatSDK\Core\Exceptions\AdapterException::class);
+        $this->expectException(AdapterException::class);
 
         $request = $this->factory->createServerRequest('POST', '/webhook')
             ->withBody($this->factory->createStream('{"entry":[{"changes":[{"field":"messages","value":{}}]}]}'));
@@ -331,7 +332,7 @@ class WhatsAppAdapterTest extends TestCase
         $request = $this->factory->createServerRequest('POST', '/webhook')
             ->withBody($this->factory->createStream($body));
 
-        $this->expectException(\BootDesk\ChatSDK\Core\Exceptions\AdapterException::class);
+        $this->expectException(AdapterException::class);
         $this->adapter->parseWebhook($request);
     }
 

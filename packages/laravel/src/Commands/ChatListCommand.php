@@ -2,8 +2,9 @@
 
 namespace BootDesk\ChatSDK\Laravel\Commands;
 
-use Illuminate\Console\Command;
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use Illuminate\Console\Command;
 
 class ChatListCommand extends Command
 {
@@ -26,8 +27,8 @@ class ChatListCommand extends Command
             $resolved = $chat->resolveAdapter($name);
             $rows[] = [
                 $name,
-                $resolved instanceof \BootDesk\ChatSDK\Core\Contracts\Adapter ? '<fg=green>Available</>' : '<fg=red>Not installed</>',
-                $resolved instanceof \BootDesk\ChatSDK\Core\Contracts\Adapter ? $resolved->getName() : '-',
+                $resolved instanceof Adapter ? '<fg=green>Available</>' : '<fg=red>Not installed</>',
+                $resolved instanceof Adapter ? $resolved->getName() : '-',
             ];
         }
 

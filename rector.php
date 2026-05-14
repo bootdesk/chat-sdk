@@ -6,11 +6,11 @@ use Rector\TypeDeclaration\Rector\ClassMethod\AddVoidReturnTypeWhereNoReturnRect
 
 return RectorConfig::configure()
     ->withPaths([
-        __DIR__ . '/packages',
+        __DIR__.'/packages',
     ])
     ->withSkip([
-        __DIR__ . '/packages/*/tests/*',
-        __DIR__ . '/vendor',
+        __DIR__.'/packages/*/tests/*',
+        __DIR__.'/vendor',
     ])
     ->withSets([
         SetList::PHP_82,

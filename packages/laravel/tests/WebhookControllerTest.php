@@ -2,11 +2,11 @@
 
 namespace BootDesk\ChatSDK\Laravel\Tests;
 
-use Illuminate\Support\Facades\Route;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
 use BootDesk\ChatSDK\Laravel\ChatServiceProvider;
 use BootDesk\ChatSDK\Laravel\Http\Controllers\WebhookController;
+use Illuminate\Support\Facades\Route;
 use Orchestra\Testbench\TestCase;
 
 class WebhookControllerTest extends TestCase

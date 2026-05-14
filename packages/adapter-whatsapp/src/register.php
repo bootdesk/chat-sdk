@@ -1,3 +1,6 @@
 <?php
-\BootDesk\ChatSDK\Core\Support\AdapterRegistry::register('whatsapp', \BootDesk\ChatSDK\WhatsApp\WhatsAppAdapter::class);
 
+use BootDesk\ChatSDK\Core\Support\AdapterRegistry;
+use BootDesk\ChatSDK\WhatsApp\WhatsAppAdapter;
+
+AdapterRegistry::register('whatsapp', WhatsAppAdapter::class);

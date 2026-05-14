@@ -6,7 +6,6 @@ use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Conversations\AskResponse;
 use BootDesk\ChatSDK\Core\Conversations\Conversation;
 use BootDesk\ChatSDK\Core\Conversations\ConversationState;
-use BootDesk\ChatSDK\Core\Conversations\ConversationManager;
 use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\MessageContext;
 use BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;

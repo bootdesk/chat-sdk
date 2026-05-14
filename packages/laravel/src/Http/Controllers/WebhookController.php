@@ -2,12 +2,13 @@
 
 namespace BootDesk\ChatSDK\Laravel\Http\Controllers;
 
+use BootDesk\ChatSDK\Core\Chat;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use BootDesk\ChatSDK\Core\Chat;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
+use Symfony\Component\HttpFoundation\Response;
 
 class WebhookController extends Controller
 {
@@ -15,7 +16,7 @@ class WebhookController extends Controller
         private readonly Chat $chat,
     ) {}
 
-    public function handle(string $adapter, Request $request): \Symfony\Component\HttpFoundation\Response
+    public function handle(string $adapter, Request $request): Response
     {
         $psrFactory = new Psr17Factory;
         $psrHttpFactory = new PsrHttpFactory(

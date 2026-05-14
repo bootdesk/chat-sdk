@@ -2,9 +2,6 @@
 
 namespace BootDesk\ChatSDK\Laravel;
 
-use Illuminate\Contracts\Cache\Factory as CacheFactory;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Str;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Core\Support\AdapterRegistry;
@@ -12,6 +9,9 @@ use BootDesk\ChatSDK\Laravel\Commands\ChatInstallCommand;
 use BootDesk\ChatSDK\Laravel\Commands\ChatListCommand;
 use BootDesk\ChatSDK\Laravel\Commands\ChatMakeAdapterCommand;
 use BootDesk\ChatSDK\Laravel\State\CacheStateAdapter;
+use Illuminate\Contracts\Cache\Factory as CacheFactory;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ServerRequestFactoryInterface;
@@ -26,7 +26,7 @@ class ChatServiceProvider extends ServiceProvider
 
         $this->bindPsr17();
 
-        $this->app->singleton(StateAdapter::class, function ($app): \BootDesk\ChatSDK\Laravel\State\CacheStateAdapter {
+        $this->app->singleton(StateAdapter::class, function ($app): CacheStateAdapter {
             return new CacheStateAdapter(
                 cacheFactory: $app->make(CacheFactory::class),
                 store: config('chat.state.store', 'file'),
@@ -34,7 +34,7 @@ class ChatServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->singleton(Chat::class, function ($app): \BootDesk\ChatSDK\Core\Chat {
+        $this->app->singleton(Chat::class, function ($app): Chat {
             $identity = null;
             if ($app->bound('chat.identity')) {
                 $identity = $app->make('chat.identity');

@@ -2,7 +2,13 @@
 
 namespace BotMan\BotMan\Messages\Incoming;
 
+use BootDesk\ChatSDK\Core\Message;
 use BotMan\BotMan\Attachments\Attachment;
+use BotMan\BotMan\Attachments\Audio;
+use BotMan\BotMan\Attachments\File;
+use BotMan\BotMan\Attachments\Image;
+use BotMan\BotMan\Attachments\Location;
+use BotMan\BotMan\Attachments\Video;
 
 class IncomingMessage
 {
@@ -16,7 +22,7 @@ class IncomingMessage
         private readonly ?array $payload = null,
     ) {}
 
-    public static function fromBotManMessage(\BootDesk\ChatSDK\Core\Message $message): self
+    public static function fromBotManMessage(Message $message): self
     {
         return new self(
             text: $message->text,
@@ -63,28 +69,28 @@ class IncomingMessage
 
     public function getImages(): array
     {
-        return array_filter($this->attachments, fn (\BotMan\BotMan\Attachments\Attachment $a): bool => $a instanceof \BotMan\BotMan\Attachments\Image);
+        return array_filter($this->attachments, fn (Attachment $a): bool => $a instanceof Image);
     }
 
     public function getVideos(): array
     {
-        return array_filter($this->attachments, fn (\BotMan\BotMan\Attachments\Attachment $a): bool => $a instanceof \BotMan\BotMan\Attachments\Video);
+        return array_filter($this->attachments, fn (Attachment $a): bool => $a instanceof Video);
     }
 
     public function getAudio(): array
     {
-        return array_filter($this->attachments, fn (\BotMan\BotMan\Attachments\Attachment $a): bool => $a instanceof \BotMan\BotMan\Attachments\Audio);
+        return array_filter($this->attachments, fn (Attachment $a): bool => $a instanceof Audio);
     }
 
     public function getFiles(): array
     {
-        return array_filter($this->attachments, fn (\BotMan\BotMan\Attachments\Attachment $a): bool => $a instanceof \BotMan\BotMan\Attachments\File);
+        return array_filter($this->attachments, fn (Attachment $a): bool => $a instanceof File);
     }
 
-    public function getLocation(): ?\BotMan\BotMan\Attachments\Location
+    public function getLocation(): ?Location
     {
         foreach ($this->attachments as $a) {
-            if ($a instanceof \BotMan\BotMan\Attachments\Location) {
+            if ($a instanceof Location) {
                 return $a;
             }
         }

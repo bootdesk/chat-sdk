@@ -3,6 +3,7 @@
 namespace App\Chat;
 
 use BootDesk\ChatSDK\Core\Conversations\Conversation;
+use BootDesk\ChatSDK\Core\Conversations\ConversationState;
 use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\Thread;
 
@@ -34,7 +35,7 @@ class OrderConversation extends Conversation
 
     private function getCurrentData(Thread $thread): array
     {
-        $state = \BootDesk\ChatSDK\Core\Conversations\ConversationState::get($thread);
+        $state = ConversationState::get($thread);
 
         return $state['data'] ?? [];
     }

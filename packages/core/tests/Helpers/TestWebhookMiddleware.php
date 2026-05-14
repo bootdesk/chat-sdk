@@ -13,6 +13,7 @@ class TestWebhookMiddleware implements WebhookMiddleware
     public function handle(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $this->called = true;
+
         return $next($request);
     }
 }

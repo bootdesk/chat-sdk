@@ -2,16 +2,31 @@
 
 namespace BootDesk\ChatSDK\Core\Tests;
 
+use BootDesk\ChatSDK\Core\ActionEvent;
+use BootDesk\ChatSDK\Core\AppHomeOpenedEvent;
+use BootDesk\ChatSDK\Core\AssistantContextChangedEvent;
+use BootDesk\ChatSDK\Core\AssistantThreadStartedEvent;
 use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\Channel;
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Concurrency\Handler;
+use BootDesk\ChatSDK\Core\Exceptions\ResourceNotFoundException;
+use BootDesk\ChatSDK\Core\MemberJoinedChannelEvent;
 use BootDesk\ChatSDK\Core\MessageContext;
+use BootDesk\ChatSDK\Core\ModalCloseEvent;
+use BootDesk\ChatSDK\Core\ModalSubmitEvent;
+use BootDesk\ChatSDK\Core\OptionsLoadEvent;
+use BootDesk\ChatSDK\Core\QueueEntry;
 use BootDesk\ChatSDK\Core\ReactionEvent;
-use BootDesk\ChatSDK\Core\ActionEvent;
 use BootDesk\ChatSDK\Core\SlashCommandEvent;
 use BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;
 use BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
+use BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapterResolver;
+use BootDesk\ChatSDK\Core\Tests\Helpers\TestReceivingMiddleware;
+use BootDesk\ChatSDK\Core\Tests\Helpers\TestSendingMiddleware;
+use BootDesk\ChatSDK\Core\Tests\Helpers\TestWebhookMiddleware;
 use BootDesk\ChatSDK\Core\Thread;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 
 class ChatTest extends TestCase
@@ -417,7 +432,7 @@ class ChatTest extends TestCase
     public function test_process_modal_submit_dispatches_handler(): void
     {
         $received = null;
-        $this->chat->onModalSubmit('feedback', function (\BootDesk\ChatSDK\Core\ModalSubmitEvent $event) use (&$received) {
+        $this->chat->onModalSubmit('feedback', function (ModalSubmitEvent $event) use (&$received) {
             $received = $event;
         });
 
@@ -436,7 +451,7 @@ class ChatTest extends TestCase
     public function test_process_modal_close_dispatches_handler(): void
     {
         $received = null;
-        $this->chat->onModalClose('feedback', function (\BootDesk\ChatSDK\Core\ModalCloseEvent $event) use (&$received) {
+        $this->chat->onModalClose('feedback', function (ModalCloseEvent $event) use (&$received) {
             $received = $event;
         });
 
@@ -463,11 +478,11 @@ class ChatTest extends TestCase
 
     public function test_modal_submit_with_context_restores_channel(): void
     {
-        $channel = new \BootDesk\ChatSDK\Core\Channel('C123', $this->adapter);
+        $channel = new Channel('C123', $this->adapter);
         $this->chat->storeModalContext('mock', 'ctx_2', ['channel' => $channel]);
 
         $received = null;
-        $this->chat->onModalSubmit('test', function (\BootDesk\ChatSDK\Core\ModalSubmitEvent $event) use (&$received) {
+        $this->chat->onModalSubmit('test', function (ModalSubmitEvent $event) use (&$received) {
             $received = $event;
         });
 
@@ -486,7 +501,7 @@ class ChatTest extends TestCase
 
     public function test_process_options_load_returns_result(): void
     {
-        $this->chat->onOptionsLoad('color_picker', function (\BootDesk\ChatSDK\Core\OptionsLoadEvent $event) {
+        $this->chat->onOptionsLoad('color_picker', function (OptionsLoadEvent $event) {
             $this->assertSame('color_picker', $event->actionId);
             $this->assertSame('re', $event->query);
 
@@ -513,7 +528,7 @@ class ChatTest extends TestCase
     public function test_process_options_load_catch_all(): void
     {
         $called = false;
-        $this->chat->onOptionsLoad(function (\BootDesk\ChatSDK\Core\OptionsLoadEvent $event) use (&$called) {
+        $this->chat->onOptionsLoad(function (OptionsLoadEvent $event) use (&$called) {
             $called = true;
 
             return ['options' => []];
@@ -541,7 +556,7 @@ class ChatTest extends TestCase
     public function test_process_assistant_thread_started(): void
     {
         $received = null;
-        $this->chat->onAssistantThreadStarted(function (\BootDesk\ChatSDK\Core\AssistantThreadStartedEvent $event) use (&$received) {
+        $this->chat->onAssistantThreadStarted(function (AssistantThreadStartedEvent $event) use (&$received) {
             $received = $event;
         });
 
@@ -562,7 +577,7 @@ class ChatTest extends TestCase
     public function test_process_assistant_context_changed(): void
     {
         $received = null;
-        $this->chat->onAssistantContextChanged(function (\BootDesk\ChatSDK\Core\AssistantContextChangedEvent $event) use (&$received) {
+        $this->chat->onAssistantContextChanged(function (AssistantContextChangedEvent $event) use (&$received) {
             $received = $event;
         });
 
@@ -581,7 +596,7 @@ class ChatTest extends TestCase
     public function test_process_app_home_opened(): void
     {
         $received = null;
-        $this->chat->onAppHomeOpened(function (\BootDesk\ChatSDK\Core\AppHomeOpenedEvent $event) use (&$received) {
+        $this->chat->onAppHomeOpened(function (AppHomeOpenedEvent $event) use (&$received) {
             $received = $event;
         });
 
@@ -599,7 +614,7 @@ class ChatTest extends TestCase
     public function test_process_member_joined_channel(): void
     {
         $received = null;
-        $this->chat->onMemberJoinedChannel(function (\BootDesk\ChatSDK\Core\MemberJoinedChannelEvent $event) use (&$received) {
+        $this->chat->onMemberJoinedChannel(function (MemberJoinedChannelEvent $event) use (&$received) {
             $received = $event;
         });
 
@@ -642,7 +657,7 @@ class ChatTest extends TestCase
     public function test_message_context_state_and_metadata(): void
     {
         $called = false;
-        $this->chat->onNewMessage(null, function (\BootDesk\ChatSDK\Core\MessageContext $ctx) use (&$called) {
+        $this->chat->onNewMessage(null, function (MessageContext $ctx) use (&$called) {
             $ctx->setState(['from_context' => true]);
             $state = $ctx->getState();
             $this->assertSame(['from_context' => true], $state);
@@ -660,8 +675,8 @@ class ChatTest extends TestCase
     public function test_constructor_with_transcripts_requires_identity(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
+        new Chat(
+            state: new MemoryStateAdapter,
             adapters: [],
             transcripts: ['max_messages' => 10],
         );
@@ -669,10 +684,10 @@ class ChatTest extends TestCase
 
     public function test_constructor_with_transcripts(): void
     {
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
-            adapters: ['mock' => new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter],
-            identity: fn (\BootDesk\ChatSDK\Core\Author $a) => $a->id,
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
+            adapters: ['mock' => new MockAdapter],
+            identity: fn (Author $a) => $a->id,
             transcripts: ['max_messages' => 10],
         );
         $this->assertNotNull($chat->getTranscripts());
@@ -685,34 +700,34 @@ class ChatTest extends TestCase
 
     public function test_resolve_adapter_with_resolver(): void
     {
-        $resolver = new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapterResolver;
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
+        $resolver = new MockAdapterResolver;
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
             adapterResolver: $resolver,
         );
-        $request = (new \Nyholm\Psr7\Factory\Psr17Factory)->createServerRequest('POST', '/');
+        $request = (new Psr17Factory)->createServerRequest('POST', '/');
         $this->assertNotNull($chat->resolveAdapter('mock', $request));
     }
 
     public function test_thread_unknown_adapter(): void
     {
-        $this->expectException(\BootDesk\ChatSDK\Core\Exceptions\ResourceNotFoundException::class);
+        $this->expectException(ResourceNotFoundException::class);
         $this->chat->thread('unknown:channel');
     }
 
     public function test_channel_unknown_adapter(): void
     {
-        $this->expectException(\BootDesk\ChatSDK\Core\Exceptions\ResourceNotFoundException::class);
+        $this->expectException(ResourceNotFoundException::class);
         $this->chat->channel('unknown:channel');
     }
 
     public function test_handle_webhook_full_flow(): void
     {
-        $factory = new \Nyholm\Psr7\Factory\Psr17Factory;
-        $responseFactory = new \Nyholm\Psr7\Factory\Psr17Factory;
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
-            adapters: ['mock' => new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter],
+        $factory = new Psr17Factory;
+        $responseFactory = new Psr17Factory;
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
+            adapters: ['mock' => new MockAdapter],
             responseFactory: $responseFactory,
         );
 
@@ -725,7 +740,7 @@ class ChatTest extends TestCase
 
     public function test_handle_webhook_throws_without_response_factory(): void
     {
-        $request = (new \Nyholm\Psr7\Factory\Psr17Factory)
+        $request = (new Psr17Factory)
             ->createServerRequest('POST', '/webhook');
 
         $this->expectException(\RuntimeException::class);
@@ -734,22 +749,22 @@ class ChatTest extends TestCase
 
     public function test_handle_webhook_unknown_adapter(): void
     {
-        $request = (new \Nyholm\Psr7\Factory\Psr17Factory)
+        $request = (new Psr17Factory)
             ->createServerRequest('POST', '/webhook');
 
-        $this->expectException(\BootDesk\ChatSDK\Core\Exceptions\ResourceNotFoundException::class);
+        $this->expectException(ResourceNotFoundException::class);
         $this->chat->handleWebhook('unknown', $request);
     }
 
     public function test_handle_webhook_with_ack_response(): void
     {
-        $factory = new \Nyholm\Psr7\Factory\Psr17Factory;
-        $adapter = new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
+        $factory = new Psr17Factory;
+        $adapter = new MockAdapter;
         $ackResponse = $factory->createResponse(202);
         $adapter->ackResponse = $ackResponse;
 
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
             adapters: ['mock' => $adapter],
             responseFactory: $factory,
         );
@@ -761,14 +776,14 @@ class ChatTest extends TestCase
 
     public function test_handle_webhook_with_webhook_middleware(): void
     {
-        $factory = new \Nyholm\Psr7\Factory\Psr17Factory;
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
-            adapters: ['mock' => new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter],
+        $factory = new Psr17Factory;
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
+            adapters: ['mock' => new MockAdapter],
             responseFactory: $factory,
         );
 
-        $middleware = new \BootDesk\ChatSDK\Core\Tests\Helpers\TestWebhookMiddleware;
+        $middleware = new TestWebhookMiddleware;
         $chat->addWebhookMiddleware($middleware);
 
         $request = $factory->createServerRequest('POST', '/webhook');
@@ -788,7 +803,7 @@ class ChatTest extends TestCase
     {
         $received = false;
         $this->chat->addReceivingMiddleware(
-            new \BootDesk\ChatSDK\Core\Tests\Helpers\TestReceivingMiddleware(stop: true),
+            new TestReceivingMiddleware(stop: true),
         );
         $this->chat->onNewMessage(null, function () use (&$received) {
             $received = true;
@@ -802,7 +817,7 @@ class ChatTest extends TestCase
 
     public function test_sending_middleware(): void
     {
-        $middleware = new \BootDesk\ChatSDK\Core\Tests\Helpers\TestSendingMiddleware;
+        $middleware = new TestSendingMiddleware;
         $this->chat->addSendingMiddleware($middleware);
 
         $thread = $this->chat->thread('mock:C123:456');
@@ -813,15 +828,15 @@ class ChatTest extends TestCase
 
     public function test_process_message_with_transcripts(): void
     {
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
             adapters: ['mock' => $this->adapter],
-            identity: fn (\BootDesk\ChatSDK\Core\Author $a) => $a->id,
+            identity: fn (Author $a) => $a->id,
             transcripts: ['max_messages' => 100],
         );
 
         $received = false;
-        $chat->onNewMessage(null, function (\BootDesk\ChatSDK\Core\MessageContext $ctx) use (&$received) {
+        $chat->onNewMessage(null, function (MessageContext $ctx) use (&$received) {
             $received = true;
         });
 
@@ -833,11 +848,11 @@ class ChatTest extends TestCase
 
     public function test_concurrent_strategy_processes_under_capacity(): void
     {
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
             config: ['concurrency' => 'concurrent', 'maxConcurrent' => 5],
         );
-        $adapter = new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
+        $adapter = new MockAdapter;
         $chat->registerAdapter('mock', $adapter);
 
         $count = 0;
@@ -853,10 +868,10 @@ class ChatTest extends TestCase
 
     public function test_concurrent_strategy_unlimited(): void
     {
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
             config: ['concurrency' => 'concurrent'],
-            adapters: ['mock' => new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter],
+            adapters: ['mock' => new MockAdapter],
         );
 
         $called = false;
@@ -870,10 +885,10 @@ class ChatTest extends TestCase
 
     public function test_channel_lock_scope(): void
     {
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
             config: ['concurrency' => 'drop', 'lockScope' => 'channel'],
-            adapters: ['mock' => new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter],
+            adapters: ['mock' => new MockAdapter],
         );
 
         $called = false;
@@ -894,10 +909,18 @@ class ChatTest extends TestCase
     {
         $events = [];
 
-        $this->chat->onAssistantThreadStarted(function ($e) use (&$events) { $events[] = 'thread_started'; });
-        $this->chat->onAssistantContextChanged(function ($e) use (&$events) { $events[] = 'context_changed'; });
-        $this->chat->onAppHomeOpened(function ($e) use (&$events) { $events[] = 'home_opened'; });
-        $this->chat->onMemberJoinedChannel(function ($e) use (&$events) { $events[] = 'member_joined'; });
+        $this->chat->onAssistantThreadStarted(function ($e) use (&$events) {
+            $events[] = 'thread_started';
+        });
+        $this->chat->onAssistantContextChanged(function ($e) use (&$events) {
+            $events[] = 'context_changed';
+        });
+        $this->chat->onAppHomeOpened(function ($e) use (&$events) {
+            $events[] = 'home_opened';
+        });
+        $this->chat->onMemberJoinedChannel(function ($e) use (&$events) {
+            $events[] = 'member_joined';
+        });
 
         $this->chat->processAssistantThreadStarted($this->adapter, 'C1', 'mock:C1:ts', 'U1', [], 'ts1');
         $this->chat->processAssistantContextChanged($this->adapter, 'C1', 'mock:C1:ts', 'U1', [], 'ts1');
@@ -939,11 +962,11 @@ class ChatTest extends TestCase
 
     public function test_process_modal_close_with_context(): void
     {
-        $channel = new \BootDesk\ChatSDK\Core\Channel('C123', $this->adapter);
+        $channel = new Channel('C123', $this->adapter);
         $this->chat->storeModalContext('mock', 'ctx_close', ['channel' => $channel]);
 
         $received = null;
-        $this->chat->onModalClose('form', function (\BootDesk\ChatSDK\Core\ModalCloseEvent $event) use (&$received) {
+        $this->chat->onModalClose('form', function (ModalCloseEvent $event) use (&$received) {
             $received = $event;
         });
 
@@ -963,7 +986,7 @@ class ChatTest extends TestCase
     {
         $dmCalled = false;
         $otherCalled = false;
-        $this->chat->onDirectMessage(function (\BootDesk\ChatSDK\Core\MessageContext $ctx) use (&$dmCalled) {
+        $this->chat->onDirectMessage(function (MessageContext $ctx) use (&$dmCalled) {
             $dmCalled = true;
             $ctx->skip();
         });
@@ -984,7 +1007,7 @@ class ChatTest extends TestCase
 
         $subCalled = false;
         $otherCalled = false;
-        $this->chat->onSubscribedMessage(function (\BootDesk\ChatSDK\Core\MessageContext $ctx) use (&$subCalled) {
+        $this->chat->onSubscribedMessage(function (MessageContext $ctx) use (&$subCalled) {
             $subCalled = true;
             $ctx->skip();
         });
@@ -1006,7 +1029,7 @@ class ChatTest extends TestCase
     {
         $firstCalled = false;
         $secondCalled = false;
-        $this->chat->onDirectMessage(function (\BootDesk\ChatSDK\Core\MessageContext $ctx) use (&$firstCalled) {
+        $this->chat->onDirectMessage(function (MessageContext $ctx) use (&$firstCalled) {
             $firstCalled = true;
             $ctx->skip();
         });
@@ -1023,11 +1046,11 @@ class ChatTest extends TestCase
 
     public function test_queue_strategy_drains_queue(): void
     {
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
             config: ['concurrency' => 'queue'],
         );
-        $adapter = new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
+        $adapter = new MockAdapter;
         $chat->registerAdapter('mock', $adapter);
 
         $count = 0;
@@ -1062,7 +1085,7 @@ class ChatTest extends TestCase
     public function test_on_modal_submit_with_callable_first_arg(): void
     {
         $received = null;
-        $this->chat->onModalSubmit(function (\BootDesk\ChatSDK\Core\ModalSubmitEvent $event) use (&$received) {
+        $this->chat->onModalSubmit(function (ModalSubmitEvent $event) use (&$received) {
             $received = $event;
         });
 
@@ -1075,7 +1098,7 @@ class ChatTest extends TestCase
     public function test_on_modal_close_with_callable_first_arg(): void
     {
         $received = null;
-        $this->chat->onModalClose(function (\BootDesk\ChatSDK\Core\ModalCloseEvent $event) use (&$received) {
+        $this->chat->onModalClose(function (ModalCloseEvent $event) use (&$received) {
             $received = $event;
         });
 
@@ -1089,7 +1112,7 @@ class ChatTest extends TestCase
     {
         $mentionCalled = false;
         $otherCalled = false;
-        $this->chat->onNewMention(function (\BootDesk\ChatSDK\Core\MessageContext $ctx) use (&$mentionCalled) {
+        $this->chat->onNewMention(function (MessageContext $ctx) use (&$mentionCalled) {
             $mentionCalled = true;
             $ctx->skip();
         });
@@ -1106,12 +1129,12 @@ class ChatTest extends TestCase
 
     public function test_handle_webhook_with_custom_adapter_response(): void
     {
-        $factory = new \Nyholm\Psr7\Factory\Psr17Factory;
-        $adapter = new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
+        $factory = new Psr17Factory;
+        $adapter = new MockAdapter;
         $adapter->customResponse = $factory->createResponse(201, 'Created');
 
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
             adapters: ['mock' => $adapter],
             responseFactory: $factory,
         );
@@ -1125,12 +1148,12 @@ class ChatTest extends TestCase
 
     public function test_debounce_strategy_processes_message(): void
     {
-        $state = new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
+        $state = new MemoryStateAdapter;
+        $chat = new Chat(
             state: $state,
             config: ['concurrency' => 'debounce', 'debounceMs' => 1],
         );
-        $adapter = new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
+        $adapter = new MockAdapter;
         $chat->registerAdapter('mock', $adapter);
 
         $called = false;
@@ -1166,15 +1189,15 @@ class ChatTest extends TestCase
 
     public function test_queue_strategy_returns_when_locked(): void
     {
-        $state = new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;
+        $state = new MemoryStateAdapter;
         $lock = $state->acquireLock('process:mock:C:q_lock', 30_000);
         $this->assertNotNull($lock);
 
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
+        $chat = new Chat(
             state: $state,
             config: ['concurrency' => 'queue'],
         );
-        $adapter = new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
+        $adapter = new MockAdapter;
         $chat->registerAdapter('mock', $adapter);
 
         $called = false;
@@ -1195,15 +1218,15 @@ class ChatTest extends TestCase
 
     public function test_debounce_strategy_enqueues_when_locked(): void
     {
-        $state = new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;
+        $state = new MemoryStateAdapter;
         $lock = $state->acquireLock('process:mock:C:deb_lock', 30_000);
         $this->assertNotNull($lock);
 
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
+        $chat = new Chat(
             state: $state,
             config: ['concurrency' => 'debounce'],
         );
-        $adapter = new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
+        $adapter = new MockAdapter;
         $chat->registerAdapter('mock', $adapter);
 
         $called = false;
@@ -1242,12 +1265,12 @@ class ChatTest extends TestCase
 
     public function test_drain_queued_with_empty_queue_is_noop(): void
     {
-        $state = new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
+        $state = new MemoryStateAdapter;
+        $chat = new Chat(
             state: $state,
             config: ['concurrency' => 'queue'],
         );
-        $adapter = new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
+        $adapter = new MockAdapter;
         $chat->registerAdapter('mock', $adapter);
 
         // Process a message — queue is empty, so drainAllQueued hits its early return
@@ -1267,27 +1290,27 @@ class ChatTest extends TestCase
 
     public function test_debounce_with_queued_messages_processes_latest(): void
     {
-        $state = new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;
+        $state = new MemoryStateAdapter;
 
         // Pre-populate queue with messages
         $msg1 = \BootDesk\ChatSDK\Core\Tests\Helpers\createTestMessage(id: 'd_skip', text: 'skip me');
         $msg2 = \BootDesk\ChatSDK\Core\Tests\Helpers\createTestMessage(id: 'd_latest', text: 'latest');
-        $state->enqueue('mock:C:deb_q', new \BootDesk\ChatSDK\Core\QueueEntry(
+        $state->enqueue('mock:C:deb_q', new QueueEntry(
             'd_skip', serialize($msg1), microtime(true),
         ), 10);
-        $state->enqueue('mock:C:deb_q', new \BootDesk\ChatSDK\Core\QueueEntry(
+        $state->enqueue('mock:C:deb_q', new QueueEntry(
             'd_latest', serialize($msg2), microtime(true),
         ), 10);
 
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
+        $chat = new Chat(
             state: $state,
             config: ['concurrency' => 'debounce', 'debounceMs' => 1],
         );
-        $adapter = new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
+        $adapter = new MockAdapter;
         $chat->registerAdapter('mock', $adapter);
 
         $received = null;
-        $chat->onNewMessage(null, function (\BootDesk\ChatSDK\Core\MessageContext $ctx) use (&$received) {
+        $chat->onNewMessage(null, function (MessageContext $ctx) use (&$received) {
             $received = $ctx;
         });
 
@@ -1308,15 +1331,15 @@ class ChatTest extends TestCase
 
     public function test_concurrent_at_capacity_drops(): void
     {
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
             config: ['concurrency' => 'concurrent', 'maxConcurrent' => 3],
         );
-        $adapter = new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
+        $adapter = new MockAdapter;
         $chat->registerAdapter('mock', $adapter);
 
         // Set slots to capacity directly
-        $ref = new \ReflectionProperty(\BootDesk\ChatSDK\Core\Chat::class, 'concurrentSlots');
+        $ref = new \ReflectionProperty(Chat::class, 'concurrentSlots');
         $ref->setAccessible(true);
         $ref->setValue($chat, ['mock:C:conc' => 3]);
 
@@ -1339,19 +1362,19 @@ class ChatTest extends TestCase
 
     public function test_drain_all_queued_early_return_when_empty(): void
     {
-        $ref = new \ReflectionMethod(\BootDesk\ChatSDK\Core\Chat::class, 'drainAllQueued');
+        $ref = new \ReflectionMethod(Chat::class, 'drainAllQueued');
         $ref->setAccessible(true);
-        $handler = new \BootDesk\ChatSDK\Core\Concurrency\Handler(
-            new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
+        $handler = new Handler(
+            new MemoryStateAdapter,
         );
 
-        $chat = new \BootDesk\ChatSDK\Core\Chat(
-            state: new \BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter,
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
         );
 
         // Calling drainAllQueued with an empty queue should be a no-op
         $ref->invokeArgs($chat, [
-            new \BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter,
+            new MockAdapter,
             'mock:C:empty_q',
             $handler,
         ]);
@@ -1363,7 +1386,7 @@ class ChatTest extends TestCase
     {
         $called = [];
 
-        $this->chat->onNewMessage('/first/', function (\BootDesk\ChatSDK\Core\MessageContext $ctx) use (&$called) {
+        $this->chat->onNewMessage('/first/', function (MessageContext $ctx) use (&$called) {
             $called[] = 'first';
             $ctx->skip();
         });

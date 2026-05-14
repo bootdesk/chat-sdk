@@ -36,6 +36,6 @@ class OutgoingMessage
 
     public function hasAttachment(): bool
     {
-        return $this->attachment instanceof \BotMan\BotMan\Attachments\Attachment;
+        return $this->attachment instanceof Attachment;
     }
 }

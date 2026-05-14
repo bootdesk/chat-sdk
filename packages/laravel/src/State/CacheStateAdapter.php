@@ -2,18 +2,17 @@
 
 namespace BootDesk\ChatSDK\Laravel\State;
 
-use Illuminate\Contracts\Cache\Factory as CacheFactory;
-use Illuminate\Contracts\Cache\Lock as LaravelLock;
-use Illuminate\Contracts\Cache\Repository;
-use Illuminate\Contracts\Cache\LockProvider;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Core\Lock;
 use BootDesk\ChatSDK\Core\QueueEntry;
+use Illuminate\Contracts\Cache\Factory as CacheFactory;
+use Illuminate\Contracts\Cache\Lock as LaravelLock;
+use Illuminate\Contracts\Cache\LockProvider;
+use Illuminate\Contracts\Cache\Repository;
 
 class CacheStateAdapter implements StateAdapter
 {
     /**
-     * 
      * @var Repository&LockProvider
      */
     private Repository $cache;

@@ -2,6 +2,10 @@
 
 namespace BotMan\BotMan\Tests;
 
+use BootDesk\ChatSDK\Core\Author;
+use BootDesk\ChatSDK\Core\Message;
+use BotMan\BotMan\Attachments\Image;
+use BotMan\BotMan\Attachments\Video;
 use BotMan\BotMan\Messages\Incoming\Answer;
 use BotMan\BotMan\Messages\Incoming\IncomingMessage;
 use BotMan\BotMan\Messages\Outgoing\Button;
@@ -23,7 +27,7 @@ class MessagesTest extends TestCase
 
     public function test_outgoing_message_with_attachment(): void
     {
-        $image = new \BotMan\BotMan\Attachments\Image('https://example.com/img.png');
+        $image = new Image('https://example.com/img.png');
         $msg = OutgoingMessage::create('See this')->withAttachment($image);
 
         $this->assertTrue($msg->hasAttachment());
@@ -133,8 +137,8 @@ class MessagesTest extends TestCase
     public function test_incoming_message_attachments(): void
     {
         $msg = new IncomingMessage('photo', 'user-1', 'bot-1');
-        $img = new \BotMan\BotMan\Attachments\Image('https://example.com/a.jpg');
-        $vid = new \BotMan\BotMan\Attachments\Video('https://example.com/v.mp4');
+        $img = new Image('https://example.com/a.jpg');
+        $vid = new Video('https://example.com/v.mp4');
 
         $msg->addAttachment($img);
         $msg->addAttachment($vid);
@@ -149,8 +153,8 @@ class MessagesTest extends TestCase
 
     public function test_incoming_message_from_core_message(): void
     {
-        $author = new \BootDesk\ChatSDK\Core\Author('user-1', 'TestUser');
-        $coreMsg = new \BootDesk\ChatSDK\Core\Message(
+        $author = new Author('user-1', 'TestUser');
+        $coreMsg = new Message(
             id: 'msg-1',
             threadId: 'slack:C123',
             author: $author,

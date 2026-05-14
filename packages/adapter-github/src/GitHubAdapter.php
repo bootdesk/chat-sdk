@@ -481,7 +481,7 @@ class GitHubAdapter implements Adapter
             ->withHeader('Accept', 'application/vnd.github+json')
             ->withHeader('User-Agent', 'bootdesk-github-adapter');
 
-        if ($this->httpClient instanceof \Psr\Http\Client\ClientInterface) {
+        if ($this->httpClient instanceof ClientInterface) {
             $psrResponse = $this->httpClient->sendRequest($request);
             $responseBody = (string) $psrResponse->getBody();
             $statusCode = $psrResponse->getStatusCode();

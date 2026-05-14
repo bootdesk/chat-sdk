@@ -121,7 +121,7 @@ class Chat
         }
 
         if ($transcripts !== null) {
-            if (!$this->identityResolver instanceof \Closure) {
+            if (! $this->identityResolver instanceof \Closure) {
                 throw new \InvalidArgumentException('transcripts config requires identity resolver');
             }
             $this->transcriptsApi = new TranscriptsApi($this->state, $transcripts);
@@ -146,7 +146,7 @@ class Chat
             return $this->adapters[$name];
         }
 
-        if ($this->adapterResolver instanceof \BootDesk\ChatSDK\Core\Contracts\AdapterResolver && $request instanceof \Psr\Http\Message\ServerRequestInterface) {
+        if ($this->adapterResolver instanceof AdapterResolver && $request instanceof ServerRequestInterface) {
             return $this->adapterResolver->resolve($name, $request);
         }
 
@@ -166,7 +166,7 @@ class Chat
         $adapterName = $parts[0];
         $adapter = $this->resolveAdapter($adapterName);
 
-        if (!$adapter instanceof \BootDesk\ChatSDK\Core\Contracts\Adapter) {
+        if (! $adapter instanceof Adapter) {
             throw new ResourceNotFoundException("No adapter found for '{$adapterName}'");
         }
 
@@ -179,7 +179,7 @@ class Chat
         $adapterName = $parts[0];
         $adapter = $this->resolveAdapter($adapterName);
 
-        if (!$adapter instanceof \BootDesk\ChatSDK\Core\Contracts\Adapter) {
+        if (! $adapter instanceof Adapter) {
             throw new ResourceNotFoundException("No adapter found for '{$adapterName}'");
         }
 
@@ -353,7 +353,7 @@ class Chat
     public function openDM(string $adapterName, string $userId): ?string
     {
         $adapter = $this->resolveAdapter($adapterName);
-        if (!$adapter instanceof \BootDesk\ChatSDK\Core\Contracts\Adapter) {
+        if (! $adapter instanceof Adapter) {
             return null;
         }
 
@@ -363,7 +363,7 @@ class Chat
     public function getUser(string $adapterName, string $userId): ?UserInfo
     {
         $adapter = $this->resolveAdapter($adapterName);
-        if (!$adapter instanceof \BootDesk\ChatSDK\Core\Contracts\Adapter) {
+        if (! $adapter instanceof Adapter) {
             return null;
         }
 
@@ -631,7 +631,7 @@ class Chat
 
         // 3. Run receiving middleware
         $message = $this->runReceivingMiddleware($message, $adapter);
-        if (!$message instanceof \BootDesk\ChatSDK\Core\Message) {
+        if (! $message instanceof Message) {
             return;
         }
 
@@ -643,7 +643,7 @@ class Chat
         $lockScope = $this->config['lockScope'] ?? 'thread';
 
         $lockKey = $lockScope === 'channel'
-            ? $adapter->getName() . ':' . $adapter->channelIdFromThreadId($threadId)
+            ? $adapter->getName().':'.$adapter->channelIdFromThreadId($threadId)
             : $threadId;
 
         $handler = new Handler($this->state, $strategy);
@@ -659,7 +659,7 @@ class Chat
     private function processDrop(Adapter $adapter, string $threadId, string $lockKey, Message $message, Handler $handler): void
     {
         $lock = $handler->acquire($lockKey);
-        if (!$lock instanceof \BootDesk\ChatSDK\Core\Lock) {
+        if (! $lock instanceof Lock) {
             return;
         }
 
@@ -676,7 +676,7 @@ class Chat
         $handler->enqueue($threadId, $entry, $maxQueueSize);
 
         $lock = $handler->acquire($lockKey);
-        if (!$lock instanceof \BootDesk\ChatSDK\Core\Lock) {
+        if (! $lock instanceof Lock) {
             return;
         }
 
@@ -690,7 +690,7 @@ class Chat
     private function processDebounce(Adapter $adapter, string $threadId, string $lockKey, Message $message, Handler $handler, int $debounceMs, int $maxQueueSize): void
     {
         $lock = $handler->acquire($lockKey);
-        if (!$lock instanceof \BootDesk\ChatSDK\Core\Lock) {
+        if (! $lock instanceof Lock) {
             $handler->enqueue($threadId, new QueueEntry($message->id, serialize($message), microtime(true)), $maxQueueSize);
 
             return;
@@ -788,7 +788,7 @@ class Chat
         }
 
         // Persist to transcripts
-        if ($this->transcriptsApi instanceof \BootDesk\ChatSDK\Core\TranscriptsApi) {
+        if ($this->transcriptsApi instanceof TranscriptsApi) {
             $userKey = $this->resolveIdentity($message->author);
             if ($userKey !== null) {
                 $this->transcriptsApi->append($userKey, $message);
@@ -861,12 +861,12 @@ class Chat
         $handler = function (ServerRequestInterface $request) use ($adapterName): ResponseInterface {
             $adapter = $this->resolveAdapter($adapterName, $request);
 
-            if (!$adapter instanceof \BootDesk\ChatSDK\Core\Contracts\Adapter) {
+            if (! $adapter instanceof Adapter) {
                 throw new ResourceNotFoundException("Adapter '{$adapterName}' is not configured.");
             }
 
             $ack = $adapter->verifyWebhook($request);
-            if ($ack instanceof \Psr\Http\Message\ResponseInterface) {
+            if ($ack instanceof ResponseInterface) {
                 return $ack;
             }
 
@@ -874,11 +874,11 @@ class Chat
             $this->processMessage($adapter, $message->threadId, $message);
 
             $adapterResponse = $adapter->createResponse();
-            if ($adapterResponse instanceof \Psr\Http\Message\ResponseInterface) {
+            if ($adapterResponse instanceof ResponseInterface) {
                 return $adapterResponse;
             }
 
-            if (!$this->responseFactory instanceof \Psr\Http\Message\ResponseFactoryInterface) {
+            if (! $this->responseFactory instanceof ResponseFactoryInterface) {
                 throw new \RuntimeException(
                     'No PSR-17 ResponseFactoryInterface provided. Pass one to the Chat constructor.'
                 );

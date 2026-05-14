@@ -1,5 +1,7 @@
 <?php
 
+use App\Chat\ChatHandlers;
+
 return [
 
     'user_name' => env('BOT_USERNAME', 'MyBot'),
@@ -37,7 +39,7 @@ return [
     ],
 
     'handlers' => [
-        \App\Chat\ChatHandlers::class,
+        ChatHandlers::class,
     ],
 
     'concurrency' => env('CHAT_CONCURRENCY', 'drop'),

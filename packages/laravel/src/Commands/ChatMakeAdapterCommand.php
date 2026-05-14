@@ -22,8 +22,8 @@ class ChatMakeAdapterCommand extends Command
 
     public function handle(): int
     {
-        $name = Str::kebab($this->argument('name'));
-        $class = Str::studly($name);
+        $class = Str::studly($this->argument('name'));
+        $kebab = Str::kebab($class);
         $namespace = "App\\Chat\\Adapters\\{$class}";
 
         $dir = app_path("Chat/Adapters/{$class}");
@@ -44,7 +44,7 @@ class ChatMakeAdapterCommand extends Command
             $content = file_get_contents("{$stubsDir}/{$stub}");
             $content = str_replace(
                 ['{{ namespace }}', '{{ class }}', '{{ kebab }}'],
-                [$namespace, $class, $name],
+                [$namespace, $class, $kebab],
                 $content,
             );
 
@@ -59,13 +59,13 @@ class ChatMakeAdapterCommand extends Command
         $this->newLine();
         $this->warn('Register in config/chat.php:');
         $this->line("'adapters' => [");
-        $this->line("    '{$name}' => [");
+        $this->line("    '{$kebab}' => [");
         $this->line('        // config...');
         $this->line('    ],');
         $this->line('],');
         $this->newLine();
         $this->warn('Then register in AppServiceProvider::boot():');
-        $this->line('$chat->registerAdapter(\''.$name.'\', new \\'.$namespace.'\\'.$class.'Adapter(...));');
+        $this->line('$chat->registerAdapter(\''.$kebab.'\', new \\'.$namespace.'\\'.$class.'Adapter(...));');
 
         return self::SUCCESS;
     }

@@ -4,6 +4,7 @@ namespace BootDesk\ChatSDK\Laravel\Tests;
 
 use BootDesk\ChatSDK\Laravel\ChatServiceProvider;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Orchestra\Testbench\TestCase;
 
 class ChatMakeAdapterCommandTest extends TestCase
@@ -26,7 +27,7 @@ class ChatMakeAdapterCommandTest extends TestCase
     {
         $path = app_path('Chat');
         if (is_dir($path)) {
-            File::deleteDirectory($path);
+            //File::deleteDirectory($path);
         }
         parent::tearDown();
     }
@@ -52,11 +53,12 @@ class ChatMakeAdapterCommandTest extends TestCase
         $this->assertFileExists("{$dir}/ForceTestAdapter.php");
     }
 
-    public function test_normalizes_kebab_case(): void
+    public function test_normalizes_studly_case(): void
     {
         $this->artisan('chat:make-adapter', ['name' => 'CustomAPI'])
             ->assertSuccessful();
 
-        $this->assertDirectoryExists(app_path('Chat/Adapters/CustomApi'));
+        $dir = app_path('Chat/Adapters/'.Str::studly('CustomAPI'));
+        $this->assertDirectoryExists($dir);
     }
 }

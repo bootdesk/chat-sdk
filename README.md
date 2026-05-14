@@ -84,6 +84,7 @@ Route::post('/chat/webhook/telegram', [WebhookController::class, 'telegram']);
 | `packages/adapter-web` | Web adapter -- Generic REST/WebSocket |
 | `packages/adapter-github` | GitHub adapter -- Webhooks, REST API |
 | `packages/adapter-linear` | Linear adapter -- Webhooks, GraphQL API |
+| `packages/adapter-telnyx` | Telnyx adapter -- Messaging API |
 | `packages/botman-compat` | BotMan compatibility shim |
 
 ## Features
@@ -98,6 +99,7 @@ Route::post('/chat/webhook/telegram', [WebhookController::class, 'telegram']);
 - **Middleware** -- Intercept inbound/outbound messages and webhooks
 - **Concurrency control** -- Built-in locking with configurable strategies (drop, queue, serial)
 - **Multi-tenant** -- Isolated state and configuration per tenant
+- **Templates** -- Platform-specific message templates (WhatsApp, Messenger) -- see individual adapter READMEs for details
 
 ## Testing
 

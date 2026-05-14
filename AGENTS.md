@@ -40,6 +40,9 @@ CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> forma
 - coverage requires `pcov` extension (see `phpunit.coverage.xml`)
 - `composer.lock` is gitignored; run `composer install` on fresh checkout
 
+## constraints
+- NEVER push unless the user explicitly says it's ok to push this specific commit.
+
 ## style
 - PHP 8.2+ features (readonly properties, enums, match, etc.)
 - `declare(strict_types=1)` in contracts and adapters (inconsistent across codebase)

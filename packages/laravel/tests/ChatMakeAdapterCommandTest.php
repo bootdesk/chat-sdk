@@ -27,7 +27,7 @@ class ChatMakeAdapterCommandTest extends TestCase
     {
         $path = app_path('Chat');
         if (is_dir($path)) {
-            //File::deleteDirectory($path);
+            File::deleteDirectory($path);
         }
         parent::tearDown();
     }

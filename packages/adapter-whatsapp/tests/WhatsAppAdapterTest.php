@@ -1,0 +1,377 @@
+<?php
+
+namespace BootDesk\ChatSDK\WhatsApp\Tests;
+
+use BootDesk\ChatSDK\Core\Cards\Button;
+use BootDesk\ChatSDK\Core\Cards\Card;
+use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
+use BootDesk\ChatSDK\Core\PostableMessage;
+use BootDesk\ChatSDK\WhatsApp\WhatsAppAdapter;
+use Nyholm\Psr7\Factory\Psr17Factory;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
+class WhatsAppAdapterTest extends TestCase
+{
+    private WhatsAppAdapter $adapter;
+
+    private Psr17Factory $factory;
+
+    protected function setUp(): void
+    {
+        $this->factory = new Psr17Factory;
+
+        $mockClient = new class implements ClientInterface
+        {
+            private Psr17Factory $factory;
+
+            public function __construct()
+            {
+                $this->factory = new Psr17Factory;
+            }
+
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $uri = (string) $request->getUri();
+
+                if (str_contains($uri, 'messages')) {
+                    return $this->factory->createResponse(200)->withBody(
+                        $this->factory->createStream(json_encode([
+                            'messaging_product' => 'whatsapp',
+                            'contacts' => [['input' => '1234567890', 'wa_id' => '1234567890']],
+                            'messages' => [['id' => 'wamid.HBgMMTIzNDU2Nzg5MB==']],
+                        ]))
+                    );
+                }
+
+                return $this->factory->createResponse(200)->withBody(
+                    $this->factory->createStream(json_encode(['success' => true]))
+                );
+            }
+        };
+
+        $this->adapter = new WhatsAppAdapter(
+            accessToken: 'test_token',
+            phoneNumberId: 'phone123',
+            appSecret: 'my_app_secret',
+            verifyToken: 'my_verify_token',
+            httpClient: $mockClient,
+            psrFactory: $this->factory,
+        );
+    }
+
+    public function test_get_name(): void
+    {
+        $this->assertSame('whatsapp', $this->adapter->getName());
+    }
+
+    public function test_thread_id_encoding(): void
+    {
+        $id = $this->adapter->encodeThreadId([
+            'phoneNumberId' => 'phone123',
+            'userWaId' => '5511999999999',
+        ]);
+        $this->assertSame('whatsapp:phone123:5511999999999', $id);
+    }
+
+    public function test_thread_id_decoding(): void
+    {
+        $decoded = $this->adapter->decodeThreadId('whatsapp:phone123:5511999999999');
+        $this->assertSame('phone123', $decoded['phoneNumberId']);
+        $this->assertSame('5511999999999', $decoded['userWaId']);
+    }
+
+    public function test_channel_id_from_thread(): void
+    {
+        $this->assertSame('5511999999999', $this->adapter->channelIdFromThreadId('whatsapp:phone123:5511999999999'));
+    }
+
+    public function test_verify_webhook_get_challenge(): void
+    {
+        $request = $this->factory->createServerRequest('GET', '/webhooks/whatsapp?hub_mode=subscribe&hub_verify_token=my_verify_token&hub_challenge=test_challenge');
+
+        $response = $this->adapter->verifyWebhook($request);
+        $this->assertNotNull($response);
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('test_challenge', (string) $response->getBody());
+    }
+
+    public function test_verify_webhook_get_wrong_token(): void
+    {
+        $request = $this->factory->createServerRequest('GET', '/webhooks/whatsapp?hub_mode=subscribe&hub_verify_token=wrong&hub_challenge=test');
+
+        $response = $this->adapter->verifyWebhook($request);
+        $this->assertSame(403, $response->getStatusCode());
+    }
+
+    public function test_verify_webhook_post_valid_signature(): void
+    {
+        $body = '{"entry":[]}';
+        $signature = 'sha256='.hash_hmac('sha256', $body, 'my_app_secret');
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/whatsapp')
+            ->withHeader('x-hub-signature-256', $signature)
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->verifyWebhook($request);
+        $this->assertNull($result);
+    }
+
+    public function test_verify_webhook_post_invalid_signature(): void
+    {
+        $body = '{"entry":[]}';
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/whatsapp')
+            ->withHeader('x-hub-signature-256', 'sha256=invalid')
+            ->withBody($this->factory->createStream($body));
+
+        $this->expectException(AuthenticationException::class);
+        $this->adapter->verifyWebhook($request);
+    }
+
+    public function test_parse_webhook_message(): void
+    {
+        $body = json_encode([
+            'object' => 'whatsapp_business_account',
+            'entry' => [[
+                'id' => '123',
+                'changes' => [[
+                    'field' => 'messages',
+                    'value' => [
+                        'messaging_product' => 'whatsapp',
+                        'metadata' => [
+                            'display_phone_number' => '+15551234567',
+                            'phone_number_id' => 'phone123',
+                        ],
+                        'contacts' => [[
+                            'profile' => ['name' => 'John Doe'],
+                            'wa_id' => '5511999999999',
+                        ]],
+                        'messages' => [[
+                            'from' => '5511999999999',
+                            'id' => 'wamid.test123',
+                            'text' => ['body' => 'Hello bot'],
+                            'timestamp' => '1700000000',
+                            'type' => 'text',
+                        ]],
+                    ],
+                ]],
+            ]],
+        ]);
+
+        $signature = 'sha256='.hash_hmac('sha256', $body, 'my_app_secret');
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/whatsapp')
+            ->withHeader('x-hub-signature-256', $signature)
+            ->withBody($this->factory->createStream($body));
+
+        $message = $this->adapter->parseWebhook($request);
+
+        $this->assertSame('wamid.test123', $message->id);
+        $this->assertSame('whatsapp:phone123:5511999999999', $message->threadId);
+        $this->assertSame('5511999999999', $message->author->id);
+        $this->assertSame('John Doe', $message->author->name);
+        $this->assertSame('Hello bot', $message->text);
+        $this->assertTrue($message->isDM);
+    }
+
+    public function test_parse_interactive_reply(): void
+    {
+        $body = json_encode([
+            'object' => 'whatsapp_business_account',
+            'entry' => [[
+                'id' => '123',
+                'changes' => [[
+                    'field' => 'messages',
+                    'value' => [
+                        'messaging_product' => 'whatsapp',
+                        'metadata' => ['phone_number_id' => 'phone123', 'display_phone_number' => '+1'],
+                        'contacts' => [['profile' => ['name' => 'Jane'], 'wa_id' => '999']],
+                        'messages' => [[
+                            'from' => '999',
+                            'id' => 'wamid.reply1',
+                            'type' => 'interactive',
+                            'interactive' => ['type' => 'button_reply', 'button_reply' => ['id' => 'chat:yes', 'title' => 'Yes']],
+                            'timestamp' => '1700000000',
+                        ]],
+                    ],
+                ]],
+            ]],
+        ]);
+
+        $signature = 'sha256='.hash_hmac('sha256', $body, 'my_app_secret');
+        $request = $this->factory->createServerRequest('POST', '/webhooks/whatsapp')
+            ->withHeader('x-hub-signature-256', $signature)
+            ->withBody($this->factory->createStream($body));
+
+        $message = $this->adapter->parseWebhook($request);
+        $this->assertSame('Yes', $message->text);
+    }
+
+    public function test_post_message(): void
+    {
+        $sent = $this->adapter->postMessage(
+            'whatsapp:phone123:5511999999999',
+            PostableMessage::text('Hello WhatsApp')
+        );
+
+        $this->assertSame('wamid.HBgMMTIzNDU2Nzg5MB==', $sent->id);
+    }
+
+    public function test_edit_message_resends(): void
+    {
+        $sent = $this->adapter->editMessage(
+            'whatsapp:phone123:5511999999999',
+            'wamid.old',
+            PostableMessage::text('Updated')
+        );
+
+        $this->assertNotNull($sent->id);
+    }
+
+    public function test_post_message_with_card(): void
+    {
+        $card = Card::make()
+            ->header('Choose')
+            ->actions([Button::primary('Go', 'go')]);
+
+        $sent = $this->adapter->postMessage(
+            'whatsapp:phone123:5511999999999',
+            PostableMessage::card($card)
+        );
+
+        $this->assertNotNull($sent->id);
+    }
+
+    public function test_add_reaction(): void
+    {
+        $this->adapter->addReaction('whatsapp:phone123:999', 'wamid.1', '👍');
+        $this->assertTrue(true);
+    }
+
+    public function test_start_typing_is_noop(): void
+    {
+        $this->adapter->startTyping('whatsapp:phone123:999');
+        $this->assertTrue(true);
+    }
+
+    public function test_fetch_messages_returns_empty(): void
+    {
+        $result = $this->adapter->fetchMessages('whatsapp:phone123:999');
+        $this->assertCount(0, $result->messages);
+    }
+
+    public function test_get_user_returns_id(): void
+    {
+        $user = $this->adapter->getUser('5511999999999');
+        $this->assertSame('5511999999999', $user->id);
+    }
+
+    public function test_open_dm_returns_thread_id(): void
+    {
+        $result = $this->adapter->openDM('5511999999999');
+        $this->assertStringContainsString('5511999999999', $result);
+    }
+
+    public function test_get_format_converter(): void
+    {
+        $this->assertNotNull($this->adapter->getFormatConverter());
+    }
+
+    public function test_initialize_sets_bot_user_id(): void
+    {
+        $chat = $this->createMock(Chat::class);
+        $this->adapter->initialize($chat);
+        $this->assertSame('phone123', $this->adapter->getBotUserId());
+    }
+
+    public function test_disconnect_is_noop(): void
+    {
+        $this->adapter->disconnect();
+        $this->assertTrue(true);
+    }
+
+    public function test_parse_webhook_invalid_json_throws(): void
+    {
+        $this->expectException(\BootDesk\ChatSDK\Core\Exceptions\AdapterException::class);
+
+        $request = $this->factory->createServerRequest('POST', '/webhook')
+            ->withBody($this->factory->createStream('not json'));
+
+        $this->adapter->parseWebhook($request);
+    }
+
+    public function test_parse_webhook_no_message_throws(): void
+    {
+        $this->expectException(\BootDesk\ChatSDK\Core\Exceptions\AdapterException::class);
+
+        $request = $this->factory->createServerRequest('POST', '/webhook')
+            ->withBody($this->factory->createStream('{"entry":[{"changes":[{"field":"messages","value":{}}]}]}'));
+
+        $this->adapter->parseWebhook($request);
+    }
+
+    public function test_parse_webhook_skips_reactions(): void
+    {
+        $body = json_encode([
+            'entry' => [[
+                'changes' => [[
+                    'field' => 'messages',
+                    'value' => [
+                        'metadata' => ['phone_number_id' => 'p123'],
+                        'messages' => [['type' => 'reaction', 'reaction' => ['emoji' => '👍']]],
+                    ],
+                ]],
+            ]],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhook')
+            ->withBody($this->factory->createStream($body));
+
+        $this->expectException(\BootDesk\ChatSDK\Core\Exceptions\AdapterException::class);
+        $this->adapter->parseWebhook($request);
+    }
+
+    public function test_encode_thread_id_defaults(): void
+    {
+        $id = $this->adapter->encodeThreadId([]);
+        $this->assertStringContainsString('phone123', $id);
+    }
+
+    public function test_decode_thread_id_partial(): void
+    {
+        $decoded = $this->adapter->decodeThreadId('whatsapp');
+        $this->assertSame('phone123', $decoded['phoneNumberId']);
+    }
+
+    public function test_fetch_thread(): void
+    {
+        $info = $this->adapter->fetchThread('whatsapp:phone123:999');
+        $this->assertSame('whatsapp:phone123:999', $info->id);
+    }
+
+    public function test_fetch_channel_info_returns_null(): void
+    {
+        $this->assertNull($this->adapter->fetchChannelInfo('phone123'));
+    }
+
+    public function test_create_response_returns_null(): void
+    {
+        $this->assertNull($this->adapter->createResponse());
+    }
+
+    public function test_remove_reaction(): void
+    {
+        $this->adapter->removeReaction('whatsapp:phone123:5511999999999', 'msg_1', '👍');
+        $this->assertTrue(true);
+    }
+
+    public function test_stream_returns_null_for_empty(): void
+    {
+        $result = $this->adapter->stream('whatsapp:phone123:999', []);
+        $this->assertNull($result);
+    }
+}

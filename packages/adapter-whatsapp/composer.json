@@ -1,0 +1,26 @@
+{
+    "name": "bootdesk/adapter-whatsapp",
+    "description": "WhatsApp adapter for bootdesk/core",
+    "type": "library",
+    "require": {
+        "php": ">=8.2",
+        "bootdesk/core": "*",
+        "ext-hash": "*",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "BootDesk\\ChatSDK\\WhatsApp\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "BootDesk\\ChatSDK\\WhatsApp\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

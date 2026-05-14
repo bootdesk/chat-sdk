@@ -1,0 +1,22 @@
+{
+    "name": "bootdesk/botman-compat",
+    "description": "BotMan compatibility shim for bootdesk",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.2",
+        "bootdesk/core": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "BotMan\\BotMan\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "BotMan\\BotMan\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

@@ -1,0 +1,32 @@
+{
+    "name": "bootdesk/adapter-slack",
+    "description": "Slack adapter for bootdesk/core",
+    "type": "library",
+    "require": {
+        "php": ">=8.2",
+        "bootdesk/core": "*",
+        "ext-hash": "*",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "BootDesk\\ChatSDK\\Slack\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "BootDesk\\ChatSDK\\Slack\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": []
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

@@ -1,0 +1,73 @@
+<?php
+
+namespace BootDesk\ChatSDK\Laravel\Tests;
+
+use BootDesk\ChatSDK\Laravel\ChatServiceProvider;
+use Illuminate\Support\Facades\File;
+use Orchestra\Testbench\TestCase;
+
+class ChatMakeAdapterCommandTest extends TestCase
+{
+    protected function getPackageProviders($app): array
+    {
+        return [ChatServiceProvider::class];
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        File::deleteDirectory(app_path('Chat'));
+    }
+
+    protected function tearDown(): void
+    {
+        File::deleteDirectory(app_path('Chat'));
+        parent::tearDown();
+    }
+
+    public function test_command_scaffolds_adapter(): void
+    {
+        $this->artisan('chat:make-adapter', ['name' => 'my-custom'])
+            ->assertSuccessful();
+
+        $dir = app_path('Chat/Adapters/MyCustom');
+        $this->assertDirectoryExists($dir);
+        $this->assertFileExists("{$dir}/MyCustomAdapter.php");
+        $this->assertFileExists("{$dir}/MyCustomFormatConverter.php");
+        $this->assertFileExists("{$dir}/MyCustomCards.php");
+        $this->assertFileExists("{$dir}/MyCustomWebhookVerifier.php");
+
+        $content = file_get_contents("{$dir}/MyCustomAdapter.php");
+        $this->assertStringContainsString('class MyCustomAdapter implements Adapter', $content);
+        $this->assertStringContainsString("return 'my-custom'", $content);
+    }
+
+    public function test_command_fails_when_adapter_exists(): void
+    {
+        mkdir(app_path('Chat/Adapters/MyCustom'), 0755, true);
+
+        $this->artisan('chat:make-adapter', ['name' => 'my-custom'])
+            ->assertFailed();
+    }
+
+    public function test_command_overwrites_with_force(): void
+    {
+        mkdir(app_path('Chat/Adapters/MyCustom'), 0755, true);
+        file_put_contents(app_path('Chat/Adapters/MyCustom/MyCustomAdapter.php'), 'old');
+
+        $this->artisan('chat:make-adapter', ['name' => 'my-custom', '--force' => true])
+            ->assertSuccessful();
+
+        $content = file_get_contents(app_path('Chat/Adapters/MyCustom/MyCustomAdapter.php'));
+        $this->assertStringContainsString('class MyCustomAdapter implements Adapter', $content);
+    }
+
+    public function test_kebab_case_is_normalized(): void
+    {
+        $this->artisan('chat:make-adapter', ['name' => 'CustomAPI'])
+            ->assertSuccessful();
+
+        $this->assertDirectoryExists(app_path('Chat/Adapters/CustomApi'));
+        $this->assertFileExists(app_path('Chat/Adapters/CustomApi/CustomApiAdapter.php'));
+    }
+}

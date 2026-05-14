@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  MIN_COVERAGE: 80
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php-version: ['8.2', '8.3', '8.4']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: pcov
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run static analysis
+        run: composer analyse
+
+      - name: Run linting
+        run: composer lint
+
+      - name: Run tests with coverage
+        run: composer test:coverage
+
+      - name: Check minimum coverage
+        run: |
+          php -r '
+            $xml = simplexml_load_file("coverage/clover.xml");
+            $metrics = $xml->xpath("//project/metrics")[0];
+            $covered = (int) $metrics["coveredelements"];
+            $total = (int) $metrics["elements"];
+            $pct = $total > 0 ? round($covered / $total * 100, 2) : 0;
+            echo "Coverage: {$pct}%\n";
+            $min = getenv("MIN_COVERAGE");
+            if ($pct < $min) {
+              fwrite(STDERR, "Coverage {$pct}% is below minimum {$min}%\n");
+              exit(1);
+            }
+            echo "Coverage {$pct}% meets minimum {$min}%\n";
+          '
+
+      - name: Check formatting
+        run: composer format:check

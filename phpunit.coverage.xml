@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         displayDetailsOnTestsThatTriggerWarnings="true"
+         displayDetailsOnTestsThatTriggerErrors="true">
+    <coverage ignoreDeprecatedCodeUnits="true">
+        <report>
+            <clover outputFile="coverage/clover.xml"/>
+            <text outputFile="coverage/coverage.txt" showUncoveredFiles="true" showOnlySummary="true"/>
+            <html outputDirectory="coverage/html" lowUpperBound="50" highLowerBound="90"/>
+        </report>
+    </coverage>
+    <php>
+        <ini name="pcov.enabled" value="1"/>
+    </php>
+</phpunit>

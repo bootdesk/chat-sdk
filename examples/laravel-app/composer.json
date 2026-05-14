@@ -1,0 +1,24 @@
+{
+    "name": "example/bootdesk-chat-app",
+    "description": "Example Laravel app using bootdesk",
+    "type": "project",
+    "require": {
+        "php": ">=8.2",
+        "laravel/framework": "^11.0",
+        "bootdesk/laravel": "*",
+        "bootdesk/adapter-slack": "*",
+        "bootdesk/adapter-telegram": "*",
+        "bootdesk/adapter-discord": "*",
+        "bootdesk/adapter-whatsapp": "*",
+        "bootdesk/adapter-github": "*",
+        "bootdesk/botman-compat": "*"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../packages/*"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

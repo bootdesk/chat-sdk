@@ -1,0 +1,7 @@
+/vendor
+/.phpunit.result.cache
+composer.phar
+composer.lock
+.phpunit.result.cache
+/coverage
+.claude/*local.json

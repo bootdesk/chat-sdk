@@ -30,9 +30,9 @@ class SlackAdapter implements Adapter
 
     public function __construct(
         private readonly string $botToken,
+        private readonly ClientInterface $httpClient,
         ?string $signingSecret = null,
         private readonly string $apiUrl = 'https://slack.com/api/',
-        private readonly ?ClientInterface $httpClient = null,
         private readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new SlackFormatConverter;
@@ -362,12 +362,8 @@ class SlackAdapter implements Adapter
             ->withHeader('Content-Type', 'application/json')
             ->withBody($factory->createStream($body));
 
-        if ($this->httpClient instanceof ClientInterface) {
-            $psrResponse = $this->httpClient->sendRequest($request);
-            $responseBody = (string) $psrResponse->getBody();
-        } else {
-            $responseBody = $this->nativeHttpPost($this->apiUrl.$method, $body);
-        }
+        $psrResponse = $this->httpClient->sendRequest($request);
+        $responseBody = (string) $psrResponse->getBody();
 
         $data = json_decode($responseBody, true);
 
@@ -381,28 +377,5 @@ class SlackAdapter implements Adapter
         }
 
         return $data;
-    }
-
-    private function nativeHttpPost(string $url, string $body): string
-    {
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => implode("\r\n", [
-                    'Authorization: Bearer '.$this->botToken,
-                    'Content-Type: application/json',
-                ]),
-                'content' => $body,
-                'ignore_errors' => true,
-            ],
-        ]);
-
-        $response = @file_get_contents($url, false, $context);
-
-        if ($response === false) {
-            throw new AdapterException("Failed to reach Slack API: {$url}");
-        }
-
-        return $response;
     }
 }

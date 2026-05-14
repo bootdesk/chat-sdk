@@ -30,9 +30,9 @@ class LinearAdapter implements Adapter
 
     public function __construct(
         private readonly string $apiKey,
+        private readonly ClientInterface $httpClient,
         string $webhookSecret,
         private readonly string $apiUrl = 'https://api.linear.app/graphql',
-        private readonly ?ClientInterface $httpClient = null,
         private readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new LinearFormatConverter;
@@ -445,12 +445,8 @@ class LinearAdapter implements Adapter
             ->withHeader('Authorization', $this->apiKey)
             ->withBody($factory->createStream($body));
 
-        if ($this->httpClient instanceof ClientInterface) {
-            $psrResponse = $this->httpClient->sendRequest($request);
-            $responseBody = (string) $psrResponse->getBody();
-        } else {
-            $responseBody = $this->nativeHttp((string) $request->getUri(), $request->getHeaders(), $body);
-        }
+        $psrResponse = $this->httpClient->sendRequest($request);
+        $responseBody = (string) $psrResponse->getBody();
 
         $data = json_decode($responseBody, true);
 
@@ -464,33 +460,6 @@ class LinearAdapter implements Adapter
         }
 
         return $data['data'] ?? null;
-    }
-
-    private function nativeHttp(string $url, array $headers, string $body): string
-    {
-        $headerLines = [];
-        foreach ($headers as $name => $values) {
-            foreach ($values as $value) {
-                $headerLines[] = "{$name}: {$value}";
-            }
-        }
-
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => implode("\r\n", $headerLines),
-                'content' => $body,
-                'ignore_errors' => true,
-            ],
-        ]);
-
-        $response = @file_get_contents($url, false, $context);
-
-        if ($response === false) {
-            throw new AdapterException("Failed to reach Linear API: {$url}");
-        }
-
-        return $response;
     }
 
     private function parseComment(array $payload, string $rawBody): Message

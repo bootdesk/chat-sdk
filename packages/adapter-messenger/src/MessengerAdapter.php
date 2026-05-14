@@ -30,11 +30,11 @@ class MessengerAdapter implements Adapter
 
     public function __construct(
         private readonly string $pageAccessToken,
+        private readonly ClientInterface $httpClient,
         string $appSecret,
         string $verifyToken,
         private readonly string $apiVersion = 'v21.0',
         private readonly string $apiUrl = 'https://graph.facebook.com',
-        private readonly ?ClientInterface $httpClient = null,
         private readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new MessengerFormatConverter;
@@ -134,7 +134,21 @@ class MessengerAdapter implements Adapter
         $decoded = $this->decodeThreadId($threadId);
         $recipientId = $decoded['recipientId'];
 
-        if ($message->isCard()) {
+        if ($message->isTemplate()) {
+            $template = $message->content;
+
+            if (! $template instanceof MessengerTemplate) {
+                throw new AdapterException('Unsupported template type for Messenger adapter');
+            }
+
+            $result = $template->toMessenger();
+
+            $response = $this->graphApiCall('me/messages', [
+                'recipient' => ['id' => $recipientId],
+                'message' => $result['attachment'],
+                'messaging_type' => 'RESPONSE',
+            ]);
+        } elseif ($message->isCard()) {
             $cardResult = MessengerCards::toMessengerPayload($message->content);
 
             if ($cardResult['type'] === 'template') {
@@ -306,12 +320,8 @@ class MessengerAdapter implements Adapter
                 ->withBody($factory->createStream($body));
         }
 
-        if ($this->httpClient instanceof ClientInterface) {
-            $psrResponse = $this->httpClient->sendRequest($request);
-            $responseBody = (string) $psrResponse->getBody();
-        } else {
-            $responseBody = $this->nativeHttp((string) $request->getUri(), $method, $request->getHeaders(), $method !== 'GET' ? json_encode($params) : '');
-        }
+        $psrResponse = $this->httpClient->sendRequest($request);
+        $responseBody = (string) $psrResponse->getBody();
 
         $data = json_decode($responseBody, true);
 
@@ -329,33 +339,6 @@ class MessengerAdapter implements Adapter
         }
 
         return $data;
-    }
-
-    private function nativeHttp(string $url, string $method, array $headers, string $body): string
-    {
-        $headerLines = [];
-        foreach ($headers as $name => $values) {
-            foreach ($values as $value) {
-                $headerLines[] = "{$name}: {$value}";
-            }
-        }
-
-        $context = stream_context_create([
-            'http' => [
-                'method' => $method,
-                'header' => implode("\r\n", $headerLines),
-                'content' => $body,
-                'ignore_errors' => true,
-            ],
-        ]);
-
-        $response = @file_get_contents($url, false, $context);
-
-        if ($response === false) {
-            throw new AdapterException("Failed to reach Messenger API: {$url}");
-        }
-
-        return $response;
     }
 
     private function jsonError(int $status, string $message): ResponseInterface

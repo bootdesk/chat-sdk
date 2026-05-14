@@ -31,9 +31,9 @@ class TelegramAdapter implements Adapter
 
     public function __construct(
         private readonly string $botToken,
+        private readonly ClientInterface $httpClient,
         ?string $secretToken = null,
         private readonly string $apiUrl = 'https://api.telegram.org',
-        private readonly ?ClientInterface $httpClient = null,
         private readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->secretToken = $secretToken;
@@ -343,12 +343,8 @@ class TelegramAdapter implements Adapter
             ->withHeader('Content-Type', 'application/json')
             ->withBody($factory->createStream($body));
 
-        if ($this->httpClient instanceof ClientInterface) {
-            $psrResponse = $this->httpClient->sendRequest($request);
-            $responseBody = (string) $psrResponse->getBody();
-        } else {
-            $responseBody = $this->nativeHttpPost($url, $body);
-        }
+        $psrResponse = $this->httpClient->sendRequest($request);
+        $responseBody = (string) $psrResponse->getBody();
 
         $data = json_decode($responseBody, true);
 
@@ -364,26 +360,6 @@ class TelegramAdapter implements Adapter
         $result = $data['result'] ?? $data;
 
         return is_array($result) ? $result : ['ok' => true];
-    }
-
-    private function nativeHttpPost(string $url, string $body): string
-    {
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => "Content-Type: application/json\r\n",
-                'content' => $body,
-                'ignore_errors' => true,
-            ],
-        ]);
-
-        $response = @file_get_contents($url, false, $context);
-
-        if ($response === false) {
-            throw new AdapterException("Failed to reach Telegram API: {$url}");
-        }
-
-        return $response;
     }
 
     private function applyEntities(string $text, array $entities): string

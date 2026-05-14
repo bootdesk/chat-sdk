@@ -9,10 +9,12 @@ use BootDesk\ChatSDK\Laravel\Commands\ChatInstallCommand;
 use BootDesk\ChatSDK\Laravel\Commands\ChatListCommand;
 use BootDesk\ChatSDK\Laravel\Commands\ChatMakeAdapterCommand;
 use BootDesk\ChatSDK\Laravel\State\CacheStateAdapter;
+use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ServerRequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -25,6 +27,7 @@ class ChatServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/chat.php', 'chat');
 
         $this->bindPsr17();
+        $this->bindHttpClient();
 
         $this->app->singleton(StateAdapter::class, function ($app): CacheStateAdapter {
             return new CacheStateAdapter(
@@ -81,6 +84,11 @@ class ChatServiceProvider extends ServiceProvider
         $this->app->bind(ServerRequestFactoryInterface::class, Psr17Factory::class);
         $this->app->bind(StreamFactoryInterface::class, Psr17Factory::class);
         $this->app->bind(UploadedFileFactoryInterface::class, Psr17Factory::class);
+    }
+
+    private function bindHttpClient(): void
+    {
+        $this->app->bind(ClientInterface::class, GuzzleClient::class);
     }
 
     private function resolveAdapters($app): array

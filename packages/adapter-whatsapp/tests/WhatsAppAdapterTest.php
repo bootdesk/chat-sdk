@@ -9,6 +9,7 @@ use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
 use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\WhatsApp\WhatsAppAdapter;
+use BootDesk\ChatSDK\WhatsApp\WhatsAppTemplate;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
@@ -334,6 +335,146 @@ class WhatsAppAdapterTest extends TestCase
 
         $this->expectException(AdapterException::class);
         $this->adapter->parseWebhook($request);
+    }
+
+    public function test_parse_webhook_with_bsuid(): void
+    {
+        $body = json_encode([
+            'object' => 'whatsapp_business_account',
+            'entry' => [[
+                'id' => '123',
+                'changes' => [[
+                    'field' => 'messages',
+                    'value' => [
+                        'messaging_product' => 'whatsapp',
+                        'metadata' => [
+                            'display_phone_number' => '+15551234567',
+                            'phone_number_id' => 'phone123',
+                        ],
+                        'contacts' => [[
+                            'profile' => ['name' => 'Jane Smith'],
+                            'user_id' => 'US.13491208655302741918',
+                        ]],
+                        'messages' => [[
+                            'from_user_id' => 'US.13491208655302741918',
+                            'id' => 'wamid.bsuid001',
+                            'text' => ['body' => 'Hello via BSUID'],
+                            'timestamp' => '1749416383',
+                            'type' => 'text',
+                        ]],
+                    ],
+                ]],
+            ]],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/whatsapp')
+            ->withBody($this->factory->createStream($body));
+
+        $message = $this->adapter->parseWebhook($request);
+
+        $this->assertSame('wamid.bsuid001', $message->id);
+        $this->assertSame('whatsapp:phone123:US.13491208655302741918', $message->threadId);
+        $this->assertSame('US.13491208655302741918', $message->author->id);
+        $this->assertSame('Jane Smith', $message->author->name);
+        $this->assertSame('Hello via BSUID', $message->text);
+    }
+
+    public function test_post_message_uses_recipient_for_bsuid(): void
+    {
+        $mockClient = new class implements ClientInterface
+        {
+            public array $captured = [];
+
+            private Psr17Factory $factory;
+
+            public function __construct()
+            {
+                $this->factory = new Psr17Factory;
+            }
+
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $this->captured[] = $request;
+
+                return $this->factory->createResponse(200)->withBody(
+                    $this->factory->createStream(json_encode([
+                        'messaging_product' => 'whatsapp',
+                        'contacts' => [['input' => 'US.13491208655302741918', 'user_id' => 'US.13491208655302741918']],
+                        'messages' => [['id' => 'wamid.bsuid002']],
+                    ]))
+                );
+            }
+        };
+
+        $adapter = new WhatsAppAdapter(
+            accessToken: 'test_token',
+            httpClient: $mockClient,
+            phoneNumberId: 'phone123',
+            psrFactory: $this->factory,
+        );
+
+        $adapter->postMessage(
+            'whatsapp:phone123:US.13491208655302741918',
+            PostableMessage::text('Hello BSUID')
+        );
+
+        $sentBody = json_decode((string) $mockClient->captured[0]->getBody(), true);
+        $this->assertArrayNotHasKey('to', $sentBody);
+        $this->assertSame('US.13491208655302741918', $sentBody['recipient']);
+        $this->assertSame('whatsapp', $sentBody['messaging_product']);
+    }
+
+    public function test_post_template_message(): void
+    {
+        $mockClient = new class implements ClientInterface
+        {
+            public array $captured = [];
+
+            private Psr17Factory $factory;
+
+            public function __construct()
+            {
+                $this->factory = new Psr17Factory;
+            }
+
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $this->captured[] = $request;
+
+                return $this->factory->createResponse(200)->withBody(
+                    $this->factory->createStream(json_encode([
+                        'messaging_product' => 'whatsapp',
+                        'contacts' => [['input' => '5511999999999', 'wa_id' => '5511999999999']],
+                        'messages' => [['id' => 'wamid.tpl001']],
+                    ]))
+                );
+            }
+        };
+
+        $adapter = new WhatsAppAdapter(
+            accessToken: 'test_token',
+            httpClient: $mockClient,
+            phoneNumberId: 'phone123',
+            psrFactory: $this->factory,
+        );
+
+        $tpl = WhatsAppTemplate::create('order_confirmation', 'en_US')
+            ->bodyParam('John')
+            ->bodyParam('#12345');
+
+        $sent = $adapter->postMessage(
+            'whatsapp:phone123:5511999999999',
+            PostableMessage::template($tpl)
+        );
+
+        $this->assertSame('wamid.tpl001', $sent->id);
+
+        $sentBody = json_decode((string) $mockClient->captured[0]->getBody(), true);
+        $this->assertSame('template', $sentBody['type']);
+        $this->assertSame('order_confirmation', $sentBody['template']['name']);
+        $this->assertSame('en_US', $sentBody['template']['language']['code']);
+        $this->assertSame('John', $sentBody['template']['components'][0]['parameters'][0]['text']);
+        $this->assertSame('#12345', $sentBody['template']['components'][0]['parameters'][1]['text']);
     }
 
     public function test_encode_thread_id_defaults(): void

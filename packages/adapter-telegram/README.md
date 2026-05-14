@@ -8,18 +8,35 @@ Telegram adapter for the laravel-bootdesk multi-platform messaging framework.
 composer require bootdesk/adapter-telegram
 ```
 
+Requires a PSR-18 HTTP client (`guzzlehttp/guzzle`, `symfony/http-client`, etc.) and a PSR-17 factory (`nyholm/psr7` bundled).
+
 ## Configuration
 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `bot_token` | Telegram Bot Token (from @BotFather) | `123456:ABC-DEF...` |
+| `http_client` | PSR-18 HTTP client instance | `new GuzzleHttp\Client` |
+| `secret_token` | Webhook secret token | `my-secret...` |
 
 ```php
 use BootDesk\ChatSDK\Telegram\TelegramAdapter;
 
-$adapter = new TelegramAdapter([
-    'bot_token' => env('TELEGRAM_BOT_TOKEN'),
-]);
+$adapter = new TelegramAdapter(
+    botToken: env('TELEGRAM_BOT_TOKEN'),
+    httpClient: new \GuzzleHttp\Client,
+    secretToken: env('TELEGRAM_SECRET_TOKEN'),
+);
+```
+
+### Laravel
+
+The `ChatServiceProvider` auto-binds `Psr\Http\Client\ClientInterface` to `GuzzleHttp\Client`. Add to `config/chat.php`:
+
+```php
+'telegram' => [
+    'bot_token'    => env('TELEGRAM_BOT_TOKEN'),
+    'secret_token' => env('TELEGRAM_SECRET_TOKEN'),
+],
 ```
 
 ## Quick Example

@@ -8,20 +8,35 @@ Slack adapter for the laravel-bootdesk multi-platform messaging framework.
 composer require bootdesk/adapter-slack
 ```
 
+Requires a PSR-18 HTTP client (`guzzlehttp/guzzle`, `symfony/http-client`, etc.) and a PSR-17 factory (`nyholm/psr7` bundled).
+
 ## Configuration
 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `bot_token` | Slack Bot OAuth Token | `xoxb-1234-abcd-...` |
+| `http_client` | PSR-18 HTTP client instance | `new GuzzleHttp\Client` |
 | `signing_secret` | Slack App Signing Secret | `8f742231b10e...` |
 
 ```php
 use BootDesk\ChatSDK\Slack\SlackAdapter;
 
-$adapter = new SlackAdapter([
+$adapter = new SlackAdapter(
+    botToken: env('SLACK_BOT_TOKEN'),
+    httpClient: new \GuzzleHttp\Client,
+    signingSecret: env('SLACK_SIGNING_SECRET'),
+);
+```
+
+### Laravel
+
+The `ChatServiceProvider` auto-binds `Psr\Http\Client\ClientInterface` to `GuzzleHttp\Client`. Add to `config/chat.php`:
+
+```php
+'slack' => [
     'bot_token'      => env('SLACK_BOT_TOKEN'),
     'signing_secret' => env('SLACK_SIGNING_SECRET'),
-]);
+],
 ```
 
 ## Quick Example

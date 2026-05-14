@@ -2,7 +2,7 @@
 
 ## repo
 bootdesk/chat-sdk -- PHP multi-platform chat bot SDK.
-Monorepo (`packages/`): core, laravel, adapter-{slack,telegram,whatsapp,discord,messenger,web,github,linear}, botman-compat.
+Monorepo (`packages/`): core, laravel, adapter-{slack,telegram,whatsapp,discord,messenger,web,github,linear,telnyx}, botman-compat.
 
 ## key commands
 ```
@@ -33,12 +33,25 @@ CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> forma
 - `BootDesk\ChatSDK\Laravel\ChatServiceProvider` -- registers Chat singleton, `Chat::class` alias, `chat` alias
 
 ## testing
-- PHPUnit with TestCase; 11 named suites (one per package), bootstrapped via `vendor/autoload.php`
+- PHPUnit with TestCase; 12 named suites (one per package), bootstrapped via `vendor/autoload.php`
 - core tests use `MemoryStateAdapter` + `MockAdapter` from `packages/core/tests/Helpers/`
 - `createTestMessage(text:, threadId:, author:, isMention:, isDM:)` helper in `tests/Helpers/functions.php`
 - Laravel tests use Orchestra Testbench
 - coverage requires `pcov` extension (see `phpunit.coverage.xml`)
 - `composer.lock` is gitignored; run `composer install` on fresh checkout
+- **When creating a new adapter**, update BOTH `phpunit.xml.dist` AND `phpunit.coverage.xml`:
+  - Add `<testsuite name="{Name}">` with `<directory>packages/adapter-{name}/tests</directory>` to `<testsuites>`
+  - Add `<directory>packages/adapter-{name}/src</directory>` to `<source><include>`
+
+## coverage (local Docker)
+```
+docker run --rm -v $PWD:/app -w /app php:8.4-cli bash -c "pecl install pcov && docker-php-ext-enable pcov && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && composer install --quiet && composer test:coverage"
+```
+Parse per-package coverage from clover.xml:
+```
+grep -A3 'file name="/app/packages/adapter-<name>/' coverage/clover.xml | grep 'metrics'
+```
+statements = `coveredstatements`/`statements` from each file's metrics line.
 
 ## constraints
 - NEVER push unless the user explicitly says it's ok to push this specific commit.

@@ -1,11 +1,12 @@
 {
-    "name": "bootdesk/adapter-discord",
-    "description": "Discord adapter for bootdesk/core",
+    "name": "bootdesk/adapter-telnyx",
+    "description": "Telnyx adapter for bootdesk/core (SMS, MMS, RCS)",
     "type": "library",
     "require": {
         "php": ">=8.2",
         "bootdesk/core": "*",
         "ext-json": "*",
+        "ext-sodium": "*",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0"
     },
@@ -14,12 +15,18 @@
     },
     "autoload": {
         "psr-4": {
-            "BootDesk\\ChatSDK\\Discord\\": "src/"
+            "BootDesk\\ChatSDK\\Telnyx\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "BootDesk\\ChatSDK\\Discord\\Tests\\": "tests/"
+            "BootDesk\\ChatSDK\\Telnyx\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": []
         }
     },
     "minimum-stability": "dev",

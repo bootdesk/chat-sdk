@@ -8,20 +8,35 @@ GitHub adapter for the laravel-bootdesk multi-platform messaging framework.
 composer require bootdesk/adapter-github
 ```
 
+Requires a PSR-18 HTTP client (`guzzlehttp/guzzle`, `symfony/http-client`, etc.) and a PSR-17 factory (`nyholm/psr7` bundled).
+
 ## Configuration
 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `auth_token` | GitHub Personal Access Token | `ghp_abc123...` |
+| `http_client` | PSR-18 HTTP client instance | `new GuzzleHttp\Client` |
 | `webhook_secret` | Webhook Secret | `my-secret...` |
 
 ```php
 use BootDesk\ChatSDK\GitHub\GitHubAdapter;
 
-$adapter = new GitHubAdapter([
+$adapter = new GitHubAdapter(
+    authToken: env('GITHUB_AUTH_TOKEN'),
+    httpClient: new \GuzzleHttp\Client,
+    webhookSecret: env('GITHUB_WEBHOOK_SECRET'),
+);
+```
+
+### Laravel
+
+The `ChatServiceProvider` auto-binds `Psr\Http\Client\ClientInterface` to `GuzzleHttp\Client`. Add to `config/chat.php`:
+
+```php
+'github' => [
     'auth_token'     => env('GITHUB_AUTH_TOKEN'),
     'webhook_secret' => env('GITHUB_WEBHOOK_SECRET'),
-]);
+],
 ```
 
 ## Quick Example

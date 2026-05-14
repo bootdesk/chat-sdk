@@ -174,6 +174,30 @@ class MessengerCards
 
     private static function convertButton(Button $button): array
     {
+        $url = $button->data['url'] ?? null;
+        $phoneNumber = $button->data['phone_number'] ?? null;
+
+        if ($url !== null) {
+            $result = [
+                'type' => 'web_url',
+                'title' => self::truncate($button->label, self::MAX_BUTTON_TITLE),
+                'url' => $url,
+            ];
+            if (isset($button->data['webview_height_ratio'])) {
+                $result['webview_height_ratio'] = $button->data['webview_height_ratio'];
+            }
+
+            return $result;
+        }
+
+        if ($phoneNumber !== null) {
+            return [
+                'type' => 'phone_number',
+                'title' => self::truncate($button->label, self::MAX_BUTTON_TITLE),
+                'payload' => $phoneNumber,
+            ];
+        }
+
         return [
             'type' => 'postback',
             'title' => self::truncate($button->label, self::MAX_BUTTON_TITLE),

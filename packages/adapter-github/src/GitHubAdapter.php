@@ -59,11 +59,11 @@ class GitHubAdapter implements Adapter
 
     public function __construct(
         private readonly string $authToken,
+        private readonly ClientInterface $httpClient,
         string $webhookSecret,
         private readonly string $apiUrl = 'https://api.github.com',
         private readonly ?string $appId = null,
         private readonly ?string $installationId = null,
-        private readonly ?ClientInterface $httpClient = null,
         private readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new GitHubFormatConverter;
@@ -481,14 +481,9 @@ class GitHubAdapter implements Adapter
             ->withHeader('Accept', 'application/vnd.github+json')
             ->withHeader('User-Agent', 'bootdesk-github-adapter');
 
-        if ($this->httpClient instanceof ClientInterface) {
-            $psrResponse = $this->httpClient->sendRequest($request);
-            $responseBody = (string) $psrResponse->getBody();
-            $statusCode = $psrResponse->getStatusCode();
-        } else {
-            $responseBody = $this->nativeHttp((string) $request->getUri(), $method, $request->getHeaders(), $method === 'GET' || $method === 'DELETE' ? '' : json_encode($params));
-            $statusCode = 200;
-        }
+        $psrResponse = $this->httpClient->sendRequest($request);
+        $responseBody = (string) $psrResponse->getBody();
+        $statusCode = $psrResponse->getStatusCode();
 
         // Handle 204 No Content
         if ($statusCode === 204 || $responseBody === '') {
@@ -506,33 +501,6 @@ class GitHubAdapter implements Adapter
         }
 
         return $data;
-    }
-
-    private function nativeHttp(string $url, string $method, array $headers, string $body): string
-    {
-        $headerLines = [];
-        foreach ($headers as $name => $values) {
-            foreach ($values as $value) {
-                $headerLines[] = "{$name}: {$value}";
-            }
-        }
-
-        $context = stream_context_create([
-            'http' => [
-                'method' => $method,
-                'header' => implode("\r\n", $headerLines),
-                'content' => $body,
-                'ignore_errors' => true,
-            ],
-        ]);
-
-        $response = @file_get_contents($url, false, $context);
-
-        if ($response === false) {
-            throw new AdapterException("Failed to reach GitHub API: {$url}");
-        }
-
-        return $response;
     }
 
     private function parseIssueComment(array $payload, string $rawBody): Message

@@ -30,10 +30,10 @@ class DiscordAdapter implements Adapter
 
     public function __construct(
         private readonly string $botToken,
+        private readonly ClientInterface $httpClient,
         string $publicKey,
         private readonly string $applicationId,
         private readonly string $apiUrl = 'https://discord.com/api/v10',
-        private readonly ?ClientInterface $httpClient = null,
         private readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new DiscordFormatConverter;
@@ -424,12 +424,8 @@ class DiscordAdapter implements Adapter
                 ->withBody($factory->createStream($body));
         }
 
-        if ($this->httpClient instanceof ClientInterface) {
-            $psrResponse = $this->httpClient->sendRequest($request);
-            $responseBody = (string) $psrResponse->getBody();
-        } else {
-            $responseBody = $this->nativeHttp($url, $method, $request->getHeaders(), $method !== 'GET' ? json_encode($params) : '');
-        }
+        $psrResponse = $this->httpClient->sendRequest($request);
+        $responseBody = (string) $psrResponse->getBody();
 
         $data = json_decode($responseBody, true);
 
@@ -447,32 +443,5 @@ class DiscordAdapter implements Adapter
         }
 
         return $data;
-    }
-
-    private function nativeHttp(string $url, string $method, array $headers, string $body): string
-    {
-        $headerLines = [];
-        foreach ($headers as $name => $values) {
-            foreach ($values as $value) {
-                $headerLines[] = "{$name}: {$value}";
-            }
-        }
-
-        $context = stream_context_create([
-            'http' => [
-                'method' => $method,
-                'header' => implode("\r\n", $headerLines),
-                'content' => $body,
-                'ignore_errors' => true,
-            ],
-        ]);
-
-        $response = @file_get_contents($url, false, $context);
-
-        if ($response === false) {
-            throw new AdapterException("Failed to reach Discord API: {$url}");
-        }
-
-        return $response;
     }
 }

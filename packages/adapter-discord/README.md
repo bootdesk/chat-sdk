@@ -8,22 +8,38 @@ Discord adapter for the laravel-bootdesk multi-platform messaging framework.
 composer require bootdesk/adapter-discord
 ```
 
+Requires a PSR-18 HTTP client (`guzzlehttp/guzzle`, `symfony/http-client`, etc.) and a PSR-17 factory (`nyholm/psr7` bundled).
+
 ## Configuration
 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `bot_token` | Discord Bot Token | `MTk4NjIy...` |
-| `application_id` | Discord Application ID | `1234567890` |
+| `http_client` | PSR-18 HTTP client instance | `new GuzzleHttp\Client` |
 | `public_key` | Application Public Key | `abcdef123456...` |
+| `application_id` | Discord Application ID | `1234567890` |
 
 ```php
 use BootDesk\ChatSDK\Discord\DiscordAdapter;
 
-$adapter = new DiscordAdapter([
+$adapter = new DiscordAdapter(
+    botToken: env('DISCORD_BOT_TOKEN'),
+    httpClient: new \GuzzleHttp\Client,
+    publicKey: env('DISCORD_PUBLIC_KEY'),
+    applicationId: env('DISCORD_APPLICATION_ID'),
+);
+```
+
+### Laravel
+
+The `ChatServiceProvider` auto-binds `Psr\Http\Client\ClientInterface` to `GuzzleHttp\Client`. Add to `config/chat.php`:
+
+```php
+'discord' => [
     'bot_token'      => env('DISCORD_BOT_TOKEN'),
-    'application_id' => env('DISCORD_APPLICATION_ID'),
     'public_key'     => env('DISCORD_PUBLIC_KEY'),
-]);
+    'application_id' => env('DISCORD_APPLICATION_ID'),
+],
 ```
 
 ## Quick Example

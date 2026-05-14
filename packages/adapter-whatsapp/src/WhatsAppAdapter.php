@@ -30,11 +30,11 @@ class WhatsAppAdapter implements Adapter
 
     public function __construct(
         private readonly string $accessToken,
+        private readonly ClientInterface $httpClient,
         private readonly string $phoneNumberId,
         ?string $appSecret = null,
         ?string $verifyToken = null,
         private readonly string $apiUrl = 'https://graph.facebook.com/v21.0',
-        private readonly ?ClientInterface $httpClient = null,
         private readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new WhatsAppFormatConverter;
@@ -142,7 +142,7 @@ class WhatsAppAdapter implements Adapter
     {
         $decoded = $this->decodeThreadId($threadId);
         $params = $this->buildMessageParams($message);
-        $params['to'] = $decoded['userWaId'];
+        $params = $this->addRecipientParam($params, $decoded['userWaId']);
         $params['messaging_product'] = 'whatsapp';
 
         $response = $this->apiCall("/{$this->phoneNumberId}/messages", $params);
@@ -164,40 +164,40 @@ class WhatsAppAdapter implements Adapter
     public function deleteMessage(string $threadId, string $messageId): void
     {
         $decoded = $this->decodeThreadId($threadId);
-        $this->apiCall("/{$this->phoneNumberId}/messages", [
+        $params = $this->addRecipientParam([
             'messaging_product' => 'whatsapp',
-            'to' => $decoded['userWaId'],
             'message_id' => $messageId,
             'status' => 'read', // Mark as read (closest to "delete" in WhatsApp)
-        ]);
+        ], $decoded['userWaId']);
+        $this->apiCall("/{$this->phoneNumberId}/messages", $params);
     }
 
     public function addReaction(string $threadId, string $messageId, string $emoji): void
     {
         $decoded = $this->decodeThreadId($threadId);
-        $this->apiCall("/{$this->phoneNumberId}/messages", [
+        $params = $this->addRecipientParam([
             'messaging_product' => 'whatsapp',
-            'to' => $decoded['userWaId'],
             'type' => 'reaction',
             'reaction' => [
                 'message_id' => $messageId,
                 'emoji' => $emoji,
             ],
-        ]);
+        ], $decoded['userWaId']);
+        $this->apiCall("/{$this->phoneNumberId}/messages", $params);
     }
 
     public function removeReaction(string $threadId, string $messageId, string $emoji): void
     {
         $decoded = $this->decodeThreadId($threadId);
-        $this->apiCall("/{$this->phoneNumberId}/messages", [
+        $params = $this->addRecipientParam([
             'messaging_product' => 'whatsapp',
-            'to' => $decoded['userWaId'],
             'type' => 'reaction',
             'reaction' => [
                 'message_id' => $messageId,
                 'emoji' => '',
             ],
-        ]);
+        ], $decoded['userWaId']);
+        $this->apiCall("/{$this->phoneNumberId}/messages", $params);
     }
 
     public function startTyping(string $threadId): void
@@ -281,7 +281,7 @@ class WhatsAppAdapter implements Adapter
             ?? $msg['interactive']['button_reply']['title']
             ?? '';
 
-        $userWaId = $msg['from'] ?? '';
+        $userWaId = $msg['from'] ?? $msg['from_user_id'] ?? '';
         $msgId = $msg['id'] ?? '';
 
         $threadId = $this->encodeThreadId([
@@ -289,7 +289,9 @@ class WhatsAppAdapter implements Adapter
             'userWaId' => $userWaId,
         ]);
 
-        $contactName = $contact['profile']['name'] ?? $userWaId;
+        $contactName = $contact['profile']['name']
+            ?? $contact['profile']['username']
+            ?? $userWaId;
 
         return new Message(
             id: $msgId,
@@ -305,8 +307,29 @@ class WhatsAppAdapter implements Adapter
         );
     }
 
+    private function addRecipientParam(array $params, string $userWaId): array
+    {
+        if (preg_match('/^[A-Z]{2}\./', $userWaId)) {
+            $params['recipient'] = $userWaId;
+        } else {
+            $params['to'] = $userWaId;
+        }
+
+        return $params;
+    }
+
     private function buildMessageParams(PostableMessage $message): array
     {
+        if ($message->isTemplate()) {
+            $template = $message->content;
+
+            if ($template instanceof WhatsAppTemplate) {
+                return $template->toWhatsApp();
+            }
+
+            throw new AdapterException('Unsupported template type for WhatsApp adapter');
+        }
+
         if ($message->isCard()) {
             $interactive = WhatsAppCards::toInteractiveMessage($message->content);
 
@@ -342,12 +365,8 @@ class WhatsAppAdapter implements Adapter
             ->withHeader('Content-Type', 'application/json')
             ->withBody($factory->createStream($body));
 
-        if ($this->httpClient instanceof ClientInterface) {
-            $psrResponse = $this->httpClient->sendRequest($request);
-            $responseBody = (string) $psrResponse->getBody();
-        } else {
-            $responseBody = $this->nativeHttpPost($url, $body);
-        }
+        $psrResponse = $this->httpClient->sendRequest($request);
+        $responseBody = (string) $psrResponse->getBody();
 
         $data = json_decode($responseBody, true);
 
@@ -361,28 +380,5 @@ class WhatsAppAdapter implements Adapter
         }
 
         return $data;
-    }
-
-    private function nativeHttpPost(string $url, string $body): string
-    {
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => implode("\r\n", [
-                    'Authorization: Bearer '.$this->accessToken,
-                    'Content-Type: application/json',
-                ]),
-                'content' => $body,
-                'ignore_errors' => true,
-            ],
-        ]);
-
-        $response = @file_get_contents($url, false, $context);
-
-        if ($response === false) {
-            throw new AdapterException("Failed to reach WhatsApp API: {$url}");
-        }
-
-        return $response;
     }
 }

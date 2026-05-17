@@ -5,13 +5,13 @@
     "require": {
         "php": ">=8.2",
         "laravel/framework": "^11.0",
-        "bootdesk/laravel": "*",
-        "bootdesk/adapter-slack": "*",
-        "bootdesk/adapter-telegram": "*",
-        "bootdesk/adapter-discord": "*",
-        "bootdesk/adapter-whatsapp": "*",
-        "bootdesk/adapter-github": "*",
-        "bootdesk/botman-compat": "*"
+        "bootdesk/chat-sdk-laravel": "*",
+        "bootdesk/chat-sdk-adapter-slack": "*",
+        "bootdesk/chat-sdk-adapter-telegram": "*",
+        "bootdesk/chat-sdk-adapter-discord": "*",
+        "bootdesk/chat-sdk-adapter-whatsapp": "*",
+        "bootdesk/chat-sdk-adapter-github": "*",
+        "bootdesk/chat-sdk-botman-compat": "*"
     },
     "repositories": [
         {

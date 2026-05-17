@@ -8,7 +8,7 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class MockAdapterResolver implements AdapterResolver
 {
-    public function resolve(string $name, ServerRequestInterface $request): ?Adapter
+    public function resolve(string $name, ?ServerRequestInterface $request): ?Adapter
     {
         return new MockAdapter;
     }

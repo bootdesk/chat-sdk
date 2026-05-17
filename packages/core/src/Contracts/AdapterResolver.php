@@ -8,5 +8,5 @@ use Psr\Http\Message\ServerRequestInterface;
 
 interface AdapterResolver
 {
-    public function resolve(string $name, ServerRequestInterface $request): ?Adapter;
+    public function resolve(string $name, ?ServerRequestInterface $request): ?Adapter;
 }

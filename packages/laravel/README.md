@@ -1,11 +1,11 @@
-# bootdesk/laravel
+# bootdesk/chat-sdk-laravel
 
 Laravel integration for laravel-bootdesk.
 
 ## Install
 
 ```bash
-composer require bootdesk/laravel
+composer require bootdesk/chat-sdk-laravel
 ```
 
 ## Setup
@@ -144,6 +144,124 @@ Register it in `config/chat.php`:
 'handlers' => [\App\Chat\ChatHandlers::class],
 ```
 
+## Middleware
+
+Middleware intercept messages at different stages. Register in your handler class:
+
+```php
+use BootDesk\ChatSDK\Core\Contracts\WebhookMiddleware;
+use BootDesk\ChatSDK\Core\Contracts\ReceivingMiddleware;
+use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
+
+class ChatHandlers
+{
+    public function register(Chat $chat): void
+    {
+        // Intercept raw webhook before parsing
+        $chat->addWebhookMiddleware(new class implements WebhookMiddleware {
+            public function handle(ServerRequestInterface $request, callable $next): ResponseInterface {
+                logger()->info('Webhook received', ['path' => $request->getUri()->getPath()]);
+                return $next($request);
+            }
+        });
+
+        // Transform inbound messages before handlers
+        $chat->addReceivingMiddleware(new class implements ReceivingMiddleware {
+            public function handle(Message $message, Adapter $adapter, callable $next): ?Message {
+                // Return null to drop the message
+                if (str_contains($message->text, 'blocked')) {
+                    return null;
+                }
+                return $next($message);
+            }
+        });
+
+        // Transform outbound messages before delivery
+        $chat->addSendingMiddleware(new class implements SendingMiddleware {
+            public function handle(string $threadId, PostableMessage $message, Adapter $adapter, string $operation, callable $next): ?SentMessage {
+                logger()->info('Sending message', ['thread' => $threadId, 'operation' => $operation]);
+                return $next($message);
+            }
+        });
+    }
+}
+```
+
+**Operations:** `post`, `edit`, `postEphemeral`
+
+## Multi-Tenant Adapter Resolution
+
+For multi-tenant applications where each tenant has their own bot credentials, use an `AdapterResolver`:
+
+```php
+// app/Chat/MultiTenantAdapterResolver.php
+namespace App\Chat;
+
+use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Contracts\AdapterResolver;
+use BootDesk\ChatSDK\Slack\SlackAdapter;
+use BootDesk\ChatSDK\Telegram\TelegramAdapter;
+use Illuminate\Support\Facades\DB;
+use Psr\Http\Message\ServerRequestInterface;
+
+class MultiTenantAdapterResolver implements AdapterResolver
+{
+    public function resolve(string $name, ?ServerRequestInterface $request): ?Adapter
+    {
+        // Extract tenant from request (header, subdomain, route param, etc.)
+        // When called from a job, $request is null - use other context (job payload, auth, etc.)
+        $tenantId = $request?->getHeaderLine('X-Tenant-ID')
+            ?? $this->getTenantFromContext();
+
+        if ($tenantId === null || $tenantId === '') {
+            return null;
+        }
+        
+        // Load tenant-specific credentials from database
+        $config = DB::table('tenant_chat_configs')
+            ->where('tenant_id', $tenantId)
+            ->where('adapter', $name)
+            ->first();
+            
+        if (! $config) {
+            return null;
+        }
+        
+        // Instantiate adapter with tenant credentials
+        return match ($name) {
+            'slack' => new SlackAdapter(
+                botToken: $config->credentials['bot_token'],
+                httpClient: app(\Psr\Http\Client\ClientInterface::class),
+                signingSecret: $config->credentials['signing_secret'] ?? null,
+            ),
+            'telegram' => new TelegramAdapter(
+                botToken: $config->credentials['bot_token'],
+                httpClient: app(\Psr\Http\Client\ClientInterface::class),
+                secretToken: $config->credentials['secret_token'] ?? null,
+            ),
+            default => null,
+        };
+    }
+}
+```
+
+Register the resolver in a service provider:
+
+```php
+// app/Providers/AppServiceProvider.php
+use BootDesk\ChatSDK\Core\Contracts\AdapterResolver;
+
+public function register(): void
+{
+    $this->app->bind(
+        AdapterResolver::class,
+        \App\Chat\MultiTenantAdapterResolver::class
+    );
+}
+```
+
+**Resolution order:** Tenant-specific (resolver) → Global (config). Tenants can override specific adapters while falling back to global defaults for others.
+
 ## Facade
 
 ```php
@@ -172,6 +290,44 @@ The job dispatches automatically when webhook requests arrive. No manual setup i
 ## State
 
 State persistence uses Laravel's cache system. Set `CHAT_STATE_STORE` to any Laravel cache driver (`file`, `redis`, `database`, `memcached`, `array`). The cache store is configured in `config/cache.php` as usual.
+
+## Error Handling
+
+Adapter exceptions bubble up to Laravel's exception handler. Register custom handlers in `app/Exceptions/Handler.php`:
+
+```php
+use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
+use BootDesk\ChatSDK\Core\Exceptions\RateLimitException;
+use Illuminate\Http\Request;
+
+public function register(): void
+{
+    $this->renderable(function (AuthenticationException $e, Request $request) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    });
+
+    $this->renderable(function (RateLimitException $e, Request $request) {
+        return response()->json(['error' => 'Rate limited'], 429);
+    });
+
+    $this->renderable(function (AdapterException $e, Request $request) {
+        Log::error('Chat adapter error', [
+            'message' => $e->getMessage(),
+            'adapter' => $request->route('adapter'),
+        ]);
+
+        return response()->json(['error' => 'Adapter failed'], 500);
+    });
+}
+```
+
+**Exception types:**
+- `AuthenticationException` — Invalid credentials/tokens
+- `RateLimitException` — Platform rate limit exceeded
+- `AdapterException` — Generic adapter errors
+- `ResourceNotFoundException` — Adapter/thread not found
+- `ValidationException` — Invalid input data
 
 ## License
 

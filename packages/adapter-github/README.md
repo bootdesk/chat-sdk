@@ -1,11 +1,11 @@
-# bootdesk/adapter-github
+# bootdesk/chat-sdk-adapter-github
 
 GitHub adapter for the laravel-bootdesk multi-platform messaging framework.
 
 ## Install
 
 ```bash
-composer require bootdesk/adapter-github
+composer require bootdesk/chat-sdk-adapter-github
 ```
 
 Requires a PSR-18 HTTP client (`guzzlehttp/guzzle`, `symfony/http-client`, etc.) and a PSR-17 factory (`nyholm/psr7` bundled).

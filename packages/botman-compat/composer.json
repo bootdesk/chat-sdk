@@ -1,11 +1,11 @@
 {
-    "name": "bootdesk/botman-compat",
+    "name": "bootdesk/chat-sdk-botman-compat",
     "description": "BotMan compatibility shim for bootdesk",
     "type": "library",
     "license": "MIT",
     "require": {
         "php": ">=8.2",
-        "bootdesk/core": "*"
+        "bootdesk/chat-sdk-core": "*"
     },
     "autoload": {
         "psr-4": {

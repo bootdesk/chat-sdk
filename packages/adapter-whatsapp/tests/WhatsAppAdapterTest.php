@@ -8,6 +8,7 @@ use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
 use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\PostableMessage;
+use BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;
 use BootDesk\ChatSDK\WhatsApp\WhatsAppAdapter;
 use BootDesk\ChatSDK\WhatsApp\WhatsAppTemplate;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -260,6 +261,52 @@ class WhatsAppAdapterTest extends TestCase
         $this->assertTrue(true);
     }
 
+    public function test_start_typing_sends_typing_indicator_via_state(): void
+    {
+        $mockClient = new class implements ClientInterface
+        {
+            public array $captured = [];
+
+            private Psr17Factory $factory;
+
+            public function __construct()
+            {
+                $this->factory = new Psr17Factory;
+            }
+
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $this->captured[] = $request;
+
+                return $this->factory->createResponse(200)->withBody(
+                    $this->factory->createStream(json_encode(['success' => true]))
+                );
+            }
+        };
+
+        $state = new MemoryStateAdapter;
+        $adapter = new WhatsAppAdapter(
+            accessToken: 'test_token',
+            httpClient: $mockClient,
+            phoneNumberId: 'phone123',
+            psrFactory: $this->factory,
+        );
+
+        $chat = new Chat(state: $state);
+        $adapter->initialize($chat);
+
+        $state->set('typing_msg:whatsapp:phone123:5511999999999', 'wamid.HBgLMTY1MDM4Nzk0MzkVAgARGBJDQjZCMzlEQUE4OTJBMTE4RTUA');
+
+        $adapter->startTyping('whatsapp:phone123:5511999999999');
+
+        $sentBody = json_decode((string) $mockClient->captured[0]->getBody(), true);
+        $this->assertSame('whatsapp', $sentBody['messaging_product']);
+        $this->assertSame('5511999999999', $sentBody['to']);
+        $this->assertSame('read', $sentBody['status']);
+        $this->assertSame('wamid.HBgLMTY1MDM4Nzk0MzkVAgARGBJDQjZCMzlEQUE4OTJBMTE4RTUA', $sentBody['message_id']);
+        $this->assertSame('text', $sentBody['typing_indicator']['type']);
+    }
+
     public function test_fetch_messages_returns_empty(): void
     {
         $result = $this->adapter->fetchMessages('whatsapp:phone123:999');
@@ -285,7 +332,8 @@ class WhatsAppAdapterTest extends TestCase
 
     public function test_initialize_sets_bot_user_id(): void
     {
-        $chat = $this->createMock(Chat::class);
+        $state = new MemoryStateAdapter;
+        $chat = new Chat(state: $state);
         $this->adapter->initialize($chat);
         $this->assertSame('phone123', $this->adapter->getBotUserId());
     }

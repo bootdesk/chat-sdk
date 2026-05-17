@@ -25,19 +25,19 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class TelnyxAdapter implements Adapter
 {
-    private TelnyxFormatConverter $formatConverter;
+    protected TelnyxFormatConverter $formatConverter;
 
-    private ?TelnyxWebhookVerifier $webhookVerifier = null;
+    protected ?TelnyxWebhookVerifier $webhookVerifier = null;
 
     public function __construct(
-        private readonly string $apiKey,
-        private readonly ClientInterface $httpClient,
-        private readonly ?string $messagingProfileId = null,
+        protected readonly string $apiKey,
+        protected readonly ClientInterface $httpClient,
+        protected readonly ?string $messagingProfileId = null,
         ?string $publicKey = null,
-        private readonly ?string $fromNumber = null,
-        private readonly ?string $agentId = null,
-        private readonly string $apiUrl = 'https://api.telnyx.com/v2/',
-        private readonly ?Psr17Factory $psrFactory = null,
+        protected readonly ?string $fromNumber = null,
+        protected readonly ?string $agentId = null,
+        protected readonly string $apiUrl = 'https://api.telnyx.com/v2/',
+        protected readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new TelnyxFormatConverter;
 
@@ -254,7 +254,7 @@ class TelnyxAdapter implements Adapter
         return $this->postMessage($threadId, PostableMessage::text($fullText));
     }
 
-    private function parseSmsMessage(array $p, string $rawBody): Message
+    protected function parseSmsMessage(array $p, string $rawBody): Message
     {
         $fromPhone = $p['from']['phone_number'] ?? '';
         $toEntry = $p['to'][0] ?? [];
@@ -293,7 +293,7 @@ class TelnyxAdapter implements Adapter
         );
     }
 
-    private function parseRcsMessage(array $p, string $rawBody): Message
+    protected function parseRcsMessage(array $p, string $rawBody): Message
     {
         $fromPhone = $p['from']['phone_number'] ?? '';
         $toEntry = $p['to'][0] ?? [];
@@ -347,7 +347,7 @@ class TelnyxAdapter implements Adapter
         );
     }
 
-    private function sendSms(string $from, string $to, PostableMessage $message): array
+    protected function sendSms(string $from, string $to, PostableMessage $message): array
     {
         $params = $this->buildSmsParams($message);
         $params['from'] = $from;
@@ -360,7 +360,7 @@ class TelnyxAdapter implements Adapter
         return $this->apiCall('messages', $params);
     }
 
-    private function sendRcs(string $to, PostableMessage $message): array
+    protected function sendRcs(string $to, PostableMessage $message): array
     {
         $messagingProfileId = $this->messagingProfileId
             ?? throw new AdapterException('messaging_profile_id is required for RCS messaging');
@@ -395,7 +395,7 @@ class TelnyxAdapter implements Adapter
         return $this->apiCall('messages/rcs', $params);
     }
 
-    private function buildSmsParams(PostableMessage $message): array
+    protected function buildSmsParams(PostableMessage $message): array
     {
         $params = [];
 
@@ -411,7 +411,7 @@ class TelnyxAdapter implements Adapter
         return $params;
     }
 
-    private function buildRcsAgentMessage(PostableMessage $message): array
+    protected function buildRcsAgentMessage(PostableMessage $message): array
     {
         if ($message->isCard()) {
             return ['content_message' => $this->buildRcsCardContent($message->content)];
@@ -436,7 +436,7 @@ class TelnyxAdapter implements Adapter
         return ['content_message' => $contentMessage];
     }
 
-    private function buildRcsCardContent(Card $card): array
+    protected function buildRcsCardContent(Card $card): array
     {
         $cardContent = [];
 
@@ -482,7 +482,7 @@ class TelnyxAdapter implements Adapter
         ];
     }
 
-    private function apiCall(string $endpoint, array $params): array
+    protected function apiCall(string $endpoint, array $params): array
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
 

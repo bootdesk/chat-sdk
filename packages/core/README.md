@@ -1,11 +1,11 @@
-# bootdesk/core
+# bootdesk/chat-sdk-core
 
 Framework-agnostic core SDK for building chat bots in PHP.
 
 ## Installation
 
 ```bash
-composer require bootdesk/core
+composer require bootdesk/chat-sdk-core
 ```
 
 ## Chat class
@@ -109,6 +109,49 @@ Three middleware interfaces for intercepting different stages:
 - **ReceivingMiddleware** -- Intercept inbound messages before handlers run
 - **SendingMiddleware** -- Intercept outbound messages before they are delivered
 - **WebhookMiddleware** -- Intercept raw webhook payloads before parsing
+
+## Extending Adapters
+
+All adapters use `protected` members for extensibility. Extend any adapter to customize behavior:
+
+```php
+use BootDesk\ChatSDK\Telegram\TelegramAdapter;
+
+class MyTelegramAdapter extends TelegramAdapter
+{
+    protected function apiCall(string $method, array $params): array
+    {
+        // Add custom logging, retry logic, etc.
+        return parent::apiCall($method, $params);
+    }
+
+    protected function buildMessageParams(PostableMessage $message): array
+    {
+        $params = parent::buildMessageParams($message);
+
+        // Add custom parameters
+        $params['disable_web_page_preview'] = true;
+
+        return $params;
+    }
+}
+```
+
+Register your custom adapter via `AdapterRegistry`:
+
+```php
+use BootDesk\ChatSDK\Core\Support\AdapterRegistry;
+
+// Register in a service provider or bootstrap file
+
+// Replace an existing adapter
+AdapterRegistry::register('telegram', MyTelegramAdapter::class);
+
+// Or register as a new adapter
+AdapterRegistry::register('telegram-custom', MyTelegramAdapter::class);
+```
+
+**With AdapterResolver:** Dynamic resolution tries resolver first (tenant-specific), then falls back to static adapters from config (global default). This allows tenants to override specific adapters while using global defaults for others.
 
 ## StateAdapter interface
 

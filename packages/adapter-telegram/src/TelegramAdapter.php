@@ -23,18 +23,18 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class TelegramAdapter implements Adapter
 {
-    private ?string $botUserId = null;
+    protected ?string $botUserId = null;
 
-    private TelegramFormatConverter $formatConverter;
+    protected TelegramFormatConverter $formatConverter;
 
-    private ?string $secretToken;
+    protected ?string $secretToken;
 
     public function __construct(
-        private readonly string $botToken,
-        private readonly ClientInterface $httpClient,
+        protected readonly string $botToken,
+        protected readonly ClientInterface $httpClient,
         ?string $secretToken = null,
-        private readonly string $apiUrl = 'https://api.telegram.org',
-        private readonly ?Psr17Factory $psrFactory = null,
+        protected readonly string $apiUrl = 'https://api.telegram.org',
+        protected readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->secretToken = $secretToken;
         $this->formatConverter = new TelegramFormatConverter;
@@ -309,7 +309,7 @@ class TelegramAdapter implements Adapter
         return $this->postMessage($threadId, PostableMessage::text($fullText));
     }
 
-    private function buildMessageParams(PostableMessage $message): array
+    protected function buildMessageParams(PostableMessage $message): array
     {
         if ($message->isCard()) {
             $keyboard = TelegramCards::toInlineKeyboard($message->content);
@@ -333,7 +333,7 @@ class TelegramAdapter implements Adapter
         ];
     }
 
-    private function apiCall(string $method, array $params): array
+    protected function apiCall(string $method, array $params): array
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
         $url = "{$this->apiUrl}/bot{$this->botToken}/{$method}";
@@ -362,7 +362,7 @@ class TelegramAdapter implements Adapter
         return is_array($result) ? $result : ['ok' => true];
     }
 
-    private function applyEntities(string $text, array $entities): string
+    protected function applyEntities(string $text, array $entities): string
     {
         // Sort by offset descending so replacements don't shift offsets
         usort($entities, fn (array $a, array $b): int => $b['offset'] <=> $a['offset']);

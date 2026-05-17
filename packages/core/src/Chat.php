@@ -100,7 +100,7 @@ class Chat
     private array $concurrentSlots = [];
 
     public function __construct(
-        private readonly StateAdapter $state,
+        public readonly StateAdapter $state,
         array $adapters = [],
         private readonly array $config = [],
         ?AdapterResolver $adapterResolver = null,
@@ -142,15 +142,14 @@ class Chat
 
     public function resolveAdapter(string $name, ?ServerRequestInterface $request = null): ?Adapter
     {
-        if (isset($this->adapters[$name])) {
-            return $this->adapters[$name];
+        if ($this->adapterResolver instanceof AdapterResolver) {
+            $adapter = $this->adapterResolver->resolve($name, $request);
+            if ($adapter instanceof Adapter) {
+                return $adapter;
+            }
         }
 
-        if ($this->adapterResolver instanceof AdapterResolver && $request instanceof ServerRequestInterface) {
-            return $this->adapterResolver->resolve($name, $request);
-        }
-
-        return null;
+        return $this->adapters[$name] ?? null;
     }
 
     public function registerAdapter(string $name, Adapter $adapter): self
@@ -854,7 +853,7 @@ class Chat
         }
     }
 
-    public function handleWebhook(string $adapterName, ServerRequestInterface $request, array $options = []): ResponseInterface
+    public function handleWebhook(string $adapterName, ServerRequestInterface $request): ResponseInterface
     {
         $this->initialize();
 

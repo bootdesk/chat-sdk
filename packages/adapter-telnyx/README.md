@@ -1,11 +1,11 @@
-# bootdesk/adapter-telnyx
+# bootdesk/chat-sdk-adapter-telnyx
 
 Telnyx adapter for the BootDesk multi-platform messaging SDK. Supports SMS, MMS, and RCS.
 
 ## Install
 
 ```bash
-composer require bootdesk/adapter-telnyx
+composer require bootdesk/chat-sdk-adapter-telnyx
 ```
 
 Requires a PSR-18 HTTP client (`guzzlehttp/guzzle`, `symfony/http-client`, etc.) and a PSR-17 factory (`nyholm/psr7` bundled).

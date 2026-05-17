@@ -7,6 +7,7 @@ use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
+use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
 use BootDesk\ChatSDK\Core\FetchOptions;
 use BootDesk\ChatSDK\Core\FetchResult;
@@ -22,20 +23,22 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class WhatsAppAdapter implements Adapter
 {
-    private ?string $botUserId = null;
+    protected ?string $botUserId = null;
 
-    private WhatsAppFormatConverter $formatConverter;
+    protected WhatsAppFormatConverter $formatConverter;
 
-    private ?WhatsAppWebhookVerifier $webhookVerifier = null;
+    protected ?WhatsAppWebhookVerifier $webhookVerifier = null;
+
+    protected ?StateAdapter $state = null;
 
     public function __construct(
-        private readonly string $accessToken,
-        private readonly ClientInterface $httpClient,
-        private readonly string $phoneNumberId,
+        protected readonly string $accessToken,
+        protected readonly ClientInterface $httpClient,
+        protected readonly string $phoneNumberId,
         ?string $appSecret = null,
         ?string $verifyToken = null,
-        private readonly string $apiUrl = 'https://graph.facebook.com/v21.0',
-        private readonly ?Psr17Factory $psrFactory = null,
+        protected readonly string $apiUrl = 'https://graph.facebook.com/v21.0',
+        protected readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new WhatsAppFormatConverter;
 
@@ -202,7 +205,26 @@ class WhatsAppAdapter implements Adapter
 
     public function startTyping(string $threadId): void
     {
-        // WhatsApp doesn't support typing indicators
+        if (! $this->state instanceof StateAdapter) {
+            return;
+        }
+
+        $messageId = $this->state->get("typing_msg:{$threadId}");
+
+        if (! is_string($messageId) || $messageId === '') {
+            return;
+        }
+
+        $decoded = $this->decodeThreadId($threadId);
+        $params = $this->addRecipientParam([
+            'messaging_product' => 'whatsapp',
+            'status' => 'read',
+            'message_id' => $messageId,
+            'typing_indicator' => [
+                'type' => 'text',
+            ],
+        ], $decoded['userWaId']);
+        $this->apiCall("/{$this->phoneNumberId}/messages", $params);
     }
 
     public function fetchMessages(string $threadId, ?FetchOptions $options = null): FetchResult
@@ -246,6 +268,7 @@ class WhatsAppAdapter implements Adapter
 
     public function initialize(Chat $chat): void
     {
+        $this->state = $chat->state;
         $this->botUserId = $this->phoneNumberId;
     }
 
@@ -273,7 +296,7 @@ class WhatsAppAdapter implements Adapter
         return $this->postMessage($threadId, PostableMessage::text($fullText));
     }
 
-    private function parseInboundMessage(array $msg, ?array $contact, string $phoneNumberId, string $rawBody): Message
+    protected function parseInboundMessage(array $msg, ?array $contact, string $phoneNumberId, string $rawBody): Message
     {
         $text = $msg['text']['body']
             ?? $msg['caption']
@@ -288,6 +311,10 @@ class WhatsAppAdapter implements Adapter
             'phoneNumberId' => $phoneNumberId,
             'userWaId' => $userWaId,
         ]);
+
+        if ($this->state instanceof StateAdapter && $msgId !== '') {
+            $this->state->set("typing_msg:{$threadId}", $msgId, 300_000);
+        }
 
         $contactName = $contact['profile']['name']
             ?? $contact['profile']['username']
@@ -307,7 +334,7 @@ class WhatsAppAdapter implements Adapter
         );
     }
 
-    private function addRecipientParam(array $params, string $userWaId): array
+    protected function addRecipientParam(array $params, string $userWaId): array
     {
         if (preg_match('/^[A-Z]{2}\./', $userWaId)) {
             $params['recipient'] = $userWaId;
@@ -318,7 +345,7 @@ class WhatsAppAdapter implements Adapter
         return $params;
     }
 
-    private function buildMessageParams(PostableMessage $message): array
+    protected function buildMessageParams(PostableMessage $message): array
     {
         if ($message->isTemplate()) {
             $template = $message->content;
@@ -354,7 +381,7 @@ class WhatsAppAdapter implements Adapter
         ];
     }
 
-    private function apiCall(string $endpoint, array $params): array
+    protected function apiCall(string $endpoint, array $params): array
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
         $url = "{$this->apiUrl}{$endpoint}";

@@ -4,6 +4,7 @@ namespace BootDesk\ChatSDK\Laravel\Commands;
 
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Support\AdapterRegistry;
 use Illuminate\Console\Command;
 
 class ChatListCommand extends Command
@@ -14,20 +15,27 @@ class ChatListCommand extends Command
 
     public function handle(Chat $chat): int
     {
-        $adapters = config('chat.adapters', []);
-
-        if (empty($adapters)) {
-            $this->warn('No adapters configured. Edit config/chat.php to add adapters.');
-
-            return self::SUCCESS;
-        }
+        $allAdapters = array_unique(
+            [
+                ...array_keys($configuredAdapters = config('chat.adapters', [])),
+                ...array_keys($registeredAdapters = AdapterRegistry::all()),
+            ]
+        );
 
         $rows = [];
-        foreach ($adapters as $name => $config) {
+        foreach ($allAdapters as $name) {
             $resolved = $chat->resolveAdapter($name);
+
+            $isRegistered = isset($registeredAdapters[$name]);
+            $isGloballyConfigured = isset($configuredAdapters[$name]);
+
             $rows[] = [
                 $name,
-                $resolved instanceof Adapter ? '<fg=green>Available</>' : '<fg=red>Not installed</>',
+                match (true) {
+                    $isRegistered && $isGloballyConfigured => '<fg=green>Registered globally</>',
+                    ! $isRegistered => '<fg=red>Globally configured but not available</>',
+                    default => '<fg=yellow>Registered with config per request</>',
+                },
                 $resolved instanceof Adapter ? $resolved->getName() : '-',
             ];
         }

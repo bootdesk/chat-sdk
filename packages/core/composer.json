@@ -1,5 +1,5 @@
 {
-    "name": "bootdesk/core",
+    "name": "bootdesk/chat-sdk-core",
     "type": "library",
     "description": "Core package for the PHP Chat SDK",
     "require": {

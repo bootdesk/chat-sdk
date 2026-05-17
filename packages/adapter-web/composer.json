@@ -1,10 +1,11 @@
 {
-    "name": "bootdesk/adapter-web",
-    "description": "Web adapter for bootdesk/core — browser chat UI via JSON request/response",
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "bootdesk/chat-sdk-adapter-web",
+    "description": "Web adapter for bootdesk/chat-sdk-core — browser chat UI via JSON request/response",
     "type": "library",
     "require": {
         "php": ">=8.2",
-        "bootdesk/core": "*",
+        "bootdesk/chat-sdk-core": "*",
         "ext-json": "*"
     },
     "require-dev": {
@@ -13,7 +14,10 @@
     "autoload": {
         "psr-4": {
             "BootDesk\\ChatSDK\\Web\\": "src/"
-        }
+        },
+        "files": [
+            "src/register.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

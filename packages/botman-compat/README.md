@@ -1,11 +1,11 @@
-# bootdesk/botman-compat
+# bootdesk/chat-sdk-botman-compat
 
 BotMan compatibility shim. Drop-in replacement for `botman/botman` using laravel-bootdesk under the hood. No botman dependency required.
 
 ## Install
 
 ```bash
-composer require bootdesk/botman-compat
+composer require bootdesk/chat-sdk-botman-compat
 ```
 
 ## Quick Start

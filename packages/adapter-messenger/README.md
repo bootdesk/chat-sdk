@@ -1,11 +1,11 @@
-# bootdesk/adapter-messenger
+# bootdesk/chat-sdk-adapter-messenger
 
 Facebook Messenger adapter for the laravel-bootdesk multi-platform messaging framework.
 
 ## Install
 
 ```bash
-composer require bootdesk/adapter-messenger
+composer require bootdesk/chat-sdk-adapter-messenger
 ```
 
 Requires a PSR-18 HTTP client (`guzzlehttp/guzzle`, `symfony/http-client`, etc.) and a PSR-17 factory (`nyholm/psr7` bundled).

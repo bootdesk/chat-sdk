@@ -22,16 +22,16 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class GitHubAdapter implements Adapter
 {
-    private ?string $botUserId = null;
+    protected ?string $botUserId = null;
 
-    private GitHubFormatConverter $formatConverter;
+    protected GitHubFormatConverter $formatConverter;
 
-    private GitHubWebhookVerifier $webhookVerifier;
+    protected GitHubWebhookVerifier $webhookVerifier;
 
     /** @var array<string, string> owner/repo → installation ID */
-    private array $installationIds = [];
+    protected array $installationIds = [];
 
-    private const EMOJI_MAP = [
+    protected const EMOJI_MAP = [
         '👍' => '+1',
         '+1' => '+1',
         'thumbs_up' => '+1',
@@ -58,13 +58,13 @@ class GitHubAdapter implements Adapter
     ];
 
     public function __construct(
-        private readonly string $authToken,
-        private readonly ClientInterface $httpClient,
+        protected readonly string $authToken,
+        protected readonly ClientInterface $httpClient,
         string $webhookSecret,
-        private readonly string $apiUrl = 'https://api.github.com',
-        private readonly ?string $appId = null,
-        private readonly ?string $installationId = null,
-        private readonly ?Psr17Factory $psrFactory = null,
+        protected readonly string $apiUrl = 'https://api.github.com',
+        protected readonly ?string $appId = null,
+        protected readonly ?string $installationId = null,
+        protected readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new GitHubFormatConverter;
         $this->webhookVerifier = new GitHubWebhookVerifier($webhookSecret);
@@ -427,7 +427,7 @@ class GitHubAdapter implements Adapter
         return $this->postMessage($threadId, PostableMessage::text($fullText));
     }
 
-    private function renderBody(PostableMessage $message): string
+    protected function renderBody(PostableMessage $message): string
     {
         if ($message->isCard()) {
             return GitHubCards::toGitHubMarkdown($message->content);
@@ -436,7 +436,7 @@ class GitHubAdapter implements Adapter
         return $this->formatConverter->renderPostable($message);
     }
 
-    private function getAuthToken(string $owner, string $repo): string
+    protected function getAuthToken(string $owner, string $repo): string
     {
         if ($this->appId !== null) {
             $key = "{$owner}/{$repo}";
@@ -450,7 +450,7 @@ class GitHubAdapter implements Adapter
         return $this->authToken;
     }
 
-    private function apiCall(string $endpoint, array $params, string $method = 'POST', array $queryParams = []): array
+    protected function apiCall(string $endpoint, array $params, string $method = 'POST', array $queryParams = []): array
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
         $url = "{$this->apiUrl}/{$endpoint}";
@@ -503,7 +503,7 @@ class GitHubAdapter implements Adapter
         return $data;
     }
 
-    private function parseIssueComment(array $payload, string $rawBody): Message
+    protected function parseIssueComment(array $payload, string $rawBody): Message
     {
         $comment = $payload['comment'] ?? [];
         $issue = $payload['issue'] ?? [];
@@ -533,7 +533,7 @@ class GitHubAdapter implements Adapter
         );
     }
 
-    private function parseReviewComment(array $payload, string $rawBody): Message
+    protected function parseReviewComment(array $payload, string $rawBody): Message
     {
         $comment = $payload['comment'] ?? [];
         $pullRequest = $payload['pull_request'] ?? [];
@@ -564,7 +564,7 @@ class GitHubAdapter implements Adapter
         );
     }
 
-    private function jsonResponse(int $status, string $message): ResponseInterface
+    protected function jsonResponse(int $status, string $message): ResponseInterface
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
 

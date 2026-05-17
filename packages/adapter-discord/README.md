@@ -1,11 +1,11 @@
-# bootdesk/adapter-discord
+# bootdesk/chat-sdk-adapter-discord
 
 Discord adapter for the laravel-bootdesk multi-platform messaging framework.
 
 ## Install
 
 ```bash
-composer require bootdesk/adapter-discord
+composer require bootdesk/chat-sdk-adapter-discord
 ```
 
 Requires a PSR-18 HTTP client (`guzzlehttp/guzzle`, `symfony/http-client`, etc.) and a PSR-17 factory (`nyholm/psr7` bundled).

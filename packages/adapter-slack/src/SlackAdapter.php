@@ -22,18 +22,18 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class SlackAdapter implements Adapter
 {
-    private ?string $botUserId = null;
+    protected ?string $botUserId = null;
 
-    private SlackFormatConverter $formatConverter;
+    protected SlackFormatConverter $formatConverter;
 
-    private ?SlackWebhookVerifier $webhookVerifier = null;
+    protected ?SlackWebhookVerifier $webhookVerifier = null;
 
     public function __construct(
-        private readonly string $botToken,
-        private readonly ClientInterface $httpClient,
+        protected readonly string $botToken,
+        protected readonly ClientInterface $httpClient,
         ?string $signingSecret = null,
-        private readonly string $apiUrl = 'https://slack.com/api/',
-        private readonly ?Psr17Factory $psrFactory = null,
+        protected readonly string $apiUrl = 'https://slack.com/api/',
+        protected readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new SlackFormatConverter;
 
@@ -338,7 +338,7 @@ class SlackAdapter implements Adapter
         return $this->postMessage($threadId, PostableMessage::text($fullText));
     }
 
-    private function buildMessageParams(PostableMessage $message): array
+    protected function buildMessageParams(PostableMessage $message): array
     {
         if ($message->isCard()) {
             $blocks = SlackCards::toBlockKit($message->content);
@@ -352,7 +352,7 @@ class SlackAdapter implements Adapter
         return $this->formatConverter->toSlackPayload($message);
     }
 
-    private function apiCall(string $method, array $params): array
+    protected function apiCall(string $method, array $params): array
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
 

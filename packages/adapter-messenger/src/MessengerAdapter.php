@@ -22,20 +22,20 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class MessengerAdapter implements Adapter
 {
-    private ?string $botUserId = null;
+    protected ?string $botUserId = null;
 
-    private MessengerFormatConverter $formatConverter;
+    protected MessengerFormatConverter $formatConverter;
 
-    private MessengerWebhookVerifier $webhookVerifier;
+    protected MessengerWebhookVerifier $webhookVerifier;
 
     public function __construct(
-        private readonly string $pageAccessToken,
-        private readonly ClientInterface $httpClient,
+        protected readonly string $pageAccessToken,
+        protected readonly ClientInterface $httpClient,
         string $appSecret,
         string $verifyToken,
-        private readonly string $apiVersion = 'v21.0',
-        private readonly string $apiUrl = 'https://graph.facebook.com',
-        private readonly ?Psr17Factory $psrFactory = null,
+        protected readonly string $apiVersion = 'v21.0',
+        protected readonly string $apiUrl = 'https://graph.facebook.com',
+        protected readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new MessengerFormatConverter;
         $this->webhookVerifier = new MessengerWebhookVerifier($appSecret, $verifyToken, $psrFactory);
@@ -293,7 +293,7 @@ class MessengerAdapter implements Adapter
         return $this->postMessage($threadId, PostableMessage::text($fullText));
     }
 
-    private function truncate(string $text, int $limit = 2000): string
+    protected function truncate(string $text, int $limit = 2000): string
     {
         if (strlen($text) <= $limit) {
             return $text;
@@ -302,7 +302,7 @@ class MessengerAdapter implements Adapter
         return substr($text, 0, $limit - 3).'...';
     }
 
-    private function graphApiCall(string $endpoint, array $params, string $method = 'POST', array $queryParams = []): array
+    protected function graphApiCall(string $endpoint, array $params, string $method = 'POST', array $queryParams = []): array
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
         $url = "{$this->apiUrl}/{$this->apiVersion}/{$endpoint}?access_token={$this->pageAccessToken}";
@@ -341,7 +341,7 @@ class MessengerAdapter implements Adapter
         return $data;
     }
 
-    private function jsonError(int $status, string $message): ResponseInterface
+    protected function jsonError(int $status, string $message): ResponseInterface
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
 

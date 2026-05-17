@@ -1,11 +1,11 @@
-# bootdesk/adapter-whatsapp
+# bootdesk/chat-sdk-adapter-whatsapp
 
 WhatsApp Business API adapter for the laravel-bootdesk multi-platform messaging framework.
 
 ## Install
 
 ```bash
-composer require bootdesk/adapter-whatsapp
+composer require bootdesk/chat-sdk-adapter-whatsapp
 ```
 
 Requires a PSR-18 HTTP client (`guzzlehttp/guzzle`, `symfony/http-client`, etc.) and a PSR-17 factory (`nyholm/psr7` bundled).

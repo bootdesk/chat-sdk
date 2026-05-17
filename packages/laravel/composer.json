@@ -1,16 +1,16 @@
 {
-    "name": "bootdesk/laravel",
+    "name": "bootdesk/chat-sdk-laravel",
     "type": "library",
     "description": "Laravel integration for the PHP Chat SDK",
     "require": {
         "php": ">=8.2",
-        "bootdesk/core": "^1.0",
-        "illuminate/support": "^10.0|^11.0|^12.0",
-        "illuminate/http": "^10.0|^11.0|^12.0",
-        "illuminate/routing": "^10.0|^11.0|^12.0",
-        "illuminate/contracts": "^10.0|^11.0|^12.0",
-        "illuminate/cache": "^10.0|^11.0|^12.0",
-        "symfony/psr-http-message-bridge": "^2.0|^3.0",
+        "bootdesk/chat-sdk-core": "*",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/http": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/routing": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/cache": "^10.0|^11.0|^12.0|^13.0",
+        "symfony/psr-http-message-bridge": "^5.4|^6.0|^6.4|^7.0|^8.0",
         "nyholm/psr7": "^1.0"
     },
     "require-dev": {

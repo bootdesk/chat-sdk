@@ -22,18 +22,18 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class LinearAdapter implements Adapter
 {
-    private ?string $botUserId = null;
+    protected ?string $botUserId = null;
 
-    private LinearFormatConverter $formatConverter;
+    protected LinearFormatConverter $formatConverter;
 
-    private LinearWebhookVerifier $webhookVerifier;
+    protected LinearWebhookVerifier $webhookVerifier;
 
     public function __construct(
-        private readonly string $apiKey,
-        private readonly ClientInterface $httpClient,
+        protected readonly string $apiKey,
+        protected readonly ClientInterface $httpClient,
         string $webhookSecret,
-        private readonly string $apiUrl = 'https://api.linear.app/graphql',
-        private readonly ?Psr17Factory $psrFactory = null,
+        protected readonly string $apiUrl = 'https://api.linear.app/graphql',
+        protected readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new LinearFormatConverter;
         $this->webhookVerifier = new LinearWebhookVerifier($webhookSecret);
@@ -371,7 +371,7 @@ class LinearAdapter implements Adapter
         return $this->postMessage($threadId, PostableMessage::text($fullText));
     }
 
-    private function renderBody(PostableMessage $message): string
+    protected function renderBody(PostableMessage $message): string
     {
         if ($message->isCard()) {
             return LinearCards::toLinearMarkdown($message->content);
@@ -380,7 +380,7 @@ class LinearAdapter implements Adapter
         return $this->formatConverter->renderPostable($message);
     }
 
-    private function graphqlQuery(string $alias, string $queryBody, array $variables): ?array
+    protected function graphqlQuery(string $alias, string $queryBody, array $variables): ?array
     {
         $varDefs = [];
         $varUses = [];
@@ -407,7 +407,7 @@ class LinearAdapter implements Adapter
         return $data;
     }
 
-    private function graphqlMutation(string $alias, string $mutationBody, array $input): ?array
+    protected function graphqlMutation(string $alias, string $mutationBody, array $input): ?array
     {
         $varDefs = [];
         foreach (array_keys($input) as $key) {
@@ -431,7 +431,7 @@ class LinearAdapter implements Adapter
         return $data;
     }
 
-    private function graphqlRequest(string $query, array $variables): ?array
+    protected function graphqlRequest(string $query, array $variables): ?array
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
 
@@ -462,7 +462,7 @@ class LinearAdapter implements Adapter
         return $data['data'] ?? null;
     }
 
-    private function parseComment(array $payload, string $rawBody): Message
+    protected function parseComment(array $payload, string $rawBody): Message
     {
         $data = $payload['data'] ?? [];
 
@@ -489,7 +489,7 @@ class LinearAdapter implements Adapter
         );
     }
 
-    private function jsonResponse(int $status, string $message): ResponseInterface
+    protected function jsonResponse(int $status, string $message): ResponseInterface
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
 

@@ -21,23 +21,23 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class WebAdapter implements Adapter
 {
-    private ?string $botUserId = null;
+    protected ?string $botUserId = null;
 
-    private WebFormatConverter $formatConverter;
+    protected WebFormatConverter $formatConverter;
 
-    private ?string $resolvedUserId = null;
+    protected ?string $resolvedUserId = null;
 
-    private ?string $resolvedUserName = null;
+    protected ?string $resolvedUserName = null;
 
-    private ?string $conversationId = null;
+    protected ?string $conversationId = null;
 
-    private string $bufferedReply = '';
+    protected string $bufferedReply = '';
 
     public function __construct(
-        private readonly string $userName,
-        private readonly \Closure $getUser,
-        private readonly ?\Closure $threadIdFor = null,
-        private readonly ?Psr17Factory $psrFactory = null,
+        protected readonly string $userName,
+        protected readonly \Closure $getUser,
+        protected readonly ?\Closure $threadIdFor = null,
+        protected readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new WebFormatConverter;
     }
@@ -288,7 +288,7 @@ class WebAdapter implements Adapter
         return $this->resolvedUserId !== null;
     }
 
-    private function resetState(): void
+    protected function resetState(): void
     {
         $this->resolvedUserId = null;
         $this->resolvedUserName = null;
@@ -296,7 +296,7 @@ class WebAdapter implements Adapter
         $this->bufferedReply = '';
     }
 
-    private function findLastUserMessage(array $messages): ?array
+    protected function findLastUserMessage(array $messages): ?array
     {
         for ($i = count($messages) - 1; $i >= 0; $i--) {
             if (($messages[$i]['role'] ?? '') === 'user') {
@@ -307,7 +307,7 @@ class WebAdapter implements Adapter
         return null;
     }
 
-    private function jsonError(int $status, string $message): ResponseInterface
+    protected function jsonError(int $status, string $message): ResponseInterface
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
 
@@ -316,7 +316,7 @@ class WebAdapter implements Adapter
             ->withBody($factory->createStream(json_encode(['error' => $message])));
     }
 
-    private function generateId(): string
+    protected function generateId(): string
     {
         return 'web-'.bin2hex(random_bytes(8));
     }

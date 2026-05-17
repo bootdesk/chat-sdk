@@ -1,11 +1,11 @@
-# bootdesk/adapter-web
+# bootdesk/chat-sdk-adapter-web
 
 Generic web/REST adapter for the laravel-bootdesk multi-platform messaging framework.
 
 ## Install
 
 ```bash
-composer require bootdesk/adapter-web
+composer require bootdesk/chat-sdk-adapter-web
 ```
 
 ## Configuration

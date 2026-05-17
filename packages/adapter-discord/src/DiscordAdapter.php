@@ -22,19 +22,19 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class DiscordAdapter implements Adapter
 {
-    private ?string $botUserId = null;
+    protected ?string $botUserId = null;
 
-    private DiscordFormatConverter $formatConverter;
+    protected DiscordFormatConverter $formatConverter;
 
-    private ?DiscordWebhookVerifier $webhookVerifier = null;
+    protected ?DiscordWebhookVerifier $webhookVerifier = null;
 
     public function __construct(
-        private readonly string $botToken,
-        private readonly ClientInterface $httpClient,
+        protected readonly string $botToken,
+        protected readonly ClientInterface $httpClient,
         string $publicKey,
-        private readonly string $applicationId,
-        private readonly string $apiUrl = 'https://discord.com/api/v10',
-        private readonly ?Psr17Factory $psrFactory = null,
+        protected readonly string $applicationId,
+        protected readonly string $apiUrl = 'https://discord.com/api/v10',
+        protected readonly ?Psr17Factory $psrFactory = null,
     ) {
         $this->formatConverter = new DiscordFormatConverter;
         $this->webhookVerifier = new DiscordWebhookVerifier($publicKey);
@@ -326,7 +326,7 @@ class DiscordAdapter implements Adapter
         return $this->postMessage($threadId, PostableMessage::text($fullText));
     }
 
-    private function parseComponentInteraction(array $interaction, string $rawBody): Message
+    protected function parseComponentInteraction(array $interaction, string $rawBody): Message
     {
         $customId = $interaction['data']['custom_id'] ?? '';
         $decoded = DiscordCards::decodeCustomId($customId);
@@ -353,7 +353,7 @@ class DiscordAdapter implements Adapter
         );
     }
 
-    private function parseGatewayEvent(array $event, string $rawBody): Message
+    protected function parseGatewayEvent(array $event, string $rawBody): Message
     {
         $data = $event['data'] ?? [];
 
@@ -387,7 +387,7 @@ class DiscordAdapter implements Adapter
         );
     }
 
-    private function buildMessageParams(PostableMessage $message): array
+    protected function buildMessageParams(PostableMessage $message): array
     {
         if ($message->isCard()) {
             $payload = DiscordCards::toDiscordPayload($message->content);
@@ -408,7 +408,7 @@ class DiscordAdapter implements Adapter
         return ['content' => $content];
     }
 
-    private function apiCall(string $endpoint, array $params, string $method = 'POST'): array
+    protected function apiCall(string $endpoint, array $params, string $method = 'POST'): array
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
         $url = "{$this->apiUrl}{$endpoint}";

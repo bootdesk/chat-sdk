@@ -3,6 +3,7 @@
 namespace BootDesk\ChatSDK\Laravel;
 
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Contracts\AdapterResolver;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Core\Support\AdapterRegistry;
 use BootDesk\ChatSDK\Laravel\Commands\ChatInstallCommand;
@@ -11,6 +12,7 @@ use BootDesk\ChatSDK\Laravel\Commands\ChatMakeAdapterCommand;
 use BootDesk\ChatSDK\Laravel\State\CacheStateAdapter;
 use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -29,7 +31,7 @@ class ChatServiceProvider extends ServiceProvider
         $this->bindPsr17();
         $this->bindHttpClient();
 
-        $this->app->singleton(StateAdapter::class, function ($app): CacheStateAdapter {
+        $this->app->singleton(StateAdapter::class, function (Application $app): CacheStateAdapter {
             return new CacheStateAdapter(
                 cacheFactory: $app->make(CacheFactory::class),
                 store: config('chat.state.store', 'file'),
@@ -37,7 +39,7 @@ class ChatServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->singleton(Chat::class, function ($app): Chat {
+        $this->app->singleton(Chat::class, function (Application $app): Chat {
             $identity = null;
             if ($app->bound('chat.identity')) {
                 $identity = $app->make('chat.identity');
@@ -51,6 +53,8 @@ class ChatServiceProvider extends ServiceProvider
                     'lock_scope' => config('chat.lock_scope', 'thread'),
                     'logger' => $app->bound('log') ? $app->make('log') : null,
                 ],
+                adapterResolver: $app->bound(AdapterResolver::class) ?
+                    $app->make(AdapterResolver::class) : null,
                 responseFactory: $app->make(ResponseFactoryInterface::class),
                 identity: $identity,
                 transcripts: config('chat.transcripts'),
@@ -91,7 +95,7 @@ class ChatServiceProvider extends ServiceProvider
         $this->app->bind(ClientInterface::class, GuzzleClient::class);
     }
 
-    private function resolveAdapters($app): array
+    private function resolveAdapters(Application $app): array
     {
         $adapters = [];
         $configured = config('chat.adapters', []);

@@ -1,10 +1,11 @@
 {
-    "name": "bootdesk/adapter-messenger",
-    "description": "Facebook Messenger adapter for bootdesk/core",
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "bootdesk/chat-sdk-adapter-messenger",
+    "description": "Facebook Messenger adapter for bootdesk/chat-sdk-core",
     "type": "library",
     "require": {
         "php": ">=8.2",
-        "bootdesk/core": "*",
+        "bootdesk/chat-sdk-core": "*",
         "ext-json": "*",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0"
@@ -15,7 +16,10 @@
     "autoload": {
         "psr-4": {
             "BootDesk\\ChatSDK\\Messenger\\": "src/"
-        }
+        },
+        "files": [
+            "src/register.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

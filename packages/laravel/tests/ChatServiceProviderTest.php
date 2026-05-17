@@ -93,9 +93,8 @@ class ChatServiceProviderTest extends TestCase
 
         $result = $this->artisan('chat:list');
         $result->assertSuccessful();
-        $result->expectsTable(['Adapter', 'Status', 'Name'], [
-            ['slack', '<fg=red>Not installed</>', '-'],
-        ]);
+
+        $result->expectsOutputToContain('Registered globally');
     }
 
     public function test_handler_registration(): void
@@ -115,6 +114,9 @@ class ChatServiceProviderTest extends TestCase
         $this->app['config']->set('chat.handlers', [$handlerClass]);
         $this->app->register(ChatServiceProvider::class);
 
+        /**
+         * @var ChatServiceProvider
+         */
         $provider = $this->app->getProvider(ChatServiceProvider::class);
         $provider->boot();
 

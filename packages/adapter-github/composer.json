@@ -1,10 +1,11 @@
 {
-    "name": "bootdesk/adapter-github",
-    "description": "GitHub adapter for bootdesk/core",
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "bootdesk/chat-sdk-adapter-github",
+    "description": "GitHub adapter for bootdesk/chat-sdk-core",
     "type": "library",
     "require": {
         "php": ">=8.2",
-        "bootdesk/core": "*",
+        "bootdesk/chat-sdk-core": "*",
         "ext-json": "*",
         "ext-curl": "*",
         "psr/http-client": "^1.0",
@@ -16,7 +17,10 @@
     "autoload": {
         "psr-4": {
             "BootDesk\\ChatSDK\\GitHub\\": "src/"
-        }
+        },
+        "files": [
+            "src/register.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

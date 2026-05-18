@@ -27,6 +27,11 @@ new WhatsAppAdapter(
 ## thread ID format
 `whatsapp:{phoneNumberId}:{fromNumber}` — per-user thread based on sender's phone number
 
+## contracts implemented
+- `HandlesReactions` — `parseReaction()` for reaction webhook events
+- `HandlesStatuses` — `parseStatus()` for message delivered/read statuses
+- `AdapterHasMessagingWindow` — 24h messaging window with per-user tracking key
+
 ## webhook flow
 1. `verifyWebhook` — responds to `hub.verify_token` challenge; verifies request signature
 2. `parseWebhook` — extracts text, interactive replies, button responses, template sends

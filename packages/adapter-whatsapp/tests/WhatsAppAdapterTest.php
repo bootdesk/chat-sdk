@@ -5,6 +5,7 @@ namespace BootDesk\ChatSDK\WhatsApp\Tests;
 use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Contracts\AdapterHasMessagingWindow;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
 use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\PostableMessage;
@@ -563,5 +564,163 @@ class WhatsAppAdapterTest extends TestCase
     {
         $result = $this->adapter->stream('whatsapp:phone123:999', []);
         $this->assertNull($result);
+    }
+
+    public function test_stream_collects_and_posts(): void
+    {
+        $sent = $this->adapter->stream(
+            'whatsapp:phone123:5511999999999',
+            ['Hello ', 'world', '!'],
+        );
+
+        $this->assertNotNull($sent);
+        $this->assertSame('wamid.HBgMMTIzNDU2Nzg5MB==', $sent->id);
+    }
+
+    public function test_delete_message(): void
+    {
+        $this->adapter->deleteMessage('whatsapp:phone123:5511999999999', 'wamid.123');
+        $this->assertTrue(true);
+    }
+
+    public function test_api_call_throws_authentication_exception_on_auth_error(): void
+    {
+        $factory = new Psr17Factory;
+        $mockClient = new class implements ClientInterface
+        {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $f = new Psr17Factory;
+
+                return $f->createResponse(200)->withBody(
+                    $f->createStream(json_encode(['error' => ['code' => 401, 'message' => 'Invalid credentials']]))
+                );
+            }
+        };
+
+        $adapter = new WhatsAppAdapter(
+            accessToken: 'bad-token',
+            phoneNumberId: 'phone123',
+            appSecret: 'secret',
+            verifyToken: 'verify',
+            httpClient: $mockClient,
+            psrFactory: $factory,
+        );
+
+        $this->expectException(AuthenticationException::class);
+        $adapter->postMessage('whatsapp:phone123:5511999999999', PostableMessage::text('test'));
+    }
+
+    public function test_implements_messaging_window(): void
+    {
+        $this->assertInstanceOf(AdapterHasMessagingWindow::class, $this->adapter);
+        $this->assertSame(86400, $this->adapter->getMessagingWindowSeconds());
+    }
+
+    public function test_tracking_key(): void
+    {
+        $key = $this->adapter->getTrackingKey('whatsapp:phone123:5511999999999');
+        $this->assertSame('whatsapp:5511999999999', $key);
+    }
+
+    public function test_parse_status_delivered(): void
+    {
+        $body = json_encode([
+            'entry' => [[
+                'changes' => [[
+                    'field' => 'messages',
+                    'value' => [
+                        'metadata' => ['phone_number_id' => 'phone123'],
+                        'statuses' => [[
+                            'id' => 'wamid.delivered123',
+                            'recipient_id' => '5511999999999',
+                            'status' => 'delivered',
+                            'timestamp' => '1700000000',
+                        ]],
+                    ],
+                ]],
+            ]],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/whatsapp')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseStatus($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('delivered', $result['type']);
+        $this->assertSame(['wamid.delivered123'], $result['messageIds']);
+        $this->assertSame(1700000000, $result['timestamp']);
+    }
+
+    public function test_parse_status_read(): void
+    {
+        $body = json_encode([
+            'entry' => [[
+                'changes' => [[
+                    'field' => 'messages',
+                    'value' => [
+                        'metadata' => ['phone_number_id' => 'phone123'],
+                        'statuses' => [[
+                            'id' => 'wamid.read456',
+                            'recipient_id' => '5511999999998',
+                            'status' => 'read',
+                            'timestamp' => '1700000001',
+                        ]],
+                    ],
+                ]],
+            ]],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/whatsapp')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseStatus($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('read', $result['type']);
+        $this->assertSame('5511999999998', $result['userId']);
+    }
+
+    public function test_parse_status_ignores_sent(): void
+    {
+        $body = json_encode([
+            'entry' => [[
+                'changes' => [[
+                    'field' => 'messages',
+                    'value' => [
+                        'metadata' => ['phone_number_id' => 'phone123'],
+                        'statuses' => [[
+                            'id' => 'wamid.sent789',
+                            'recipient_id' => '5511999999997',
+                            'status' => 'sent',
+                            'timestamp' => '1700000002',
+                        ]],
+                    ],
+                ]],
+            ]],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/whatsapp')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseStatus($request));
+    }
+
+    public function test_parse_status_not_messages_field(): void
+    {
+        $body = json_encode([
+            'entry' => [[
+                'changes' => [[
+                    'field' => 'other',
+                    'value' => ['statuses' => [['status' => 'delivered']]],
+                ]],
+            ]],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/whatsapp')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseStatus($request));
     }
 }

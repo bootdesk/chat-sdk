@@ -2,18 +2,25 @@
 
 namespace BootDesk\ChatSDK\WhatsApp;
 
+use BootDesk\ChatSDK\Core\Attachment;
 use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Contracts\AdapterHasMessagingWindow;
+use BootDesk\ChatSDK\Core\Contracts\FileUploadConverter;
 use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
+use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
+use BootDesk\ChatSDK\Core\Contracts\HandlesStatuses;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\FetchOptions;
 use BootDesk\ChatSDK\Core\FetchResult;
 use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\SentMessage;
+use BootDesk\ChatSDK\Core\Support\NullFileUploadConverter;
 use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Core\UserInfo;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -21,7 +28,7 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class WhatsAppAdapter implements Adapter
+class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesReactions, HandlesStatuses
 {
     protected ?string $botUserId = null;
 
@@ -31,6 +38,8 @@ class WhatsAppAdapter implements Adapter
 
     protected ?StateAdapter $state = null;
 
+    protected FileUploadConverter $fileUploadConverter;
+
     public function __construct(
         protected readonly string $accessToken,
         protected readonly ClientInterface $httpClient,
@@ -39,8 +48,10 @@ class WhatsAppAdapter implements Adapter
         ?string $verifyToken = null,
         protected readonly string $apiUrl = 'https://graph.facebook.com/v21.0',
         protected readonly ?Psr17Factory $psrFactory = null,
+        ?FileUploadConverter $fileUploadConverter = null,
     ) {
         $this->formatConverter = new WhatsAppFormatConverter;
+        $this->fileUploadConverter = $fileUploadConverter ?? new NullFileUploadConverter;
 
         if ($appSecret !== null && $verifyToken !== null) {
             $this->webhookVerifier = new WhatsAppWebhookVerifier($appSecret, $verifyToken);
@@ -50,6 +61,19 @@ class WhatsAppAdapter implements Adapter
     public function getName(): string
     {
         return 'whatsapp';
+    }
+
+    public function getMessagingWindowSeconds(): ?int
+    {
+        return 86400; // 24 hours
+    }
+
+    public function getTrackingKey(string $threadId): string
+    {
+        $parts = explode(':', $threadId, 3);
+        $userWaId = $parts[2] ?? $parts[1] ?? '';
+
+        return "{$this->getName()}:{$userWaId}";
     }
 
     public function getBotUserId(): ?string
@@ -79,6 +103,100 @@ class WhatsAppAdapter implements Adapter
 
         if ($this->webhookVerifier instanceof WhatsAppWebhookVerifier) {
             $this->webhookVerifier->verifyWebhookSignature($request, $body);
+        }
+
+        return null;
+    }
+
+    public function parseReaction(ServerRequestInterface $request): ?array
+    {
+        $body = (string) $request->getBody();
+        $payload = json_decode($body, true);
+
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        foreach ($payload['entry'] ?? [] as $entry) {
+            foreach ($entry['changes'] ?? [] as $change) {
+                if (($change['field'] ?? '') !== 'messages') {
+                    continue;
+                }
+
+                $value = $change['value'] ?? [];
+                $messages = $value['messages'] ?? [];
+                $phoneNumberId = $value['metadata']['phone_number_id'] ?? $this->phoneNumberId;
+
+                foreach ($messages as $msg) {
+                    $reaction = $msg['reaction'] ?? null;
+                    if ($reaction === null || ($msg['type'] ?? '') !== 'reaction') {
+                        continue;
+                    }
+
+                    $rawEmoji = $reaction['emoji'] ?? '';
+                    $added = $rawEmoji !== '';
+
+                    $threadId = $this->encodeThreadId([
+                        'phoneNumberId' => $phoneNumberId,
+                        'userWaId' => $msg['from'],
+                    ]);
+
+                    return [
+                        'emoji' => $rawEmoji,
+                        'rawEmoji' => $rawEmoji,
+                        'added' => $added,
+                        'threadId' => $threadId,
+                        'messageId' => $reaction['message_id'],
+                        'userId' => $msg['from'],
+                        'raw' => $payload,
+                    ];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public function parseStatus(ServerRequestInterface $request): ?array
+    {
+        $body = (string) $request->getBody();
+        $payload = json_decode($body, true);
+
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        foreach ($payload['entry'] ?? [] as $entry) {
+            foreach ($entry['changes'] ?? [] as $change) {
+                if (($change['field'] ?? '') !== 'messages') {
+                    continue;
+                }
+
+                $value = $change['value'] ?? [];
+                $phoneNumberId = $value['metadata']['phone_number_id'] ?? $this->phoneNumberId;
+
+                foreach ($value['statuses'] ?? [] as $status) {
+                    $statusType = $status['status'] ?? '';
+                    if ($statusType !== 'delivered' && $statusType !== 'read') {
+                        continue;
+                    }
+
+                    $recipientId = $status['recipient_id'] ?? '';
+                    $threadId = $this->encodeThreadId([
+                        'phoneNumberId' => $phoneNumberId,
+                        'userWaId' => $recipientId,
+                    ]);
+
+                    return [
+                        'type' => $statusType,
+                        'messageIds' => [$status['id'] ?? ''],
+                        'threadId' => $threadId,
+                        'userId' => $recipientId,
+                        'timestamp' => (int) ($status['timestamp'] ?? 0),
+                        'raw' => $payload,
+                    ];
+                }
+            }
         }
 
         return null;
@@ -144,6 +262,51 @@ class WhatsAppAdapter implements Adapter
     public function postMessage(string $threadId, PostableMessage $message): SentMessage
     {
         $decoded = $this->decodeThreadId($threadId);
+
+        // Convert files to attachments via the registered converter
+        if ($message->files !== []) {
+            $converted = [];
+            foreach ($message->files as $file) {
+                $converted[] = $this->fileUploadConverter->upload($file, $this);
+            }
+            $message = new PostableMessage(
+                content: $message->content,
+                replyToMessageId: $message->replyToMessageId,
+                attachments: array_merge($message->attachments, $converted),
+            );
+        }
+
+        // Attachments take priority
+        if ($message->attachments !== []) {
+            $att = $message->attachments[0];
+            $text = $message->getTextContent();
+            $params = [
+                'messaging_product' => 'whatsapp',
+                'type' => match ($att->type) {
+                    'image' => 'image',
+                    'video' => 'video',
+                    'audio' => 'audio',
+                    default => 'document',
+                },
+            ];
+
+            $mediaField = $params['type'];
+            $params[$mediaField] = ['link' => $att->url];
+            if ($att->name !== null && $mediaField === 'document') {
+                $params[$mediaField]['filename'] = $att->name;
+            }
+            if ($text !== '') {
+                $params[$mediaField]['caption'] = $text;
+            }
+
+            $params = $this->addRecipientParam($params, $decoded['userWaId']);
+            $response = $this->apiCall("/{$this->phoneNumberId}/messages", $params);
+
+            $msgId = $response['messages'][0]['id'] ?? uniqid('wa_', true);
+
+            return new SentMessage(id: $msgId, threadId: $threadId);
+        }
+
         $params = $this->buildMessageParams($message);
         $params = $this->addRecipientParam($params, $decoded['userWaId']);
         $params['messaging_product'] = 'whatsapp';
@@ -329,9 +492,53 @@ class WhatsAppAdapter implements Adapter
                 isBot: false,
             ),
             text: $text,
+            attachments: $this->extractAttachments($msg),
             isDM: true,
             raw: $rawBody,
         );
+    }
+
+    /** @return Attachment[] */
+    protected function extractAttachments(array $msg): array
+    {
+        $attachments = [];
+
+        if (isset($msg['image'])) {
+            $attachments[] = new Attachment(
+                type: 'image',
+                name: $msg['image']['caption'] ?? null,
+                mimeType: $msg['image']['mime_type'] ?? null,
+                fetchMetadata: ['media_id' => $msg['image']['id']],
+            );
+        }
+
+        if (isset($msg['document'])) {
+            $attachments[] = new Attachment(
+                type: 'file',
+                name: $msg['document']['filename'] ?? null,
+                mimeType: $msg['document']['mime_type'] ?? null,
+                fetchMetadata: ['media_id' => $msg['document']['id']],
+            );
+        }
+
+        if (isset($msg['audio'])) {
+            $attachments[] = new Attachment(
+                type: 'audio',
+                mimeType: $msg['audio']['mime_type'] ?? null,
+                fetchMetadata: ['media_id' => $msg['audio']['id']],
+            );
+        }
+
+        if (isset($msg['video'])) {
+            $attachments[] = new Attachment(
+                type: 'video',
+                name: $msg['video']['caption'] ?? null,
+                mimeType: $msg['video']['mime_type'] ?? null,
+                fetchMetadata: ['media_id' => $msg['video']['id']],
+            );
+        }
+
+        return $attachments;
     }
 
     protected function addRecipientParam(array $params, string $userWaId): array
@@ -403,6 +610,12 @@ class WhatsAppAdapter implements Adapter
 
         if (isset($data['error'])) {
             $error = $data['error']['message'] ?? ($data['error']['code'] ?? 'unknown_error');
+            $code = $data['error']['code'] ?? 0;
+
+            if (in_array($code, [401, 403], true)) {
+                throw new AuthenticationException("WhatsApp API authentication error ({$endpoint}): {$error}");
+            }
+
             throw new AdapterException("WhatsApp API error ({$endpoint}): {$error}");
         }
 

@@ -25,10 +25,30 @@ jobs:
             exit 1
           fi
 
-      - name: Create tag
+      - name: Update package versions
+        run: |
+          VERSION="${{ inputs.version }}"
+          CARET="^$VERSION"
+          for file in packages/*/composer.json; do
+            jq --arg ver "$VERSION" --arg req "$CARET" '
+              .version = $ver |
+              .require |= with_entries(
+                if .key | startswith("bootdesk/") then
+                  .value = $req
+                else . end
+              )
+            ' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
+          done
+
+      - name: Commit version bump
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+          git add packages/*/composer.json
+          git commit -m "chore: bump package versions to v${{ inputs.version }}"
+
+      - name: Create tag
+        run: |
           git tag -a "v${{ inputs.version }}" -m "Release v${{ inputs.version }}"
           git push origin --force "v${{ inputs.version }}"
 

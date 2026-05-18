@@ -521,9 +521,14 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
 
         foreach ($message->attachments as $att) {
             $name = $att->name ?? 'Attachment';
-            $lines[] = $att->url !== null
-                ? "[{$name}]({$att->url})"
-                : $name;
+
+            if ($att->url === null) {
+                $lines[] = $name;
+            } elseif ($att->type === 'image') {
+                $lines[] = "![{$name}]({$att->url})";
+            } else {
+                $lines[] = "[{$name}]({$att->url})";
+            }
         }
 
         if ($lines === []) {

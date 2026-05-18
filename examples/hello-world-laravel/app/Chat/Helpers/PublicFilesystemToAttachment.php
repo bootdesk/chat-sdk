@@ -37,7 +37,7 @@ class PublicFilesystemToAttachment implements FileUploadConverter
 
         return new Attachment(
             type: $type,
-            url: $diskInstance->publicUrl($storagePath),
+            url: $diskInstance->url($storagePath),
             mimeType: $mimeType,
             name: $file->filename
         );

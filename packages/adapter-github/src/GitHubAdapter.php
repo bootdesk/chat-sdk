@@ -150,6 +150,7 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
             'text' => $args,
             'userId' => (string) ($comment['user']['id'] ?? ''),
             'isBot' => ($comment['user']['type'] ?? '') === 'Bot',
+            'isMe' => $this->botUserId !== null && (string) ($comment['user']['id'] ?? '') === $this->botUserId,
             'channelId' => $channelId,
             'triggerId' => null,
             'raw' => $body,
@@ -741,6 +742,7 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
             author: new Author(
                 id: (string) ($comment['user']['id'] ?? ''),
                 isBot: ($comment['user']['type'] ?? '') === 'Bot',
+                isMe: $this->botUserId !== null && (string) ($comment['user']['id'] ?? '') === $this->botUserId,
             ),
             text: $comment['body'] ?? '',
             isDM: false,
@@ -772,6 +774,7 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
             author: new Author(
                 id: (string) ($comment['user']['id'] ?? ''),
                 isBot: ($comment['user']['type'] ?? '') === 'Bot',
+                isMe: $this->botUserId !== null && (string) ($comment['user']['id'] ?? '') === $this->botUserId,
             ),
             text: $comment['body'] ?? '',
             isDM: false,

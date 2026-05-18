@@ -7,6 +7,7 @@ use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Laravel\ChatFacade;
 use BootDesk\ChatSDK\Laravel\ChatServiceProvider;
+use BootDesk\ChatSDK\Laravel\Contracts\ChatHandler as ChatHandlerContract;
 use BootDesk\ChatSDK\Laravel\State\CacheStateAdapter;
 use Orchestra\Testbench\TestCase;
 
@@ -99,7 +100,7 @@ class ChatServiceProviderTest extends TestCase
 
     public function test_handler_registration(): void
     {
-        $handler = new class
+        $handler = new class implements ChatHandlerContract
         {
             public bool $registered = false;
 

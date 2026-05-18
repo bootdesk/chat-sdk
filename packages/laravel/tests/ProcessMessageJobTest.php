@@ -25,7 +25,7 @@ class ProcessMessageJobTest extends TestCase
     {
         $chat = $this->app->make(Chat::class);
         $called = false;
-        $chat->onNewMessage(null, function () use (&$called) {
+        $chat->onNewMessage('/.*/', function () use (&$called) {
             $called = true;
         });
 
@@ -46,7 +46,7 @@ class ProcessMessageJobTest extends TestCase
     {
         $chat = $this->app->make(Chat::class);
         $called = false;
-        $chat->onNewMessage(null, function () use (&$called) {
+        $chat->onNewMessage('/.*/', function () use (&$called) {
             $called = true;
         });
 

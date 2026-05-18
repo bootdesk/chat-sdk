@@ -122,8 +122,9 @@ namespace App\Chat;
 
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\MessageContext;
+use BootDesk\ChatSDK\Laravel\Contracts\ChatHandler as ChatHandlerContract;
 
-class ChatHandlers
+class ChatHandlers implements ChatHandlerContract
 {
     public function register(Chat $chat): void
     {

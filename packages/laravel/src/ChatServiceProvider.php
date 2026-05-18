@@ -4,11 +4,15 @@ namespace BootDesk\ChatSDK\Laravel;
 
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\AdapterResolver;
+use BootDesk\ChatSDK\Core\Contracts\FileUploadConverter;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Core\Support\AdapterRegistry;
+use BootDesk\ChatSDK\Core\Support\NullFileUploadConverter;
 use BootDesk\ChatSDK\Laravel\Commands\ChatInstallCommand;
 use BootDesk\ChatSDK\Laravel\Commands\ChatListCommand;
 use BootDesk\ChatSDK\Laravel\Commands\ChatMakeAdapterCommand;
+use BootDesk\ChatSDK\Laravel\Contracts\ChatHandler as ChatHandlerContract;
+use BootDesk\ChatSDK\Laravel\Notifications\ChatChannel;
 use BootDesk\ChatSDK\Laravel\State\CacheStateAdapter;
 use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
@@ -80,6 +84,11 @@ class ChatServiceProvider extends ServiceProvider
 
         // Register handler classes from config
         $this->registerHandlers();
+
+        // Register notification channel
+        $this->app->bind(ChatChannel::class, function (Application $app): ChatChannel {
+            return new ChatChannel($app->make(Chat::class));
+        });
     }
 
     private function bindPsr17(): void
@@ -99,6 +108,9 @@ class ChatServiceProvider extends ServiceProvider
     {
         $adapters = [];
         $configured = config('chat.adapters', []);
+        $fileUploadConverter = $app->bound(FileUploadConverter::class)
+            ? $app->make(FileUploadConverter::class)
+            : new NullFileUploadConverter;
 
         foreach ($configured as $name => $adapterConfig) {
             $class = $this->adapterClass($name);
@@ -108,6 +120,7 @@ class ChatServiceProvider extends ServiceProvider
                 foreach (($adapterConfig ?? []) as $key => $value) {
                     $normalized[Str::camel($key)] = $value;
                 }
+                $normalized['fileUploadConverter'] = $fileUploadConverter;
                 $adapters[$name] = $app->make($class, $normalized);
             }
         }
@@ -127,7 +140,7 @@ class ChatServiceProvider extends ServiceProvider
         foreach (config('chat.handlers', []) as $handlerClass) {
             if (class_exists($handlerClass)) {
                 $handler = $this->app->make($handlerClass);
-                if (method_exists($handler, 'register')) {
+                if ($handler instanceof ChatHandlerContract) {
                     $handler->register($chat);
                 }
             }

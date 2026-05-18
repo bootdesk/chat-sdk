@@ -177,6 +177,24 @@ class ChatHandlers implements ChatHandler
             $ctx->thread->post($card);
         });
 
+        $chat->onNewMessage('/^thread$/i', function (MessageContext $ctx) {
+            $info = $ctx->thread->adapter->fetchThread($ctx->thread->id);
+
+            $card = Card::make()
+                ->header('Thread Info')
+                ->table(
+                    ['Property', 'Value'],
+                    [
+                        ['ID', $info->id],
+                        ['Channel ID', $info->channelId],
+                        ['Title', $info->title ?? 'N/A'],
+                        ['Messages', (string) ($info->messageCount ?? 'N/A')],
+                    ],
+                );
+
+            $ctx->thread->post($card);
+        });
+
         // Slash commands — only use for platform-native features.
         // Prefer pattern-matched handlers above for cross-platform compatibility,
         // since some platforms don't support arbitrary slash command registration.

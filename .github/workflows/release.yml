@@ -33,7 +33,7 @@ jobs:
           git push origin "v${{ inputs.version }}"
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ inputs.version }}
           name: v${{ inputs.version }}
@@ -73,13 +73,19 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: bootdesk
 
-      - uses: danharrin/monorepo-split-github-action@v2.4.5
+      - name: Split and push package
         env:
-          PAT: "${{ secrets.PAT }}"
-        with:
-          tag: v${{ inputs.version }}
-          package_directory: packages/${{ matrix.package.local_path }}
-          repository_organization: bootdesk
-          repository_name: ${{ matrix.package.split_repository }}
-          user_name: github-actions
-          user_email: github-actions@github.com
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          REPO="bootdesk/${{ matrix.package.split_repository }}"
+          TAG="v${{ inputs.version }}"
+          PREFIX="packages/${{ matrix.package.local_path }}"
+          SPLIT_BRANCH="split-${{ matrix.package.split_repository }}-$TAG"
+
+          git branch -D "$SPLIT_BRANCH" 2>/dev/null || true
+          git subtree split --prefix="$PREFIX" -b "$SPLIT_BRANCH"
+
+          git push "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" \
+            "$SPLIT_BRANCH:main" --force
+          git push "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" \
+            "$TAG" --force

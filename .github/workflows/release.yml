@@ -123,7 +123,7 @@ jobs:
           git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate-token.outputs.app-slug }}[bot]@users.noreply.github.com'
           gh auth setup-git
 
-          git push "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" \
+          git push "https://github.com/$REPO.git" \
             "$SPLIT_BRANCH:main" --force
-          git push "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" \
+          git push "https://github.com/$REPO.git" \
             "$TAG" --force

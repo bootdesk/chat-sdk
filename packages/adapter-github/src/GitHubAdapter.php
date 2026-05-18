@@ -665,7 +665,7 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
 
         // Determine auth token
         $owner = $repo = '';
-        if (preg_match('#^repos/([^/]+)/([^/]+)/#', $endpoint, $m)) {
+        if (preg_match('#^repos/([^/]+)/([^/]+)(/|$)#', $endpoint, $m)) {
             $owner = $m[1];
             $repo = $m[2];
         }

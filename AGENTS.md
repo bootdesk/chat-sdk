@@ -23,9 +23,14 @@ CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> forma
 - `core` is framework-agnostic, never depends on adapters
 - `laravel` depends on core only; discovers adapters at runtime via `class_exists()` + config
 - adapters implement `BootDesk\ChatSDK\Core\Contracts\Adapter`
+- Optional adapter contracts: `HandlesActions`, `HandlesSlashCommands`, `HandlesReactions`, `HandlesModals`, `HandlesOptionsLoad`, `HandlesSlackEvents`, `SupportsModals`, `AdapterHasMessagingWindow`
 - thread IDs are canonical: `"{adapter}:{platformChannelId}:{platformThreadId}"` (e.g., `slack:C123:1234567890.123456`)
 - concurrency strategies: `drop`, `queue`, `debounce`, `concurrent` (default: drop)
 - state is pluggable via `StateAdapter`; Laravel uses `CacheStateAdapter`
+- attachments: URL-based `Attachment` objects handled by all adapters; binary `FileUpload` objects handled natively by Slack/TG/Discord, converted via `FileUploadConverter` on others
+- multipart uploads use `php-http/multipart-stream-builder`
+- Modals: platform-agnostic `Modals\Modal`, `Modals\TextInput`, `Modals\Select`, `Modals\ExternalSelect`, `Modals\RadioSelect` value objects; converted to platform-native via each adapter (Slack uses `SlackModalConverter`)
+- `ActionEvent` and `SlashCommandEvent` expose `openModal(Modal $modal)` via the `OpensModals` trait`
 
 ## entrypoints
 - `BootDesk\ChatSDK\Core\Chat` -- orchestrator (handleWebhook, processMessage, onNewMessage, etc.)

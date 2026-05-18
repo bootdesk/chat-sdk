@@ -1,22 +1,23 @@
 {
-    "name": "bootdesk/chat-sdk-botman-compat",
-    "description": "BotMan compatibility shim for bootdesk",
-    "type": "library",
-    "license": "MIT",
-    "require": {
-        "php": ">=8.2",
-        "bootdesk/chat-sdk-core": "*"
-    },
-    "autoload": {
-        "psr-4": {
-            "BotMan\\BotMan\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "BotMan\\BotMan\\Tests\\": "tests/"
-        }
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true
+  "name": "bootdesk/chat-sdk-botman-compat",
+  "description": "BotMan compatibility shim for bootdesk",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.2",
+    "bootdesk/chat-sdk-core": "^0.2.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "BotMan\\BotMan\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "BotMan\\BotMan\\Tests\\": "tests/"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "version": "0.2.2"
 }

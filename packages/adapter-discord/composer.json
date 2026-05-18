@@ -17,15 +17,15 @@
     "autoload": {
         "psr-4": {
             "BootDesk\\ChatSDK\\Discord\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "BootDesk\\ChatSDK\\Discord\\Tests\\": "tests/"
         },
         "files": [
             "src/register.php"
         ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "BootDesk\\ChatSDK\\Discord\\Tests\\": "tests/"
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true

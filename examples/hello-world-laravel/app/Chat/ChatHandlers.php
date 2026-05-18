@@ -49,7 +49,7 @@ class ChatHandlers implements ChatHandler
 
         // Pattern-matched messages (unsubscribed threads only — including DMs)
         $chat->onNewMessage('/^(hello|hi|hey)$/i', function (MessageContext $ctx) {
-            $ctx->thread->adapter->addReaction($ctx->thread->id, $ctx->message->id, '👍');
+            $ctx->thread->addReaction($ctx->message->id, '👍');
 
             $reply = $ctx->message->isDM
                 ? 'Hey there! I\'m a bot. Send `/help` to see what I can do.'
@@ -59,7 +59,7 @@ class ChatHandlers implements ChatHandler
         });
 
         $chat->onNewMessage('/^order\s+(.+)$/i', function (MessageContext $ctx) {
-            $ctx->thread->adapter->addReaction($ctx->thread->id, $ctx->message->id, '👍');
+            $ctx->thread->addReaction($ctx->message->id, '👍');
 
             $item = trim(preg_replace('/^order\s+/i', '', $ctx->message->text));
 
@@ -75,7 +75,7 @@ class ChatHandlers implements ChatHandler
         });
 
         $chat->onNewMessage('/^status$/i', function (MessageContext $ctx) {
-            $ctx->thread->adapter->addReaction($ctx->thread->id, $ctx->message->id, '👍');
+            $ctx->thread->addReaction($ctx->message->id, '👍');
             $card = Card::make()
                 ->header('System Status')
                 ->imageUrl('https://picsum.photos/seed/status/800/200', 'System status banner')
@@ -98,7 +98,7 @@ class ChatHandlers implements ChatHandler
         });
 
         $chat->onNewMessage('/^photo\s+(.+)$/i', function (MessageContext $ctx) {
-            $ctx->thread->adapter->addReaction($ctx->thread->id, $ctx->message->id, '👍');
+            $ctx->thread->addReaction($ctx->message->id, '👍');
             $query = trim(preg_replace('/^photo\s+/i', '', $ctx->message->text));
             $seed = urlencode($query);
 
@@ -111,7 +111,7 @@ class ChatHandlers implements ChatHandler
         });
 
         $chat->onNewMessage('/^photocard$/i', function (MessageContext $ctx) {
-            $ctx->thread->adapter->addReaction($ctx->thread->id, $ctx->message->id, '👍');
+            $ctx->thread->addReaction($ctx->message->id, '👍');
             $card = Card::make()
                 ->imageUrl('https://picsum.photos/seed/demo/800/600', 'Random demo photo')
                 ->header('Demo Photo')
@@ -121,7 +121,7 @@ class ChatHandlers implements ChatHandler
         });
 
         $chat->onNewMessage('/^upload$/i', function (MessageContext $ctx) {
-            $ctx->thread->adapter->addReaction($ctx->thread->id, $ctx->message->id, '👍');
+            $ctx->thread->addReaction($ctx->message->id, '👍');
             $path = sys_get_temp_dir().'/picsum_upload.jpg';
             file_put_contents($path, file_get_contents('https://picsum.photos/seed/upload/800/600'));
 
@@ -134,7 +134,7 @@ class ChatHandlers implements ChatHandler
         });
 
         $chat->onNewMessage('/^bigtable$/i', function (MessageContext $ctx) {
-            $ctx->thread->adapter->addReaction($ctx->thread->id, $ctx->message->id, '👍');
+            $ctx->thread->addReaction($ctx->message->id, '👍');
             $rows = [];
             for ($i = 1; $i <= 105; $i++) {
                 $rows[] = ["Row {$i}", 'Value '.chr(65 + (($i - 1) % 26)), $i % 2 === 0 ? '✅' : '❌'];
@@ -148,7 +148,7 @@ class ChatHandlers implements ChatHandler
         });
 
         $chat->onNewMessage('/^feedback$/i', function (MessageContext $ctx) {
-            $ctx->thread->adapter->addReaction($ctx->thread->id, $ctx->message->id, '👍');
+            $ctx->thread->addReaction($ctx->message->id, '👍');
             $card = Card::make()
                 ->header('Feedback')
                 ->section(fn ($s) => $s->text('Click the button below to open a feedback form.'))
@@ -160,7 +160,7 @@ class ChatHandlers implements ChatHandler
         });
 
         $chat->onNewMessage('/^channel$/i', function (MessageContext $ctx) {
-            $ctx->thread->adapter->addReaction($ctx->thread->id, $ctx->message->id, '👍');
+            $ctx->thread->addReaction($ctx->message->id, '👍');
             $channelId = $ctx->thread->adapter->channelIdFromThreadId($ctx->thread->id);
 
             $channel = new Channel($channelId, $ctx->thread->adapter);
@@ -189,7 +189,7 @@ class ChatHandlers implements ChatHandler
         });
 
         $chat->onNewMessage('/^thread$/i', function (MessageContext $ctx) {
-            $ctx->thread->adapter->addReaction($ctx->thread->id, $ctx->message->id, '👍');
+            $ctx->thread->addReaction($ctx->message->id, '👍');
             $info = $ctx->thread->adapter->fetchThread($ctx->thread->id);
 
             $card = Card::make()

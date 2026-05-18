@@ -38,3 +38,47 @@ jobs:
           tag_name: v${{ inputs.version }}
           name: v${{ inputs.version }}
           generate_release_notes: true
+
+  split:
+    needs: release
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - { local_path: core, split_repository: chat-sdk-core }
+          - { local_path: laravel, split_repository: chat-sdk-laravel }
+          - { local_path: adapter-slack, split_repository: chat-sdk-adapter-slack }
+          - { local_path: adapter-telegram, split_repository: chat-sdk-adapter-telegram }
+          - { local_path: adapter-whatsapp, split_repository: chat-sdk-adapter-whatsapp }
+          - { local_path: adapter-discord, split_repository: chat-sdk-adapter-discord }
+          - { local_path: adapter-messenger, split_repository: chat-sdk-adapter-messenger }
+          - { local_path: adapter-web, split_repository: chat-sdk-adapter-web }
+          - { local_path: adapter-github, split_repository: chat-sdk-adapter-github }
+          - { local_path: adapter-linear, split_repository: chat-sdk-adapter-linear }
+          - { local_path: adapter-telnyx, split_repository: chat-sdk-adapter-telnyx }
+          - { local_path: botman-compat, split_repository: chat-sdk-botman-compat }
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: danharrin/monorepo-split-github-action@v2.4.5
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        with:
+          tag: v${{ inputs.version }}
+          package_directory: packages/${{ matrix.package.local_path }}
+          repository_organization: bootdesk
+          repository_name: ${{ matrix.package.split_repository }}
+          user_name: github-actions
+          user_email: github-actions@github.com

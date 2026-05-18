@@ -63,8 +63,8 @@ class ChatHandlers implements ChatHandler
                 ->header("Order: {$item}")
                 ->section(fn ($s) => $s->text("Confirm your order for **{$item}**?"))
                 ->actions([
-                    Button::primary('Confirm', 'order_confirm', ['item' => $item]),
-                    Button::danger('Cancel', 'order_cancel'),
+                    Button::primary('Confirm', 'order_confirm', ['item' => $item], actionHref: 'https://picsum.photos/seed/'.urlencode($item).'/800/200'),
+                    Button::danger('Cancel', 'order_cancel', actionHref: 'https://picsum.photos/seed/cancel/800/200'),
                 ]);
 
             $ctx->thread->post($card);
@@ -143,7 +143,7 @@ class ChatHandlers implements ChatHandler
                 ->header('Feedback')
                 ->section(fn ($s) => $s->text('Click the button below to open a feedback form.'))
                 ->actions([
-                    Button::primary('Open Feedback Form', 'feedback'),
+                    Button::primary('Open Feedback Form', 'feedback', actionHref: 'https://picsum.photos/seed/feedback/800/200'),
                 ]);
 
             $ctx->thread->post($card);

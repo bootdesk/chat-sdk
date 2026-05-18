@@ -96,7 +96,7 @@ jobs:
         id: generate-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: bootdesk
           permission-contents: write
@@ -128,8 +128,7 @@ jobs:
           git checkout "$SPLIT_BRANCH"
           git tag -f "$TAG"
 
-          git push "https://x-access-token:${TOKEN}@github.com/${REPO}.git" \
-            "$SPLIT_BRANCH:main" --force
+          git remote add target "https://x-access-token:${TOKEN}@github.com/${REPO}.git"
 
-          git push "https://x-access-token:${TOKEN}@github.com/${REPO}.git" \
-            "$TAG" --force
+          git push target "$SPLIT_BRANCH:main" --force
+          git push target "$TAG" --force

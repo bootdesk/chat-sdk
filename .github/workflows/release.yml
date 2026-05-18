@@ -30,7 +30,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git tag -a "v${{ inputs.version }}" -m "Release v${{ inputs.version }}"
-          git push origin "v${{ inputs.version }}"
+          git push origin --force "v${{ inputs.version }}"
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v3
@@ -101,11 +101,12 @@ jobs:
           owner: bootdesk
           permission-contents: write
 
-      - name: Get GitHub App User ID
-        id: get-user-id
-        run: echo "user-id=$(gh api "/users/${{ steps.generate-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+      - name: Debug Token
+        run: |
+          echo "Token length is: ${#TOKEN}"
+          echo "Token starts with: ${TOKEN:0:10}..."
         env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+          TOKEN: ${{ steps.generate-token.outputs.token }}
 
       - name: Split and push package
         env:

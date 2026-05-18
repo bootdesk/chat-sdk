@@ -203,6 +203,153 @@ class TelegramAdapterTest extends TestCase
         $this->assertStringContainsString('**bold**', $message->text);
     }
 
+    public function test_parse_slash_command_detects_bot_command_entity(): void
+    {
+        $body = json_encode([
+            'update_id' => 10,
+            'message' => [
+                'message_id' => 400,
+                'from' => ['id' => 7859184066, 'is_bot' => false, 'first_name' => 'Vin'],
+                'chat' => ['id' => 7859184066, 'type' => 'private'],
+                'date' => 1779043654,
+                'text' => '/unsubscribe',
+                'entities' => [['offset' => 0, 'length' => 12, 'type' => 'bot_command']],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/telegram')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseSlashCommand($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('/unsubscribe', $result['command']);
+        $this->assertSame('', $result['text']);
+        $this->assertSame('7859184066', $result['userId']);
+        $this->assertSame('telegram:7859184066', $result['channelId']);
+        $this->assertFalse($result['isBot']);
+        $this->assertNull($result['triggerId']);
+    }
+
+    public function test_parse_slash_command_with_text(): void
+    {
+        $body = json_encode([
+            'update_id' => 11,
+            'message' => [
+                'message_id' => 401,
+                'from' => ['id' => 123, 'is_bot' => false, 'first_name' => 'Test'],
+                'chat' => ['id' => 456, 'type' => 'group'],
+                'date' => 1779043655,
+                'text' => '/status all good',
+                'entities' => [['offset' => 0, 'length' => 7, 'type' => 'bot_command']],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/telegram')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseSlashCommand($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('/status', $result['command']);
+        $this->assertSame('all good', $result['text']);
+    }
+
+    public function test_parse_slash_command_returns_null_for_regular_message(): void
+    {
+        $body = json_encode([
+            'update_id' => 12,
+            'message' => [
+                'message_id' => 402,
+                'from' => ['id' => 123, 'is_bot' => false, 'first_name' => 'Test'],
+                'chat' => ['id' => 456, 'type' => 'private'],
+                'date' => 1779043656,
+                'text' => 'Hello bot',
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/telegram')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseSlashCommand($request));
+    }
+
+    public function test_parse_slash_command_returns_null_for_text_starting_with_slash_without_entity(): void
+    {
+        $body = json_encode([
+            'update_id' => 13,
+            'message' => [
+                'message_id' => 403,
+                'from' => ['id' => 123, 'is_bot' => false, 'first_name' => 'Test'],
+                'chat' => ['id' => 456, 'type' => 'private'],
+                'date' => 1779043657,
+                'text' => '/not a command',
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/telegram')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseSlashCommand($request));
+    }
+
+    public function test_parse_action_detects_callback_query(): void
+    {
+        $body = json_encode([
+            'update_id' => 20,
+            'callback_query' => [
+                'id' => '6084822427674355899',
+                'from' => ['id' => 7859184066, 'is_bot' => false, 'first_name' => 'Vin'],
+                'message' => [
+                    'message_id' => 97,
+                    'chat' => ['id' => 7859184066, 'type' => 'private'],
+                    'date' => 1779044255,
+                ],
+                'data' => 'chat:{"a":"order_confirm","v":"{\"item\":\"123\"}"}',
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/telegram')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseAction($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('order_confirm', $result['actionId']);
+        $this->assertSame('{"item":"123"}', $result['value']);
+        $this->assertSame('telegram:7859184066', $result['threadId']);
+        $this->assertSame('7859184066:97', $result['messageId']);
+        $this->assertSame('7859184066', $result['userId']);
+        $this->assertFalse($result['isBot']);
+    }
+
+    public function test_parse_action_returns_null_without_callback_query(): void
+    {
+        $body = json_encode(['update_id' => 21, 'message' => ['text' => 'hello']]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/telegram')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseAction($request));
+    }
+
+    public function test_parse_action_returns_null_for_empty_callback_data(): void
+    {
+        $body = json_encode([
+            'update_id' => 22,
+            'callback_query' => [
+                'id' => 'abc123',
+                'from' => ['id' => 1, 'is_bot' => false],
+                'data' => null,
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/telegram')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseAction($request));
+    }
+
     public function test_post_message(): void
     {
         $sent = $this->adapter->postMessage(
@@ -323,6 +470,19 @@ class TelegramAdapterTest extends TestCase
         $this->assertSame('100', $sent->id);
     }
 
+    public function test_remove_reaction(): void
+    {
+        $this->adapter->removeReaction('telegram:12345', '100', '👍');
+        $this->assertTrue(true);
+    }
+
+    public function test_fetch_thread(): void
+    {
+        $info = $this->adapter->fetchThread('telegram:-100123');
+        $this->assertSame('telegram:-100123', $info->id);
+        $this->assertSame('-100123', $info->channelId);
+    }
+
     public function test_fetch_messages_returns_empty(): void
     {
         $result = $this->adapter->fetchMessages('telegram:12345');
@@ -333,5 +493,92 @@ class TelegramAdapterTest extends TestCase
     {
         $this->adapter->disconnect();
         $this->assertTrue(true);
+    }
+
+    public function test_api_call_throws_authentication_exception_on_auth_error(): void
+    {
+        $factory = new Psr17Factory;
+        $mockClient = new class implements ClientInterface
+        {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $f = new Psr17Factory;
+
+                return $f->createResponse(200)->withBody(
+                    $f->createStream(json_encode(['ok' => false, 'error_code' => 401, 'description' => 'Unauthorized']))
+                );
+            }
+        };
+
+        $adapter = new TelegramAdapter(
+            botToken: '123456:BAD',
+            httpClient: $mockClient,
+            psrFactory: $factory,
+        );
+        $adapter->initialize($this->createMock(Chat::class));
+
+        $this->expectException(AuthenticationException::class);
+        $adapter->postMessage('telegram:12345', PostableMessage::text('test'));
+    }
+
+    public function test_parse_reaction_added(): void
+    {
+        $body = json_encode([
+            'message_reaction' => [
+                'chat' => ['id' => -100123],
+                'message_id' => 42,
+                'user' => ['id' => 789],
+                'date' => 1700000000,
+                'old_reaction' => [],
+                'new_reaction' => [['type' => 'emoji', 'emoji' => '👍']],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/telegram')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseReaction($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('👍', $result['emoji']);
+        $this->assertTrue($result['added']);
+    }
+
+    public function test_parse_reaction_removed(): void
+    {
+        $body = json_encode([
+            'message_reaction' => [
+                'chat' => ['id' => -100123],
+                'message_id' => 42,
+                'user' => ['id' => 789],
+                'date' => 1700000000,
+                'old_reaction' => [['type' => 'emoji', 'emoji' => '👍']],
+                'new_reaction' => [],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/telegram')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseReaction($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('👍', $result['emoji']);
+        $this->assertFalse($result['added']);
+    }
+
+    public function test_parse_reaction_skips_non_message_reaction(): void
+    {
+        $body = json_encode(['message' => ['text' => 'hello', 'chat' => ['id' => 123]]]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/telegram')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseReaction($request));
+    }
+
+    public function test_implements_handles_reactions(): void
+    {
+        $this->assertInstanceOf(\BootDesk\ChatSDK\Core\Contracts\HandlesReactions::class, $this->adapter);
     }
 }

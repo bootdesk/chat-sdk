@@ -30,6 +30,9 @@ new TelegramAdapter(
 - Post/edit/delete messages, inline keyboards
 - Typing indicators (sendChatAction)
 - Fetch chat member count, chat info (getChat)
+- File uploads via `sendDocument` (multipart), URL-based attachments via `sendPhoto`/`sendDocument`/`sendAudio`/`sendVideo`
+- Card `imageUrl` uses `sendPhoto` with HTML caption
+- Inbound attachment extraction (photo, document, video, audio, voice)
 - Streaming: splits into chunks (4096 chars max per Telegram limit), sends incrementally
 - Supports HTML parse mode for rich text
 

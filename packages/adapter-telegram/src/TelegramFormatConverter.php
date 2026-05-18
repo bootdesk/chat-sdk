@@ -31,7 +31,7 @@ class TelegramFormatConverter extends BaseFormatConverter
     public function renderPostable(PostableMessage $message): string
     {
         if ($message->isCard()) {
-            return $message->content->getFallbackText();
+            return TelegramCards::toHtmlText($message->content);
         }
 
         return $this->escapeMarkdownV2((string) $message->content);

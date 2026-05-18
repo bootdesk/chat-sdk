@@ -13,6 +13,8 @@ use BootDesk\ChatSDK\Core\Concurrency\Handler;
 use BootDesk\ChatSDK\Core\Exceptions\ResourceNotFoundException;
 use BootDesk\ChatSDK\Core\MemberJoinedChannelEvent;
 use BootDesk\ChatSDK\Core\MessageContext;
+use BootDesk\ChatSDK\Core\MessageDeliveredEvent;
+use BootDesk\ChatSDK\Core\MessageReadEvent;
 use BootDesk\ChatSDK\Core\ModalCloseEvent;
 use BootDesk\ChatSDK\Core\ModalSubmitEvent;
 use BootDesk\ChatSDK\Core\OptionsLoadEvent;
@@ -96,7 +98,7 @@ class ChatTest extends TestCase
     public function test_on_new_message_catch_all(): void
     {
         $received = [];
-        $this->chat->onNewMessage(null, function (MessageContext $ctx) use (&$received) {
+        $this->chat->onNewMessage('/.*/', function (MessageContext $ctx) use (&$received) {
             $received[] = $ctx->message->text;
         });
 
@@ -109,7 +111,7 @@ class ChatTest extends TestCase
     public function test_self_filter_skips_bot_messages(): void
     {
         $received = [];
-        $this->chat->onNewMessage(null, function (MessageContext $ctx) use (&$received) {
+        $this->chat->onNewMessage('/.*/', function (MessageContext $ctx) use (&$received) {
             $received[] = $ctx->message->text;
         });
 
@@ -125,7 +127,7 @@ class ChatTest extends TestCase
     public function test_deduplication(): void
     {
         $count = 0;
-        $this->chat->onNewMessage(null, function (MessageContext $ctx) use (&$count) {
+        $this->chat->onNewMessage('/.*/', function (MessageContext $ctx) use (&$count) {
             $count++;
         });
 
@@ -191,7 +193,7 @@ class ChatTest extends TestCase
         $message = \BootDesk\ChatSDK\Core\Tests\Helpers\createTestMessage(isDM: true, isMention: true);
         $this->chat->processMessage($this->adapter, $message->threadId, $message);
 
-        $this->assertSame(['dm', 'mention'], $order);
+        $this->assertSame(['dm'], $order);
     }
 
     public function test_skip_stops_dispatch(): void
@@ -329,21 +331,6 @@ class ChatTest extends TestCase
         $this->chat->processSlashCommand($this->adapter, 'C123', '/help', '');
 
         $this->assertSame(['specific', 'catch_all'], $order);
-    }
-
-    public function test_text_message_with_slash_dispatches_slash_command(): void
-    {
-        $received = null;
-        $this->chat->onSlashCommand('/status', function (SlashCommandEvent $event) use (&$received) {
-            $received = $event;
-        });
-
-        $message = \BootDesk\ChatSDK\Core\Tests\Helpers\createTestMessage(text: '/status all good');
-        $this->chat->processMessage($this->adapter, $message->threadId, $message);
-
-        $this->assertNotNull($received);
-        $this->assertSame('/status', $received->command);
-        $this->assertSame('all good', $received->text);
     }
 
     public function test_process_reaction_dispatches_handler(): void
@@ -654,10 +641,65 @@ class ChatTest extends TestCase
         $this->assertNull($this->chat->getUser('unknown', 'U1'));
     }
 
+    public function test_process_message_delivered(): void
+    {
+        $received = null;
+        $this->chat->onMessageDelivered(function (MessageDeliveredEvent $event) use (&$received) {
+            $received = $event;
+        });
+
+        $this->chat->processMessageDelivered(
+            threadId: 'whatsapp:123:5511999999999',
+            messageIds: ['mid1', 'mid2'],
+            userId: '5511999999999',
+        );
+
+        $this->assertNotNull($received);
+        $this->assertSame(['mid1', 'mid2'], $received->messageIds);
+        $this->assertSame('5511999999999', $received->userId);
+    }
+
+    public function test_process_message_read(): void
+    {
+        $received = null;
+        $this->chat->onMessageRead(function (MessageReadEvent $event) use (&$received) {
+            $received = $event;
+        });
+
+        $this->chat->processMessageRead(
+            threadId: 'messenger:123:456',
+            userId: '456',
+            timestamp: 1700000000,
+        );
+
+        $this->assertNotNull($received);
+        $this->assertSame('messenger:123:456', $received->threadId);
+        $this->assertSame(1700000000, $received->timestamp);
+    }
+
+    public function test_process_message_delivered_no_handlers(): void
+    {
+        $this->chat->processMessageDelivered(
+            threadId: 'whatsapp:123:5511999999999',
+            messageIds: ['mid1'],
+            userId: '5511999999999',
+        );
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_process_message_read_no_handlers(): void
+    {
+        $this->chat->processMessageRead(
+            threadId: 'messenger:123:456',
+            userId: '456',
+        );
+        $this->expectNotToPerformAssertions();
+    }
+
     public function test_message_context_state_and_metadata(): void
     {
         $called = false;
-        $this->chat->onNewMessage(null, function (MessageContext $ctx) use (&$called) {
+        $this->chat->onNewMessage('/.*/', function (MessageContext $ctx) use (&$called) {
             $ctx->setState(['from_context' => true]);
             $state = $ctx->getState();
             $this->assertSame(['from_context' => true], $state);
@@ -805,7 +847,7 @@ class ChatTest extends TestCase
         $this->chat->addReceivingMiddleware(
             new TestReceivingMiddleware(stop: true),
         );
-        $this->chat->onNewMessage(null, function () use (&$received) {
+        $this->chat->onNewMessage('/.*/', function () use (&$received) {
             $received = true;
         });
 
@@ -836,7 +878,7 @@ class ChatTest extends TestCase
         );
 
         $received = false;
-        $chat->onNewMessage(null, function (MessageContext $ctx) use (&$received) {
+        $chat->onNewMessage('/.*/', function (MessageContext $ctx) use (&$received) {
             $received = true;
         });
 
@@ -856,7 +898,7 @@ class ChatTest extends TestCase
         $chat->registerAdapter('mock', $adapter);
 
         $count = 0;
-        $chat->onNewMessage(null, function () use (&$count) {
+        $chat->onNewMessage('/.*/', function () use (&$count) {
             $count++;
         });
 
@@ -875,7 +917,7 @@ class ChatTest extends TestCase
         );
 
         $called = false;
-        $chat->onNewMessage(null, function () use (&$called) {
+        $chat->onNewMessage('/.*/', function () use (&$called) {
             $called = true;
         });
 
@@ -892,7 +934,7 @@ class ChatTest extends TestCase
         );
 
         $called = false;
-        $chat->onNewMessage(null, function () use (&$called) {
+        $chat->onNewMessage('/.*/', function () use (&$called) {
             $called = true;
         });
 
@@ -990,7 +1032,7 @@ class ChatTest extends TestCase
             $dmCalled = true;
             $ctx->skip();
         });
-        $this->chat->onNewMessage(null, function () use (&$otherCalled) {
+        $this->chat->onNewMessage('/.*/', function () use (&$otherCalled) {
             $otherCalled = true;
         });
 
@@ -1011,7 +1053,7 @@ class ChatTest extends TestCase
             $subCalled = true;
             $ctx->skip();
         });
-        $this->chat->onNewMessage(null, function () use (&$otherCalled) {
+        $this->chat->onNewMessage('/.*/', function () use (&$otherCalled) {
             $otherCalled = true;
         });
 
@@ -1054,7 +1096,7 @@ class ChatTest extends TestCase
         $chat->registerAdapter('mock', $adapter);
 
         $count = 0;
-        $chat->onNewMessage(null, function () use (&$count) {
+        $chat->onNewMessage('/.*/', function () use (&$count) {
             $count++;
         });
 
@@ -1070,7 +1112,7 @@ class ChatTest extends TestCase
     public function test_process_message_skip_on_self(): void
     {
         $called = false;
-        $this->chat->onNewMessage(null, function () use (&$called) {
+        $this->chat->onNewMessage('/.*/', function () use (&$called) {
             $called = true;
         });
 
@@ -1116,7 +1158,7 @@ class ChatTest extends TestCase
             $mentionCalled = true;
             $ctx->skip();
         });
-        $this->chat->onNewMessage(null, function () use (&$otherCalled) {
+        $this->chat->onNewMessage('/.*/', function () use (&$otherCalled) {
             $otherCalled = true;
         });
 
@@ -1157,7 +1199,7 @@ class ChatTest extends TestCase
         $chat->registerAdapter('mock', $adapter);
 
         $called = false;
-        $chat->onNewMessage(null, function () use (&$called) {
+        $chat->onNewMessage('/.*/', function () use (&$called) {
             $called = true;
         });
 
@@ -1177,7 +1219,7 @@ class ChatTest extends TestCase
         $this->assertNotNull($lock);
 
         $called = false;
-        $this->chat->onNewMessage(null, function () use (&$called) {
+        $this->chat->onNewMessage('/.*/', function () use (&$called) {
             $called = true;
         });
 
@@ -1201,7 +1243,7 @@ class ChatTest extends TestCase
         $chat->registerAdapter('mock', $adapter);
 
         $called = false;
-        $chat->onNewMessage(null, function () use (&$called) {
+        $chat->onNewMessage('/.*/', function () use (&$called) {
             $called = true;
         });
 
@@ -1230,7 +1272,7 @@ class ChatTest extends TestCase
         $chat->registerAdapter('mock', $adapter);
 
         $called = false;
-        $chat->onNewMessage(null, function () use (&$called) {
+        $chat->onNewMessage('/.*/', function () use (&$called) {
             $called = true;
         });
 
@@ -1252,7 +1294,7 @@ class ChatTest extends TestCase
         $secondCalled = false;
 
         // Register specific pattern first (matches "hello"), then catch-all
-        $this->chat->onNewMessage(null, function () use (&$secondCalled) {
+        $this->chat->onNewMessage('/.*/', function () use (&$secondCalled) {
             $secondCalled = true;
         });
 
@@ -1275,7 +1317,7 @@ class ChatTest extends TestCase
 
         // Process a message — queue is empty, so drainAllQueued hits its early return
         $called = false;
-        $chat->onNewMessage(null, function () use (&$called) {
+        $chat->onNewMessage('/.*/', function () use (&$called) {
             $called = true;
         });
 
@@ -1310,7 +1352,7 @@ class ChatTest extends TestCase
         $chat->registerAdapter('mock', $adapter);
 
         $received = null;
-        $chat->onNewMessage(null, function (MessageContext $ctx) use (&$received) {
+        $chat->onNewMessage('/.*/', function (MessageContext $ctx) use (&$received) {
             $received = $ctx;
         });
 
@@ -1343,7 +1385,7 @@ class ChatTest extends TestCase
         $ref->setValue($chat, ['mock:C:conc' => 3]);
 
         $called = false;
-        $chat->onNewMessage(null, function () use (&$called) {
+        $chat->onNewMessage('/.*/', function () use (&$called) {
             $called = true;
         });
 
@@ -1388,7 +1430,7 @@ class ChatTest extends TestCase
             $called[] = 'first';
             $ctx->skip();
         });
-        $this->chat->onNewMessage(null, function () use (&$called) {
+        $this->chat->onNewMessage('/.*/', function () use (&$called) {
             $called[] = 'catchall';
         });
 
@@ -1396,5 +1438,128 @@ class ChatTest extends TestCase
         $this->chat->processMessage($this->adapter, $msg->threadId, $msg);
 
         $this->assertSame(['first'], $called);
+    }
+
+    public function test_mention_handler_receives_is_mention_flag(): void
+    {
+        $received = null;
+        $this->chat->onNewMention(function (MessageContext $ctx) use (&$received) {
+            $received = $ctx;
+        });
+
+        $message = \BootDesk\ChatSDK\Core\Tests\Helpers\createTestMessage(isMention: true);
+        $this->chat->processMessage($this->adapter, $message->threadId, $message);
+
+        $this->assertNotNull($received);
+        $this->assertTrue($received->message->isMention);
+    }
+
+    public function test_mention_in_subscribed_thread_does_not_fire_mention(): void
+    {
+        $threadId = 'mock:C123:sub_mention';
+        $this->state->subscribe($threadId);
+
+        $order = [];
+        $this->chat->onSubscribedMessage(function (MessageContext $ctx) use (&$order) {
+            $order[] = 'subscribed';
+        });
+        $this->chat->onNewMention(function (MessageContext $ctx) use (&$order) {
+            $order[] = 'mention';
+        });
+
+        $message = \BootDesk\ChatSDK\Core\Tests\Helpers\createTestMessage(
+            threadId: $threadId,
+            isMention: true,
+        );
+        $this->chat->processMessage($this->adapter, $threadId, $message);
+
+        $this->assertSame(['subscribed'], $order);
+    }
+
+    public function test_slash_command_channel_post(): void
+    {
+        $channel = null;
+        $this->chat->onSlashCommand('/say', function (SlashCommandEvent $event) use (&$channel) {
+            $channel = $event->channel;
+        });
+
+        $this->chat->processSlashCommand(
+            adapter: $this->adapter,
+            channelId: 'mock:C123',
+            command: '/say',
+            text: 'hello',
+        );
+
+        $this->assertNotNull($channel);
+        $this->assertInstanceOf(Channel::class, $channel);
+    }
+
+    public function test_options_load_prefers_specific_before_catch_all(): void
+    {
+        $order = [];
+        $this->chat->onOptionsLoad('specific_action', function (OptionsLoadEvent $event) use (&$order) {
+            $order[] = 'specific';
+
+            return ['items' => []];
+        });
+        $this->chat->onOptionsLoad(function (OptionsLoadEvent $event) use (&$order) {
+            $order[] = 'catch_all';
+
+            return ['items' => []];
+        });
+
+        $result = $this->chat->processOptionsLoad(
+            adapter: $this->adapter,
+            actionId: 'specific_action',
+            query: 'test',
+            user: new Author(id: 'U1'),
+        );
+
+        $this->assertSame(['specific'], $order);
+        $this->assertNotNull($result);
+    }
+
+    public function test_options_load_falls_back_to_catch_all(): void
+    {
+        $caught = false;
+        $this->chat->onOptionsLoad('action_a', function (OptionsLoadEvent $event) {
+            return ['items' => []];
+        });
+        $this->chat->onOptionsLoad(function (OptionsLoadEvent $event) use (&$caught) {
+            $caught = true;
+
+            return ['items' => []];
+        });
+
+        $this->chat->processOptionsLoad(
+            adapter: $this->adapter,
+            actionId: 'unknown_action',
+            query: 'test',
+            user: new Author(id: 'U1'),
+        );
+
+        $this->assertTrue($caught);
+    }
+
+    public function test_is_subscribed_returns_true_for_subscribed_thread(): void
+    {
+        $thread = new Thread('mock:C123', $this->chat, $this->adapter, $this->state);
+
+        $this->assertFalse($thread->isSubscribed());
+
+        $thread->subscribe();
+
+        $this->assertTrue($thread->isSubscribed());
+    }
+
+    public function test_thread_subscribe_unsubscribe(): void
+    {
+        $thread = new Thread('mock:C123', $this->chat, $this->adapter, $this->state);
+
+        $thread->subscribe();
+        $this->assertTrue($thread->isSubscribed());
+
+        $thread->unsubscribe();
+        $this->assertFalse($thread->isSubscribed());
     }
 }

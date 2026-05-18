@@ -15,13 +15,20 @@ Framework-agnostic PHP Chat SDK core. Namespace: `BootDesk\ChatSDK\Core`
 - `StateAdapter` — pluggable state backend (locks, subscribe, queue, modal context, key-value)
 - `FormatConverter` — platform markdown ↔ CommonMark AST
 - `AdapterResolver` — dynamic adapter resolution (multi-tenant)
+- `FileUploadConverter` — convert binary `FileUpload` to URL-based `Attachment` (for adapters without native uploads)
 - `ReceivingMiddleware` / `SendingMiddleware` / `WebhookMiddleware` — middleware pipeline
+- `HandlesActions` / `HandlesSlashCommands` / `HandlesReactions` — optional adapter contracts for incoming events
+- `HandlesModals` / `HandlesOptionsLoad` / `HandlesSlackEvents` — optional adapter contracts for modals, external selects, Slack events
+- `SupportsModals` — optional adapter contract for opening modals from handlers
+- `AdapterHasMessagingWindow` — optional adapter contract for platforms with limited messaging windows (e.g., WhatsApp 24h)
 
 ## architecture notes
 - Thread IDs are canonical: `"{adapter}:{platformChannelId}:{platformThreadId}"`
 - Concurrency strategies: `drop` (default), `queue`, `debounce`, `concurrent`
 - Deduplication via `StateAdapter::setIfNotExists` (300s TTL)
 - Event system: ReactionEvent, ActionEvent, SlashCommandEvent, ModalSubmitEvent, ModalCloseEvent, OptionsLoadEvent, AssistantThreadStartedEvent, AssistantContextChangedEvent, AppHomeOpenedEvent, MemberJoinedChannelEvent
+- `ActionEvent` and `SlashCommandEvent` have `openModal(Modal $modal)` via `OpensModals` trait
+- `ReactionEvent` has `added: bool` and `rawEmoji: string` properties
 
 ## conversations
 - `Conversations/Conversation` — base class for multi-turn dialogs
@@ -32,9 +39,26 @@ Framework-agnostic PHP Chat SDK core. Namespace: `BootDesk\ChatSDK\Core`
 - `Cards/Card` + Section, Button, Image, CardElement, ButtonStyle — cross-platform interactive messages
 - Each adapter has a `XxxCards` class that converts to platform-native format
 
+## modals
+- `Modals/Modal` — modal form builder with children (TextInput, Select, ExternalSelect, RadioSelect)
+- `Modals/TextInput`, `Modals/Select`, `Modals/ExternalSelect`, `Modals/RadioSelect`, `Modals/SelectOption`
+- Platform-agnostic value objects converted to platform-native via each adapter
+- Slack uses `SlackModalConverter` to convert to Block Kit views
+
+## concerns
+- `Concerns/OpensModals` — trait used by `ActionEvent` and `SlashCommandEvent` to expose `openModal(Modal $modal): ?array`
+
 ## support
 - `Support/AdapterRegistry` — static register(name, class) / get(name); populated by adapter register.php files
 - `Support/Arr` / `Support/Str` — polyfill helpers
+- `Support/NullFileUploadConverter` — default `FileUploadConverter` that throws `AdapterException`
+
+## attachments
+- `Attachment` — URL-based media value object (type, url, name, mimeType, size, fetchData, fetchMetadata)
+- `FileUpload` — binary file upload value object (data, filename, mimeType); supports resource or string data
+- `FileUpload::fromFilename(string $path)` — factory that opens file, infers MIME via `mime_content_type()`
+- Adapters with native upload support (Slack, Telegram, Discord) handle `FileUpload` directly
+- Other adapters convert via `FileUploadConverter` (if registered) or throw `AdapterException`
 
 ## markdown
 - `Markdown/` — CommonMark-based conversion pipeline for cross-platform formatting

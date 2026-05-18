@@ -16,4 +16,6 @@ interface FormatConverter
     public function extractPlainText(string $platformText): string;
 
     public function renderPostable(PostableMessage $message): string;
+
+    public function fromMarkdown(string $markdown): string;
 }

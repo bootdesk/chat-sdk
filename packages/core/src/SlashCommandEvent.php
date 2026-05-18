@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace BootDesk\ChatSDK\Core;
 
+use BootDesk\ChatSDK\Core\Concerns\OpensModals;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 
 class SlashCommandEvent
 {
+    use OpensModals;
+
     public function __construct(
         public readonly Adapter $adapter,
         public readonly Channel $channel,

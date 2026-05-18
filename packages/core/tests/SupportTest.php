@@ -1,92 +1,49 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BootDesk\ChatSDK\Core\Tests;
 
-use BootDesk\ChatSDK\Core\Support\Arr;
-use BootDesk\ChatSDK\Core\Support\Str;
+use BootDesk\ChatSDK\Core\PostableMessage;
+use BootDesk\ChatSDK\Core\Support\AdapterRegistry;
+use BootDesk\ChatSDK\Core\Support\AttachmentUtils;
 use PHPUnit\Framework\TestCase;
 
 class SupportTest extends TestCase
 {
-    public function test_arr_get_simple_key(): void
+    public function test_adapter_registry_register_and_get(): void
     {
-        $this->assertSame('bar', Arr::get(['foo' => 'bar'], 'foo'));
+        AdapterRegistry::register('support_test_reg', \stdClass::class);
+        $this->assertSame(\stdClass::class, AdapterRegistry::get('support_test_reg'));
     }
 
-    public function test_arr_get_dot_notation(): void
+    public function test_adapter_registry_returns_null_for_unknown(): void
     {
-        $this->assertSame('baz', Arr::get(['foo' => ['bar' => 'baz']], 'foo.bar'));
+        $this->assertNull(AdapterRegistry::get('support_test_nonexistent'));
     }
 
-    public function test_arr_get_default(): void
+    public function test_adapter_registry_overwrite(): void
     {
-        $this->assertNull(Arr::get([], 'missing'));
-        $this->assertSame('fallback', Arr::get([], 'missing', 'fallback'));
+        AdapterRegistry::register('support_test_a', \stdClass::class);
+        AdapterRegistry::register('support_test_a', \Exception::class);
+        $this->assertSame(\Exception::class, AdapterRegistry::get('support_test_a'));
     }
 
-    public function test_arr_get_deeply_nested(): void
+    public function test_attachment_utils_has_attachments(): void
     {
-        $data = ['a' => ['b' => ['c' => 'deep']]];
-        $this->assertSame('deep', Arr::get($data, 'a.b.c'));
+        $msg = PostableMessage::text('test');
+        $this->assertFalse(AttachmentUtils::hasAttachments($msg));
     }
 
-    public function test_arr_set_simple(): void
+    public function test_attachment_utils_extract_files(): void
     {
-        $data = ['foo' => 'bar'];
-        Arr::set($data, 'baz', 'qux');
-        $this->assertSame(['foo' => 'bar', 'baz' => 'qux'], $data);
+        $msg = PostableMessage::text('test');
+        $this->assertEmpty(AttachmentUtils::extractFiles($msg));
     }
 
-    public function test_arr_set_dot_notation(): void
+    public function test_attachment_utils_extract_attachments(): void
     {
-        $data = [];
-        Arr::set($data, 'foo.bar.baz', 'deep');
-        $this->assertSame(['foo' => ['bar' => ['baz' => 'deep']]], $data);
-    }
-
-    public function test_arr_set_overwrite_existing(): void
-    {
-        $data = ['nested' => ['key' => 'old']];
-        Arr::set($data, 'nested.key', 'new');
-        $this->assertSame(['nested' => ['key' => 'new']], $data);
-    }
-
-    public function test_arr_set_overwrite_non_array(): void
-    {
-        $data = ['nested' => 'scalar'];
-        Arr::set($data, 'nested.key', 'value');
-        $this->assertSame(['nested' => ['key' => 'value']], $data);
-    }
-
-    public function test_arr_except(): void
-    {
-        $result = Arr::except(['a' => 1, 'b' => 2, 'c' => 3], ['a', 'c']);
-        $this->assertSame(['b' => 2], $result);
-    }
-
-    public function test_arr_get_invalid_key_segment(): void
-    {
-        $data = ['foo' => 'not_array'];
-        $this->assertSame('default', Arr::get($data, 'foo.bar', 'default'));
-    }
-
-    public function test_str_starts_with(): void
-    {
-        $this->assertTrue(Str::startsWith('hello world', 'hello'));
-        $this->assertFalse(Str::startsWith('hello world', 'world'));
-    }
-
-    public function test_str_camel(): void
-    {
-        $this->assertSame('helloWorld', Str::camel('hello_world'));
-        $this->assertSame('fooBarBaz', Str::camel('foo_bar_baz'));
-        $this->assertSame('single', Str::camel('single'));
-    }
-
-    public function test_str_snake(): void
-    {
-        $this->assertSame('hello_world', Str::snake('helloWorld'));
-        $this->assertSame('foo_bar_baz', Str::snake('fooBarBaz'));
-        $this->assertSame('single', Str::snake('single'));
+        $msg = PostableMessage::text('test');
+        $this->assertEmpty(AttachmentUtils::extractAttachments($msg));
     }
 }

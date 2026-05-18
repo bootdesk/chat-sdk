@@ -139,7 +139,7 @@ class ConversationTest extends TestCase
     public function test_conversation_blocks_normal_handlers(): void
     {
         $handlerCalled = false;
-        $this->chat->onNewMessage(null, function (MessageContext $ctx) use (&$handlerCalled) {
+        $this->chat->onNewMessage('/.*/', function (MessageContext $ctx) use (&$handlerCalled) {
             $handlerCalled = true;
         });
 

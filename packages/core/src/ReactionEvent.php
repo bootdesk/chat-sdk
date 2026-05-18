@@ -11,6 +11,8 @@ class ReactionEvent
         public readonly string $messageId,
         public readonly Thread $thread,
         public readonly Author $user,
+        public readonly bool $added = true,
+        public readonly string $rawEmoji = '',
         public readonly mixed $raw = null,
     ) {}
 }

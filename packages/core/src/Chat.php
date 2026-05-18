@@ -6,6 +6,13 @@ use BootDesk\ChatSDK\Core\Concurrency\Handler;
 use BootDesk\ChatSDK\Core\Concurrency\Strategy;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\AdapterResolver;
+use BootDesk\ChatSDK\Core\Contracts\HandlesActions;
+use BootDesk\ChatSDK\Core\Contracts\HandlesModals;
+use BootDesk\ChatSDK\Core\Contracts\HandlesOptionsLoad;
+use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
+use BootDesk\ChatSDK\Core\Contracts\HandlesSlackEvents;
+use BootDesk\ChatSDK\Core\Contracts\HandlesSlashCommands;
+use BootDesk\ChatSDK\Core\Contracts\HandlesStatuses;
 use BootDesk\ChatSDK\Core\Contracts\ReceivingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
@@ -31,6 +38,8 @@ class Chat
     private ?ResponseFactoryInterface $responseFactory = null;
 
     private bool $initialized = false;
+
+    private bool $stateInitialized = false;
 
     private ?\Closure $identityResolver = null;
 
@@ -95,6 +104,12 @@ class Chat
 
     /** @var callable[] */
     private array $memberJoinedChannelHandlers = [];
+
+    /** @var callable[] */
+    private array $messageDeliveredHandlers = [];
+
+    /** @var callable[] */
+    private array $messageReadHandlers = [];
 
     /** @var array<string, int> */
     private array $concurrentSlots = [];
@@ -185,10 +200,13 @@ class Chat
         return new Channel($channelId, $adapter);
     }
 
-    public function onNewMessage(?string $pattern, callable $handler): self
+    public function onNewMessage(string $pattern, callable $handler): self
     {
-        $key = $pattern ?? '*';
-        $this->messageHandlers[$key] = $handler;
+        if (preg_match($pattern, '') === false) {
+            throw new \InvalidArgumentException("Invalid regex pattern: {$pattern}");
+        }
+
+        $this->messageHandlers[$pattern] = $handler;
 
         return $this;
     }
@@ -339,6 +357,20 @@ class Chat
         return $this;
     }
 
+    public function onMessageDelivered(callable $handler): self
+    {
+        $this->messageDeliveredHandlers[] = $handler;
+
+        return $this;
+    }
+
+    public function onMessageRead(callable $handler): self
+    {
+        $this->messageReadHandlers[] = $handler;
+
+        return $this;
+    }
+
     public function storeModalContext(string $adapterName, string $contextId, array $data, int $ttlMs = 86400000): void
     {
         $this->state->storeModalContext($adapterName, $contextId, $data, $ttlMs);
@@ -375,6 +407,8 @@ class Chat
         string $emoji,
         string $messageId,
         Author $user,
+        bool $added = true,
+        string $rawEmoji = '',
         mixed $raw = null,
     ): void {
         $thread = new Thread($threadId, $this, $adapter, $this->state);
@@ -384,6 +418,8 @@ class Chat
             messageId: $messageId,
             thread: $thread,
             user: $user,
+            added: $added,
+            rawEmoji: $rawEmoji,
             raw: $raw,
         );
 
@@ -432,8 +468,12 @@ class Chat
             $context = $this->getAndDeleteModalContext($adapter->getName(), $contextId);
             if ($context !== null) {
                 $relatedChannel = $context['channel'] ?? null;
-                $relatedThread = $context['thread'] ?? null;
                 $relatedMessage = $context['message'] ?? null;
+                if (isset($context['threadId'])) {
+                    $relatedThread = new Thread($context['threadId'], $this, $adapter, $this->state);
+                } else {
+                    $relatedThread = $context['thread'] ?? null;
+                }
             }
         }
 
@@ -467,8 +507,12 @@ class Chat
             $context = $this->getAndDeleteModalContext($adapter->getName(), $contextId);
             if ($context !== null) {
                 $relatedChannel = $context['channel'] ?? null;
-                $relatedThread = $context['thread'] ?? null;
                 $relatedMessage = $context['message'] ?? null;
+                if (isset($context['threadId'])) {
+                    $relatedThread = new Thread($context['threadId'], $this, $adapter, $this->state);
+                } else {
+                    $relatedThread = $context['thread'] ?? null;
+                }
             }
         }
 
@@ -493,9 +537,9 @@ class Chat
             return;
         }
 
-        $threadId = "{$adapter->getName()}:{$channelId}";
+        $threadId = $channelId;
         $thread = new Thread($threadId, $this, $adapter, $this->state);
-        $channel = new Channel($channelId, $adapter);
+        $channel = new Channel($threadId, $adapter);
         $message = new Message(
             id: uniqid('slash_'),
             threadId: $threadId,
@@ -613,6 +657,38 @@ class Chat
         );
 
         $this->dispatchMemberJoinedChannelHandlers($event);
+    }
+
+    public function processMessageDelivered(
+        string $threadId,
+        array $messageIds,
+        string $userId,
+        mixed $raw = null,
+    ): void {
+        $event = new MessageDeliveredEvent(
+            messageIds: $messageIds,
+            threadId: $threadId,
+            userId: $userId,
+            raw: $raw,
+        );
+
+        $this->dispatchMessageDeliveredHandlers($event);
+    }
+
+    public function processMessageRead(
+        string $threadId,
+        string $userId,
+        mixed $raw = null,
+        ?int $timestamp = null,
+    ): void {
+        $event = new MessageReadEvent(
+            threadId: $threadId,
+            userId: $userId,
+            raw: $raw,
+            timestamp: $timestamp,
+        );
+
+        $this->dispatchMessageReadHandlers($event);
     }
 
     public function processMessage(Adapter $adapter, string $threadId, Message $message): void
@@ -803,87 +879,268 @@ class Chat
         );
 
         // DM routing
-        if ($message->isDM) {
+        if ($message->isDM && $this->dmHandlers !== []) {
             $this->dispatchHandlers($this->dmHandlers, $context);
-            if ($context->isSkipped()) {
-                return;
-            }
+
+            return;
         }
 
         // Subscribed
         if ($this->state->isSubscribed($threadId)) {
             $this->dispatchHandlers($this->subscribedHandlers, $context);
-            if ($context->isSkipped()) {
-                return;
-            }
+
+            return;
         }
 
         // Mention
         if ($message->isMention) {
             $this->dispatchHandlers($this->mentionHandlers, $context);
-            if ($context->isSkipped()) {
-                return;
-            }
+
+            return;
         }
 
         // Pattern match
         foreach ($this->messageHandlers as $pattern => $handler) {
-            if ($pattern === '*' || preg_match($pattern, $message->text)) {
+            if (preg_match($pattern, $message->text)) {
                 $handler($context);
                 if ($context->isSkipped()) {
                     return;
                 }
             }
         }
-
-        // Slash commands from text
-        if ($message->text !== '' && $message->text[0] === '/') {
-            $parts = explode(' ', $message->text, 2);
-            $slashEvent = new SlashCommandEvent(
-                adapter: $adapter,
-                channel: new Channel($threadId, $adapter),
-                thread: $thread,
-                message: $message,
-                user: $message->author,
-                command: $parts[0],
-                text: $parts[1] ?? '',
-                raw: $message->raw,
-            );
-            $this->dispatchSlashCommandHandlers($slashEvent);
-        }
     }
 
     public function handleWebhook(string $adapterName, ServerRequestInterface $request): ResponseInterface
     {
-        $this->initialize();
+        $adapter = $this->resolveAdapter($adapterName, $request);
 
-        $handler = function (ServerRequestInterface $request) use ($adapterName): ResponseInterface {
-            $adapter = $this->resolveAdapter($adapterName, $request);
+        if (! $adapter instanceof Adapter) {
+            throw new ResourceNotFoundException("Adapter '{$adapterName}' is not configured.");
+        }
 
-            if (! $adapter instanceof Adapter) {
-                throw new ResourceNotFoundException("Adapter '{$adapterName}' is not configured.");
-            }
+        $this->initAdapter($adapter);
+
+        $handler = function (ServerRequestInterface $request) use ($adapter): ResponseInterface {
 
             $ack = $adapter->verifyWebhook($request);
             if ($ack instanceof ResponseInterface) {
                 return $ack;
             }
 
+            // Check for action (button clicks, etc.)
+            if ($adapter instanceof HandlesActions) {
+                $actionData = $adapter->parseAction($request);
+                if ($actionData !== null) {
+                    $this->processAction(
+                        adapter: $adapter,
+                        threadId: $actionData['threadId'],
+                        actionId: $actionData['actionId'],
+                        value: $actionData['value'] ?? null,
+                        messageId: $actionData['messageId'],
+                        user: new Author(
+                            id: $actionData['userId'],
+                            isBot: $actionData['isBot'],
+                        ),
+                        triggerId: $actionData['triggerId'] ?? null,
+                        raw: $actionData['raw'] ?? null,
+                    );
+
+                    $ack = $adapter->acknowledgeAction($actionData['callbackQueryId'] ?? null);
+                    if ($ack instanceof ResponseInterface) {
+                        return $ack;
+                    }
+
+                    return $this->webhookResponse($adapter);
+                }
+            }
+
+            // Check for native slash command
+            if ($adapter instanceof HandlesSlashCommands) {
+                $slashData = $adapter->parseSlashCommand($request);
+                if ($slashData !== null) {
+                    $this->processSlashCommand(
+                        adapter: $adapter,
+                        channelId: $slashData['channelId'],
+                        command: $slashData['command'],
+                        text: $slashData['text'],
+                        user: new Author(
+                            id: $slashData['userId'],
+                            isBot: $slashData['isBot'],
+                        ),
+                        raw: $slashData['raw'] ?? null,
+                        triggerId: $slashData['triggerId'] ?? null,
+                    );
+
+                    return $this->webhookResponse($adapter);
+                }
+            }
+
+            // Check for modals (view_submission, view_closed)
+            if ($adapter instanceof HandlesModals) {
+                $modalData = $adapter->parseModalSubmit($request);
+                if ($modalData !== null) {
+                    $this->processModalSubmit(
+                        adapter: $adapter,
+                        callbackId: $modalData['callbackId'],
+                        values: $modalData['values'],
+                        user: new Author(
+                            id: $modalData['userId'],
+                        ),
+                        raw: $modalData['raw'] ?? null,
+                        viewId: $modalData['viewId'],
+                        contextId: $modalData['contextId'] ?? null,
+                    );
+
+                    return $this->webhookResponse($adapter);
+                }
+
+                $modalData = $adapter->parseModalClose($request);
+                if ($modalData !== null) {
+                    $this->processModalClose(
+                        adapter: $adapter,
+                        callbackId: $modalData['callbackId'],
+                        user: new Author(
+                            id: $modalData['userId'],
+                        ),
+                        raw: $modalData['raw'] ?? null,
+                        viewId: $modalData['viewId'],
+                        contextId: $modalData['contextId'] ?? null,
+                    );
+
+                    return $this->webhookResponse($adapter);
+                }
+            }
+
+            // Check for options load (block_suggestion)
+            if ($adapter instanceof HandlesOptionsLoad) {
+                $optionsData = $adapter->parseOptionsLoad($request);
+                if ($optionsData !== null) {
+                    $result = $this->processOptionsLoad(
+                        adapter: $adapter,
+                        actionId: $optionsData['actionId'],
+                        query: $optionsData['query'],
+                        user: new Author(
+                            id: $optionsData['userId'],
+                        ),
+                        raw: $optionsData['raw'] ?? null,
+                    );
+
+                    $ack = $adapter->respondToOptionsLoad($result);
+                    if ($ack instanceof ResponseInterface) {
+                        return $ack;
+                    }
+
+                    return $this->webhookResponse($adapter);
+                }
+            }
+
+            // Check for reactions (emoji added/removed)
+            if ($adapter instanceof HandlesReactions) {
+                $reactionData = $adapter->parseReaction($request);
+                if ($reactionData !== null) {
+                    $this->processReaction(
+                        adapter: $adapter,
+                        threadId: $reactionData['threadId'],
+                        emoji: $reactionData['emoji'],
+                        messageId: $reactionData['messageId'],
+                        user: new Author(
+                            id: $reactionData['userId'],
+                        ),
+                        added: $reactionData['added'],
+                        rawEmoji: $reactionData['rawEmoji'],
+                        raw: $reactionData['raw'] ?? null,
+                    );
+
+                    return $this->webhookResponse($adapter);
+                }
+            }
+
+            // Check for Slack Events (assistant threads, app home, member joined)
+            if ($adapter instanceof HandlesSlackEvents) {
+                $eventData = $adapter->parseAssistantThreadStarted($request);
+                if ($eventData !== null) {
+                    $this->processAssistantThreadStarted(
+                        adapter: $adapter,
+                        channelId: $eventData['channelId'],
+                        threadId: $eventData['threadId'],
+                        userId: $eventData['userId'],
+                        context: $eventData['context'],
+                        threadTs: $eventData['threadTs'],
+                        raw: $eventData['raw'] ?? null,
+                    );
+
+                    return $this->webhookResponse($adapter);
+                }
+
+                $eventData = $adapter->parseAssistantContextChanged($request);
+                if ($eventData !== null) {
+                    $this->processAssistantContextChanged(
+                        adapter: $adapter,
+                        channelId: $eventData['channelId'],
+                        threadId: $eventData['threadId'],
+                        userId: $eventData['userId'],
+                        context: $eventData['context'],
+                        threadTs: $eventData['threadTs'],
+                        raw: $eventData['raw'] ?? null,
+                    );
+
+                    return $this->webhookResponse($adapter);
+                }
+
+                $eventData = $adapter->parseAppHomeOpened($request);
+                if ($eventData !== null) {
+                    $this->processAppHomeOpened(
+                        adapter: $adapter,
+                        channelId: $eventData['channelId'],
+                        userId: $eventData['userId'],
+                        raw: $eventData['raw'] ?? null,
+                    );
+
+                    return $this->webhookResponse($adapter);
+                }
+
+                $eventData = $adapter->parseMemberJoinedChannel($request);
+                if ($eventData !== null) {
+                    $this->processMemberJoinedChannel(
+                        adapter: $adapter,
+                        channelId: $eventData['channelId'],
+                        userId: $eventData['userId'],
+                        inviterId: $eventData['inviterId'] ?? null,
+                        raw: $eventData['raw'] ?? null,
+                    );
+
+                    return $this->webhookResponse($adapter);
+                }
+            }
+
+            // Check for message statuses (delivered/read)
+            if ($adapter instanceof HandlesStatuses) {
+                $statusData = $adapter->parseStatus($request);
+                if ($statusData !== null) {
+                    if ($statusData['type'] === 'delivered') {
+                        $this->processMessageDelivered(
+                            threadId: $statusData['threadId'],
+                            messageIds: $statusData['messageIds'],
+                            userId: $statusData['userId'],
+                            raw: $statusData['raw'] ?? null,
+                        );
+                    } elseif ($statusData['type'] === 'read') {
+                        $this->processMessageRead(
+                            threadId: $statusData['threadId'],
+                            userId: $statusData['userId'],
+                            raw: $statusData['raw'] ?? null,
+                            timestamp: $statusData['timestamp'] ?? null,
+                        );
+                    }
+
+                    return $this->webhookResponse($adapter);
+                }
+            }
+
             $message = $adapter->parseWebhook($request);
             $this->processMessage($adapter, $message->threadId, $message);
 
-            $adapterResponse = $adapter->createResponse();
-            if ($adapterResponse instanceof ResponseInterface) {
-                return $adapterResponse;
-            }
-
-            if (! $this->responseFactory instanceof ResponseFactoryInterface) {
-                throw new \RuntimeException(
-                    'No PSR-17 ResponseFactoryInterface provided. Pass one to the Chat constructor.'
-                );
-            }
-
-            return $this->responseFactory->createResponse(200);
+            return $this->webhookResponse($adapter);
         };
 
         foreach (array_reverse($this->webhookMiddleware) as $middleware) {
@@ -895,6 +1152,22 @@ class Chat
         return $handler($request);
     }
 
+    private function webhookResponse(Adapter $adapter): ResponseInterface
+    {
+        $adapterResponse = $adapter->createResponse();
+        if ($adapterResponse instanceof ResponseInterface) {
+            return $adapterResponse;
+        }
+
+        if (! $this->responseFactory instanceof ResponseFactoryInterface) {
+            throw new \RuntimeException(
+                'No PSR-17 ResponseFactoryInterface provided. Pass one to the Chat constructor.'
+            );
+        }
+
+        return $this->responseFactory->createResponse(200);
+    }
+
     public function initialize(): void
     {
         if ($this->initialized) {
@@ -902,12 +1175,23 @@ class Chat
         }
 
         $this->state->connect();
+        $this->stateInitialized = true;
 
         foreach ($this->adapters as $adapter) {
             $adapter->initialize($this);
         }
 
         $this->initialized = true;
+    }
+
+    private function initAdapter(Adapter $adapter): void
+    {
+        if (! $this->stateInitialized) {
+            $this->state->connect();
+            $this->stateInitialized = true;
+        }
+
+        $adapter->initialize($this);
     }
 
     public function shutdown(): void
@@ -1056,6 +1340,20 @@ class Chat
     private function dispatchMemberJoinedChannelHandlers(MemberJoinedChannelEvent $event): void
     {
         foreach ($this->memberJoinedChannelHandlers as $handler) {
+            $handler($event);
+        }
+    }
+
+    private function dispatchMessageDeliveredHandlers(MessageDeliveredEvent $event): void
+    {
+        foreach ($this->messageDeliveredHandlers as $handler) {
+            $handler($event);
+        }
+    }
+
+    private function dispatchMessageReadHandlers(MessageReadEvent $event): void
+    {
+        foreach ($this->messageReadHandlers as $handler) {
             $handler($event);
         }
     }

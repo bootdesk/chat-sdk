@@ -33,6 +33,13 @@ abstract class BaseFormatConverter implements FormatConverter
 
     abstract public function fromAst(Document $ast): string;
 
+    public function fromMarkdown(string $markdown): string
+    {
+        $ast = $this->parseMarkdown($markdown);
+
+        return $this->fromAst($ast);
+    }
+
     public function extractPlainText(string $platformText): string
     {
         $ast = $this->toAst($platformText);

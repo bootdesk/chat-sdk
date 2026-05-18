@@ -142,12 +142,15 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
         $owner = $repository['owner']['login'] ?? '';
         $repo = $repository['name'] ?? '';
 
+        // Derive thread ID from the webhook payload so channel->post works
+        $channelId = $this->deriveChannelId($payload, $event);
+
         return [
             'command' => $command,
             'text' => $args,
             'userId' => (string) ($comment['user']['id'] ?? ''),
             'isBot' => ($comment['user']['type'] ?? '') === 'Bot',
-            'channelId' => "github:{$owner}/{$repo}",
+            'channelId' => $channelId,
             'triggerId' => null,
             'raw' => $body,
         ];
@@ -619,6 +622,30 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
     protected function base64urlEncode(string $data): string
     {
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+
+    protected function deriveChannelId(array $payload, string $event): string
+    {
+        $repository = $payload['repository'] ?? [];
+        $owner = $repository['owner']['login'] ?? '';
+        $repo = $repository['name'] ?? '';
+
+        if ($event === 'pull_request_review_comment') {
+            $prNumber = $payload['pull_request']['number'] ?? 0;
+            $commentId = $payload['comment']['id'] ?? 0;
+
+            return "github:{$owner}/{$repo}:{$prNumber}:rc:{$commentId}";
+        }
+
+        $issue = $payload['issue'] ?? [];
+        $number = $issue['number'] ?? 0;
+        $isPR = isset($issue['pull_request']);
+
+        if ($isPR) {
+            return "github:{$owner}/{$repo}:{$number}";
+        }
+
+        return "github:{$owner}/{$repo}:issue:{$number}";
     }
 
     protected function apiCall(string $endpoint, array $params, string $method = 'POST', array $queryParams = []): array

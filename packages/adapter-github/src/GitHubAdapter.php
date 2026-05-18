@@ -34,6 +34,9 @@ class GitHubAdapter implements Adapter
     /** @var array<string, string> owner/repo → installation ID */
     protected array $installationIds = [];
 
+    /** @var array<string, array{token: string, expiresAt: int}> installation ID → cached token */
+    protected array $installationTokenCache = [];
+
     protected FileUploadConverter $fileUploadConverter;
 
     protected const EMOJI_MAP = [
@@ -63,14 +66,15 @@ class GitHubAdapter implements Adapter
     ];
 
     public function __construct(
-        protected readonly string $authToken,
         protected readonly ClientInterface $httpClient,
         string $webhookSecret,
+        protected readonly ?string $authToken = null,
         protected readonly string $apiUrl = 'https://api.github.com',
         protected readonly ?string $appId = null,
         protected readonly ?string $installationId = null,
         protected readonly ?Psr17Factory $psrFactory = null,
         ?FileUploadConverter $fileUploadConverter = null,
+        protected readonly ?string $privateKey = null,
     ) {
         $this->formatConverter = new GitHubFormatConverter;
         $this->webhookVerifier = new GitHubWebhookVerifier($webhookSecret);
@@ -483,11 +487,88 @@ class GitHubAdapter implements Adapter
             $installId = $this->installationIds[$key] ?? $this->installationId;
 
             if ($installId !== null) {
-                return $this->authToken; // In production, exchange for installation token
+                return $this->getInstallationToken($installId);
+            }
+
+            if ($this->privateKey !== null) {
+                throw new AuthenticationException(
+                    "No installation ID found for {$key}. The GitHub App must be installed on the repository."
+                );
             }
         }
 
         return $this->authToken;
+    }
+
+    protected function getInstallationToken(string $installationId): string
+    {
+        if (isset($this->installationTokenCache[$installationId])) {
+            $cached = $this->installationTokenCache[$installationId];
+            if ($cached['expiresAt'] > time() + 30) {
+                return $cached['token'];
+            }
+        }
+
+        $result = $this->exchangeInstallationToken($installationId);
+        $this->installationTokenCache[$installationId] = $result;
+
+        return $result['token'];
+    }
+
+    protected function exchangeInstallationToken(string $installationId): array
+    {
+        $jwt = $this->generateJWT();
+        $factory = $this->psrFactory ?? new Psr17Factory;
+
+        $request = $factory->createRequest(
+            'POST',
+            "{$this->apiUrl}/app/installations/{$installationId}/access_tokens"
+        )
+            ->withHeader('Authorization', "Bearer {$jwt}")
+            ->withHeader('Accept', 'application/vnd.github+json')
+            ->withHeader('User-Agent', 'bootdesk-github-adapter')
+            ->withBody($factory->createStream('{}'));
+
+        $response = $this->httpClient->sendRequest($request);
+        $statusCode = $response->getStatusCode();
+        $body = json_decode((string) $response->getBody(), true);
+
+        if ($statusCode !== 201 || ! isset($body['token'])) {
+            throw new AuthenticationException(
+                'Failed to exchange GitHub App installation token: '.($body['message'] ?? 'unknown error')
+            );
+        }
+
+        return [
+            'token' => $body['token'],
+            'expiresAt' => strtotime($body['expires_at'] ?? '+1 hour'),
+        ];
+    }
+
+    protected function generateJWT(): string
+    {
+        if ($this->privateKey === null || $this->appId === null) {
+            throw new AuthenticationException('privateKey and appId required for JWT generation');
+        }
+
+        $key = base64_decode($this->privateKey);
+
+        $header = $this->base64urlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
+        $payload = $this->base64urlEncode(json_encode([
+            'iat' => time(),
+            'exp' => time() + 600,
+            'iss' => $this->appId,
+        ]));
+
+        $signature = '';
+        openssl_sign("{$header}.{$payload}", $signature, $key, OPENSSL_ALGO_SHA256);
+
+        return "{$header}.{$payload}.".$this->base64urlEncode($signature);
+    }
+
+    protected function base64urlEncode(string $data): string
+    {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 
     protected function apiCall(string $endpoint, array $params, string $method = 'POST', array $queryParams = []): array
@@ -505,7 +586,12 @@ class GitHubAdapter implements Adapter
             $owner = $m[1];
             $repo = $m[2];
         }
-        $token = ($owner !== '') ? $this->getAuthToken($owner, $repo) : $this->authToken;
+        $token = $this->authToken;
+        if ($owner !== '') {
+            $token = $this->getAuthToken($owner, $repo);
+        } elseif ($this->appId !== null && $this->installationId !== null) {
+            $token = $this->getInstallationToken($this->installationId);
+        }
 
         if ($method === 'GET' || $method === 'DELETE') {
             $request = $factory->createRequest($method, $url);

@@ -45,10 +45,11 @@ return [
         // 'web' => [
         //     'user_name' => env('BOT_USERNAME', 'Bot'),
         // ],
-        // 'github' => [
-        //     'auth_token' => env('GITHUB_TOKEN'),
-        //     'webhook_secret' => env('GITHUB_WEBHOOK_SECRET'),
-        // ],
+        'github' => [
+            'app_id' => env('GITHUB_APP_ID'),
+            'private_key' => env('GITHUB_PRIVATE_KEY'),
+            'webhook_secret' => env('GITHUB_WEBHOOK_SECRET'),
+        ],
         // 'linear' => [
         //     'api_key' => env('LINEAR_API_KEY'),
         //     'webhook_secret' => env('LINEAR_WEBHOOK_SECRET'),

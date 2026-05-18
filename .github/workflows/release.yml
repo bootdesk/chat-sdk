@@ -72,23 +72,10 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: bootdesk
-          repositories: |
-            chat-sdk-core
-            chat-sdk-laravel
-            chat-sdk-adapter-slack
-            chat-sdk-adapter-telegram
-            chat-sdk-adapter-whatsapp
-            chat-sdk-adapter-discord
-            chat-sdk-adapter-messenger
-            chat-sdk-adapter-web
-            chat-sdk-adapter-github
-            chat-sdk-adapter-linear
-            chat-sdk-adapter-telnyx
-            chat-sdk-botman-compat
 
       - uses: danharrin/monorepo-split-github-action@v2.4.5
         env:
-          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          PAT: "${{ steps.generate-token.outputs.token }}"
         with:
           tag: v${{ inputs.version }}
           package_directory: packages/${{ matrix.package.local_path }}

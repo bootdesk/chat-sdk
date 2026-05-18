@@ -433,6 +433,7 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
         return new ThreadInfo(
             id: $threadId,
             channelId: $this->channelIdFromThreadId($threadId),
+            title: $data['title'] ?? null,
             messageCount: (int) ($data['comments'] ?? 0),
         );
     }

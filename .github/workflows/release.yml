@@ -46,6 +46,7 @@ jobs:
           git config user.email "github-actions@github.com"
           git add packages/*/composer.json
           git commit -m "chore: bump package versions to v${{ inputs.version }}"
+          git push origin main
 
       - name: Create tag
         run: |

@@ -92,35 +92,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Generate GitHub App token
-        id: generate-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ secrets.APP_CLIENT_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: bootdesk
-          permission-contents: write
-
-      - name: Debug Token
-        run: |
-          echo "Token length is: ${#TOKEN}"
-          echo "Token starts with: ${TOKEN:0:10}..."
-        env:
-          TOKEN: ${{ steps.generate-token.outputs.token }}
-
       - name: Split and push package
         env:
-          TOKEN: ${{ steps.generate-token.outputs.token }}
-          APP_ID: ${{ secrets.APP_ID }}
-          APP_SLUG: ${{ steps.generate-token.outputs.app-slug }}
+          TOKEN: ${{ secrets.PAT }}
         run: |
           REPO="bootdesk/${{ matrix.package.split_repository }}"
           TAG="v${{ inputs.version }}"
           PREFIX="packages/${{ matrix.package.local_path }}"
           SPLIT_BRANCH="split-${{ matrix.package.split_repository }}-$TAG"
 
-          git config --global user.name "$APP_SLUG[bot]"
-          git config --global user.email "$APP_ID+$APP_SLUG[bot]@users.noreply.github.com"
+          git config --global user.name "bootdesk-bot[bot]"
+          git config --global user.email "178296575+bootdesk-bot[bot]@users.noreply.github.com"
 
           git branch -D "$SPLIT_BRANCH" 2>/dev/null || true
           git subtree split --prefix="$PREFIX" -b "$SPLIT_BRANCH"

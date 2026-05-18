@@ -6,6 +6,7 @@ use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Contracts\FileUploadConverter;
 use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
 use BootDesk\ChatSDK\Core\FetchOptions;
@@ -13,6 +14,7 @@ use BootDesk\ChatSDK\Core\FetchResult;
 use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\SentMessage;
+use BootDesk\ChatSDK\Core\Support\NullFileUploadConverter;
 use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Core\UserInfo;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -33,13 +35,17 @@ class WebAdapter implements Adapter
 
     protected string $bufferedReply = '';
 
+    protected FileUploadConverter $fileUploadConverter;
+
     public function __construct(
         protected readonly string $userName,
         protected readonly \Closure $getUser,
         protected readonly ?\Closure $threadIdFor = null,
         protected readonly ?Psr17Factory $psrFactory = null,
+        ?FileUploadConverter $fileUploadConverter = null,
     ) {
         $this->formatConverter = new WebFormatConverter;
+        $this->fileUploadConverter = $fileUploadConverter ?? new NullFileUploadConverter;
     }
 
     public function getName(): string
@@ -156,9 +162,27 @@ class WebAdapter implements Adapter
 
     public function postMessage(string $threadId, PostableMessage $message): SentMessage
     {
+        // Convert files to attachments via the registered converter
+        if ($message->files !== []) {
+            $converted = [];
+            foreach ($message->files as $file) {
+                $converted[] = $this->fileUploadConverter->upload($file, $this);
+            }
+            $message = new PostableMessage(
+                content: $message->content,
+                replyToMessageId: $message->replyToMessageId,
+                attachments: array_merge($message->attachments, $converted),
+            );
+        }
+
         $text = $message->isCard()
             ? $message->content->getFallbackText()
             : (string) $message->content;
+
+        foreach ($message->attachments as $att) {
+            $name = $att->name ?? 'Attachment';
+            $text .= "\n".($att->url !== null ? "{$name}: {$att->url}" : $name);
+        }
 
         if ($text !== '') {
             $this->bufferedReply .= $text;

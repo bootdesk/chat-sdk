@@ -6,13 +6,16 @@ use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Contracts\FileUploadConverter;
 use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\FetchOptions;
 use BootDesk\ChatSDK\Core\FetchResult;
 use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\SentMessage;
+use BootDesk\ChatSDK\Core\Support\NullFileUploadConverter;
 use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Core\UserInfo;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -30,6 +33,8 @@ class GitHubAdapter implements Adapter
 
     /** @var array<string, string> owner/repo → installation ID */
     protected array $installationIds = [];
+
+    protected FileUploadConverter $fileUploadConverter;
 
     protected const EMOJI_MAP = [
         '👍' => '+1',
@@ -65,9 +70,11 @@ class GitHubAdapter implements Adapter
         protected readonly ?string $appId = null,
         protected readonly ?string $installationId = null,
         protected readonly ?Psr17Factory $psrFactory = null,
+        ?FileUploadConverter $fileUploadConverter = null,
     ) {
         $this->formatConverter = new GitHubFormatConverter;
         $this->webhookVerifier = new GitHubWebhookVerifier($webhookSecret);
+        $this->fileUploadConverter = $fileUploadConverter ?? new NullFileUploadConverter;
     }
 
     public function getName(): string
@@ -193,8 +200,22 @@ class GitHubAdapter implements Adapter
 
     public function postMessage(string $threadId, PostableMessage $message): SentMessage
     {
+        // Convert files to attachments via the registered converter
+        if ($message->files !== []) {
+            $converted = [];
+            foreach ($message->files as $file) {
+                $converted[] = $this->fileUploadConverter->upload($file, $this);
+            }
+            $message = new PostableMessage(
+                content: $message->content,
+                replyToMessageId: $message->replyToMessageId,
+                attachments: array_merge($message->attachments, $converted),
+            );
+        }
+
         $decoded = $this->decodeThreadId($threadId);
         $body = $this->renderBody($message);
+        $body = $this->appendAttachments($body, $message);
 
         if ($decoded['type'] === 'review_comment') {
             $response = $this->apiCall(
@@ -219,6 +240,7 @@ class GitHubAdapter implements Adapter
     {
         $decoded = $this->decodeThreadId($threadId);
         $body = $this->renderBody($message);
+        $body = $this->appendAttachments($body, $message);
 
         if ($decoded['type'] === 'review_comment') {
             $response = $this->apiCall(
@@ -436,6 +458,24 @@ class GitHubAdapter implements Adapter
         return $this->formatConverter->renderPostable($message);
     }
 
+    protected function appendAttachments(string $body, PostableMessage $message): string
+    {
+        $lines = [];
+
+        foreach ($message->attachments as $att) {
+            $name = $att->name ?? 'Attachment';
+            $lines[] = $att->url !== null
+                ? "[{$name}]({$att->url})"
+                : $name;
+        }
+
+        if ($lines === []) {
+            return $body;
+        }
+
+        return $body !== '' ? $body."\n\n".implode("\n", $lines) : implode("\n", $lines);
+    }
+
     protected function getAuthToken(string $owner, string $repo): string
     {
         if ($this->appId !== null) {
@@ -497,7 +537,13 @@ class GitHubAdapter implements Adapter
         }
 
         if (isset($data['message']) && ! isset($data['id']) && ! isset($data[0])) {
-            throw new AdapterException("GitHub API error ({$endpoint}): {$data['message']}");
+            $errorMsg = $data['message'];
+
+            if (in_array($statusCode, [401, 403], true)) {
+                throw new AuthenticationException("GitHub API authentication error ({$endpoint}): {$errorMsg}");
+            }
+
+            throw new AdapterException("GitHub API error ({$endpoint}): {$errorMsg}");
         }
 
         return $data;

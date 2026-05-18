@@ -6,6 +6,7 @@ use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Telnyx\TelnyxAdapter;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -667,6 +668,31 @@ class TelnyxAdapterTest extends TestCase
         $this->expectExceptionMessage('Invalid JSON');
 
         $this->adapter->parseWebhook($request);
+    }
+
+    public function test_api_call_throws_authentication_exception_on_auth_error(): void
+    {
+        $factory = new Psr17Factory;
+        $mockClient = new class implements ClientInterface
+        {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $f = new Psr17Factory;
+
+                return $f->createResponse(401);
+            }
+        };
+
+        $adapter = new TelnyxAdapter(
+            apiKey: 'bad_key',
+            messagingProfileId: 'profile-123',
+            fromNumber: '+15551234567',
+            httpClient: $mockClient,
+            psrFactory: $factory,
+        );
+
+        $this->expectException(AuthenticationException::class);
+        $adapter->postMessage('telnyx:+15551234567:+15559876543', PostableMessage::text('test'));
     }
 
     private function createRcsAdapter(): TelnyxAdapter

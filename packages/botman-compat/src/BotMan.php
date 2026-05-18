@@ -321,7 +321,7 @@ class BotMan
 
     private function wireHandlers(): void
     {
-        $this->chat->onNewMessage(null, function (MessageContext $context): void {
+        $this->chat->onNewMessage('/.*/', function (MessageContext $context): void {
             $this->handleCoreMessage($context);
         });
     }

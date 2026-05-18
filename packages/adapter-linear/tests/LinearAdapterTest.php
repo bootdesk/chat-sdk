@@ -6,6 +6,7 @@ use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Linear\LinearAdapter;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -509,5 +510,31 @@ class LinearAdapterTest extends TestCase
     public function test_create_response_returns_null(): void
     {
         $this->assertNull($this->adapter->createResponse());
+    }
+
+    public function test_api_call_throws_authentication_exception_on_auth_error(): void
+    {
+        $factory = new Psr17Factory;
+        $mockClient = new class implements ClientInterface
+        {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $f = new Psr17Factory;
+
+                return $f->createResponse(401)->withBody(
+                    $f->createStream(json_encode(['errors' => [['message' => 'Authentication required', 'extensions' => ['code' => 'AUTHENTICATION_ERROR']]]]))
+                );
+            }
+        };
+
+        $adapter = new LinearAdapter(
+            apiKey: 'lin_api_bad',
+            webhookSecret: 'secret',
+            httpClient: $mockClient,
+            psrFactory: $factory,
+        );
+
+        $this->expectException(AuthenticationException::class);
+        $adapter->postMessage('linear:ISS-1', PostableMessage::text('test'));
     }
 }

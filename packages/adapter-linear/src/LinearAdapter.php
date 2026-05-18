@@ -6,13 +6,16 @@ use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Contracts\FileUploadConverter;
 use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\FetchOptions;
 use BootDesk\ChatSDK\Core\FetchResult;
 use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\SentMessage;
+use BootDesk\ChatSDK\Core\Support\NullFileUploadConverter;
 use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Core\UserInfo;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -28,15 +31,19 @@ class LinearAdapter implements Adapter
 
     protected LinearWebhookVerifier $webhookVerifier;
 
+    protected FileUploadConverter $fileUploadConverter;
+
     public function __construct(
         protected readonly string $apiKey,
         protected readonly ClientInterface $httpClient,
         string $webhookSecret,
         protected readonly string $apiUrl = 'https://api.linear.app/graphql',
         protected readonly ?Psr17Factory $psrFactory = null,
+        ?FileUploadConverter $fileUploadConverter = null,
     ) {
         $this->formatConverter = new LinearFormatConverter;
         $this->webhookVerifier = new LinearWebhookVerifier($webhookSecret);
+        $this->fileUploadConverter = $fileUploadConverter ?? new NullFileUploadConverter;
     }
 
     public function getName(): string
@@ -141,8 +148,22 @@ class LinearAdapter implements Adapter
 
     public function postMessage(string $threadId, PostableMessage $message): SentMessage
     {
+        // Convert files to attachments via the registered converter
+        if ($message->files !== []) {
+            $converted = [];
+            foreach ($message->files as $file) {
+                $converted[] = $this->fileUploadConverter->upload($file, $this);
+            }
+            $message = new PostableMessage(
+                content: $message->content,
+                replyToMessageId: $message->replyToMessageId,
+                attachments: array_merge($message->attachments, $converted),
+            );
+        }
+
         $decoded = $this->decodeThreadId($threadId);
         $body = $this->renderBody($message);
+        $body = $this->appendAttachments($body, $message);
 
         $result = $this->graphqlMutation(
             'commentCreate',
@@ -380,6 +401,24 @@ class LinearAdapter implements Adapter
         return $this->formatConverter->renderPostable($message);
     }
 
+    protected function appendAttachments(string $body, PostableMessage $message): string
+    {
+        $lines = [];
+
+        foreach ($message->attachments as $att) {
+            $name = $att->name ?? 'Attachment';
+            $lines[] = $att->url !== null
+                ? "[{$name}]({$att->url})"
+                : $name;
+        }
+
+        if ($lines === []) {
+            return $body;
+        }
+
+        return $body !== '' ? $body."\n\n".implode("\n", $lines) : implode("\n", $lines);
+    }
+
     protected function graphqlQuery(string $alias, string $queryBody, array $variables): ?array
     {
         $varDefs = [];
@@ -447,6 +486,7 @@ class LinearAdapter implements Adapter
 
         $psrResponse = $this->httpClient->sendRequest($request);
         $responseBody = (string) $psrResponse->getBody();
+        $statusCode = $psrResponse->getStatusCode();
 
         $data = json_decode($responseBody, true);
 
@@ -456,6 +496,12 @@ class LinearAdapter implements Adapter
 
         if (isset($data['errors'])) {
             $messages = array_column($data['errors'], 'message');
+            $extensions = $data['errors'][0]['extensions'] ?? [];
+
+            if (in_array($statusCode, [401, 403], true) || ($extensions['code'] ?? '') === 'AUTHENTICATION_ERROR') {
+                throw new AuthenticationException('Linear API authentication error: '.implode('; ', $messages));
+            }
+
             throw new AdapterException('Linear API error: '.implode('; ', $messages));
         }
 

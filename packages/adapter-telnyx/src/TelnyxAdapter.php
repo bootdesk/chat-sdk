@@ -9,13 +9,16 @@ use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Contracts\FileUploadConverter;
 use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\FetchOptions;
 use BootDesk\ChatSDK\Core\FetchResult;
 use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\SentMessage;
+use BootDesk\ChatSDK\Core\Support\NullFileUploadConverter;
 use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Core\UserInfo;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -29,6 +32,8 @@ class TelnyxAdapter implements Adapter
 
     protected ?TelnyxWebhookVerifier $webhookVerifier = null;
 
+    protected FileUploadConverter $fileUploadConverter;
+
     public function __construct(
         protected readonly string $apiKey,
         protected readonly ClientInterface $httpClient,
@@ -38,8 +43,10 @@ class TelnyxAdapter implements Adapter
         protected readonly ?string $agentId = null,
         protected readonly string $apiUrl = 'https://api.telnyx.com/v2/',
         protected readonly ?Psr17Factory $psrFactory = null,
+        ?FileUploadConverter $fileUploadConverter = null,
     ) {
         $this->formatConverter = new TelnyxFormatConverter;
+        $this->fileUploadConverter = $fileUploadConverter ?? new NullFileUploadConverter;
 
         if ($publicKey !== null) {
             $this->webhookVerifier = new TelnyxWebhookVerifier($publicKey);
@@ -127,6 +134,19 @@ class TelnyxAdapter implements Adapter
     public function postMessage(string $threadId, PostableMessage $message): SentMessage
     {
         $decoded = $this->decodeThreadId($threadId);
+
+        // Convert files to attachments via the registered converter
+        if ($message->files !== []) {
+            $converted = [];
+            foreach ($message->files as $file) {
+                $converted[] = $this->fileUploadConverter->upload($file, $this);
+            }
+            $message = new PostableMessage(
+                content: $message->content,
+                replyToMessageId: $message->replyToMessageId,
+                attachments: array_merge($message->attachments, $converted),
+            );
+        }
 
         if ($this->agentId !== null) {
             $response = $this->sendRcs($decoded['to'], $message);
@@ -497,9 +517,13 @@ class TelnyxAdapter implements Adapter
         $responseBody = (string) $psrResponse->getBody();
 
         if ($statusCode < 200 || $statusCode >= 300) {
-            throw new AdapterException(
-                "Telnyx API returned HTTP {$statusCode} for {$endpoint}: {$responseBody}"
-            );
+            $errorMsg = "Telnyx API returned HTTP {$statusCode} for {$endpoint}: {$responseBody}";
+
+            if (in_array($statusCode, [401, 403], true)) {
+                throw new AuthenticationException($errorMsg);
+            }
+
+            throw new AdapterException($errorMsg);
         }
 
         $data = json_decode($responseBody, true);
@@ -513,6 +537,11 @@ class TelnyxAdapter implements Adapter
             $error = $errors[0] ?? [];
             $code = $error['code'] ?? 'unknown';
             $detail = $error['detail'] ?? ($error['title'] ?? 'unknown error');
+
+            if (in_array($code, ['401', '403', 'unauthorized', 'forbidden'], true)) {
+                throw new AuthenticationException("Telnyx API authentication error ({$endpoint}): [{$code}] {$detail}");
+            }
+
             throw new AdapterException("Telnyx API error ({$endpoint}): [{$code}] {$detail}");
         }
 

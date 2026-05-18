@@ -6,6 +6,7 @@ use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\GitHub\GitHubAdapter;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -625,5 +626,31 @@ class GitHubAdapterTest extends TestCase
     public function test_create_response_returns_null(): void
     {
         $this->assertNull($this->adapter->createResponse());
+    }
+
+    public function test_api_call_throws_authentication_exception_on_auth_error(): void
+    {
+        $factory = new Psr17Factory;
+        $mockClient = new class implements ClientInterface
+        {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $f = new Psr17Factory;
+
+                return $f->createResponse(401)->withBody(
+                    $f->createStream(json_encode(['message' => 'Bad credentials']))
+                );
+            }
+        };
+
+        $adapter = new GitHubAdapter(
+            authToken: 'ghp_bad',
+            webhookSecret: 'secret',
+            httpClient: $mockClient,
+            psrFactory: $factory,
+        );
+
+        $this->expectException(AuthenticationException::class);
+        $adapter->postMessage('github:acme/app:42', PostableMessage::text('test'));
     }
 }

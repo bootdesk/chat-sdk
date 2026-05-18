@@ -134,6 +134,11 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
             }
         }
 
+        // Detect bot user ID from sender
+        if ($this->botUserId === null && isset($payload['sender']['id']) && isset($payload['sender']['type']) && $payload['sender']['type'] === 'Bot') {
+            $this->botUserId = (string) $payload['sender']['id'];
+        }
+
         $parts = explode(' ', $text, 2);
         $command = $parts[0];
         $args = $parts[1] ?? '';
@@ -476,6 +481,10 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
 
     public function initialize(Chat $chat): void
     {
+        if ($this->appId !== null && $this->installationId === null) {
+            return;
+        }
+
         try {
             $me = $this->apiCall('user', [], 'GET');
             $this->botUserId = (string) ($me['id'] ?? null);

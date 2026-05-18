@@ -9,8 +9,9 @@ use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\MessageContext;
 use BootDesk\ChatSDK\Core\ReactionEvent;
 use BootDesk\ChatSDK\Core\SlashCommandEvent;
+use BootDesk\ChatSDK\Laravel\Contracts\ChatHandler;
 
-class ChatHandlers
+class ChatHandlers implements ChatHandler
 {
     public function register(Chat $chat): void
     {
@@ -63,11 +64,6 @@ class ChatHandlers
         // Slash command handler
         $chat->onSlashCommand('/status', function (SlashCommandEvent $event) {
             $event->thread->post('All systems operational.');
-        });
-
-        // Fallback — unmatched messages
-        $chat->onNewMessage(null, function (MessageContext $ctx) {
-            $ctx->thread->post("I didn't understand that. Try `hello` or `order pizza`.");
         });
     }
 }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 use App\Chat\ChatHandlers;
+use App\Chat\ChatMiddlewareHandler;
 
 return [
 
@@ -18,10 +19,10 @@ return [
     |
     */
     'adapters' => [
-        // 'slack' => [
-        //     'bot_token' => env('SLACK_BOT_TOKEN'),
-        //     'signing_secret' => env('SLACK_SIGNING_SECRET'),
-        // ],
+        'slack' => [
+            'bot_token' => env('SLACK_BOT_TOKEN'),
+            'signing_secret' => env('SLACK_SIGNING_SECRET'),
+        ],
         'telegram' => [
             'bot_token' => env('TELEGRAM_BOT_TOKEN'),
         ],
@@ -86,6 +87,7 @@ return [
     |
     */
     'handlers' => [
+        ChatMiddlewareHandler::class, // This is used only to register the middlewares, to keep it organized
         ChatHandlers::class,
     ],
 

@@ -75,7 +75,7 @@ jobs:
 
       - uses: danharrin/monorepo-split-github-action@v2.4.5
         env:
-          PAT: "${{ steps.generate-token.outputs.token }}"
+          PAT: "${{ secrets.PAT }}"
         with:
           tag: v${{ inputs.version }}
           package_directory: packages/${{ matrix.package.local_path }}

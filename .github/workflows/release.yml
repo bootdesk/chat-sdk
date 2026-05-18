@@ -101,8 +101,8 @@ jobs:
           PREFIX="packages/${{ matrix.package.local_path }}"
           SPLIT_BRANCH="split-${{ matrix.package.split_repository }}-$TAG"
 
-          git config --global user.name "bootdesk-bot[bot]"
-          git config --global user.email "178296575+bootdesk-bot[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git branch -D "$SPLIT_BRANCH" 2>/dev/null || true
           git subtree split --prefix="$PREFIX" -b "$SPLIT_BRANCH"

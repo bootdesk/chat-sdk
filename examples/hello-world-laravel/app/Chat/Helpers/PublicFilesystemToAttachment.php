@@ -13,13 +13,6 @@ use Override;
 
 class PublicFilesystemToAttachment implements FileUploadConverter
 {
-    private readonly string $baseUrl;
-
-    public function __construct()
-    {
-        $this->baseUrl = rtrim(config('filesystems.disks.public.url', '/storage'), '/');
-    }
-
     #[Override]
     public function upload(FileUpload $file, Adapter $adapter): Attachment
     {
@@ -44,7 +37,7 @@ class PublicFilesystemToAttachment implements FileUploadConverter
 
         return new Attachment(
             type: $type,
-            url: $this->baseUrl.'/'.$storagePath,
+            url: $diskInstance->publicUrl($storagePath),
             mimeType: $mimeType,
             name: $file->filename
         );

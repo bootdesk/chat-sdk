@@ -2,17 +2,23 @@
 
 namespace BootDesk\ChatSDK\Messenger;
 
+use BootDesk\ChatSDK\Core\Attachment;
 use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Contracts\FileUploadConverter;
 use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
+use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
+use BootDesk\ChatSDK\Core\Contracts\HandlesStatuses;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\FetchOptions;
 use BootDesk\ChatSDK\Core\FetchResult;
 use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\SentMessage;
+use BootDesk\ChatSDK\Core\Support\NullFileUploadConverter;
 use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Core\UserInfo;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -20,13 +26,15 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class MessengerAdapter implements Adapter
+class MessengerAdapter implements Adapter, HandlesReactions, HandlesStatuses
 {
     protected ?string $botUserId = null;
 
     protected MessengerFormatConverter $formatConverter;
 
     protected MessengerWebhookVerifier $webhookVerifier;
+
+    protected FileUploadConverter $fileUploadConverter;
 
     public function __construct(
         protected readonly string $pageAccessToken,
@@ -36,9 +44,11 @@ class MessengerAdapter implements Adapter
         protected readonly string $apiVersion = 'v21.0',
         protected readonly string $apiUrl = 'https://graph.facebook.com',
         protected readonly ?Psr17Factory $psrFactory = null,
+        ?FileUploadConverter $fileUploadConverter = null,
     ) {
         $this->formatConverter = new MessengerFormatConverter;
         $this->webhookVerifier = new MessengerWebhookVerifier($appSecret, $verifyToken, $psrFactory);
+        $this->fileUploadConverter = $fileUploadConverter ?? new NullFileUploadConverter;
     }
 
     public function getName(): string
@@ -66,6 +76,84 @@ class MessengerAdapter implements Adapter
 
         if (! $this->webhookVerifier->verifySignature($body, $signature)) {
             return $this->jsonError(403, 'Invalid signature');
+        }
+
+        return null;
+    }
+
+    public function parseReaction(ServerRequestInterface $request): ?array
+    {
+        $body = (string) $request->getBody();
+        $payload = json_decode($body, true);
+
+        if (! is_array($payload) || ($payload['object'] ?? '') !== 'page') {
+            return null;
+        }
+
+        foreach ($payload['entry'] ?? [] as $entry) {
+            foreach ($entry['messaging'] ?? [] as $event) {
+                $reaction = $event['reaction'] ?? null;
+                if ($reaction === null) {
+                    continue;
+                }
+
+                $emoji = $reaction['emoji'] ?? $reaction['reaction'] ?? '';
+                $action = $reaction['action'] ?? '';
+                $senderId = $event['sender']['id'] ?? '';
+
+                $threadId = $this->encodeThreadId(['recipientId' => $senderId]);
+
+                return [
+                    'emoji' => $emoji,
+                    'rawEmoji' => $emoji,
+                    'added' => $action === 'react',
+                    'threadId' => $threadId,
+                    'messageId' => $reaction['mid'] ?? $event['timestamp'] ?? '',
+                    'userId' => $senderId,
+                    'raw' => $payload,
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    public function parseStatus(ServerRequestInterface $request): ?array
+    {
+        $body = (string) $request->getBody();
+        $payload = json_decode($body, true);
+
+        if (! is_array($payload) || ($payload['object'] ?? '') !== 'page') {
+            return null;
+        }
+
+        foreach ($payload['entry'] ?? [] as $entry) {
+            foreach ($entry['messaging'] ?? [] as $event) {
+                $senderId = $event['sender']['id'] ?? '';
+                $threadId = $this->encodeThreadId(['recipientId' => $senderId]);
+
+                if (isset($event['delivery'])) {
+                    return [
+                        'type' => 'delivered',
+                        'messageIds' => $event['delivery']['mids'] ?? [],
+                        'threadId' => $threadId,
+                        'userId' => $senderId,
+                        'timestamp' => $event['delivery']['watermark'] ?? null,
+                        'raw' => $payload,
+                    ];
+                }
+
+                if (isset($event['read'])) {
+                    return [
+                        'type' => 'read',
+                        'messageIds' => [],
+                        'threadId' => $threadId,
+                        'userId' => $senderId,
+                        'timestamp' => $event['read']['watermark'] ?? null,
+                        'raw' => $payload,
+                    ];
+                }
+            }
         }
 
         return null;
@@ -99,6 +187,7 @@ class MessengerAdapter implements Adapter
                     threadId: $threadId,
                     author: new Author(id: $senderId, isBot: false),
                     text: $text,
+                    attachments: $this->extractAttachments($message),
                     isDM: true,
                     raw: $body,
                 );
@@ -133,6 +222,55 @@ class MessengerAdapter implements Adapter
     {
         $decoded = $this->decodeThreadId($threadId);
         $recipientId = $decoded['recipientId'];
+
+        // Convert files to attachments via the registered converter
+        if ($message->files !== []) {
+            $converted = [];
+            foreach ($message->files as $file) {
+                $converted[] = $this->fileUploadConverter->upload($file, $this);
+            }
+            $message = new PostableMessage(
+                content: $message->content,
+                replyToMessageId: $message->replyToMessageId,
+                attachments: array_merge($message->attachments, $converted),
+            );
+        }
+
+        // Attachments take priority
+        if ($message->attachments !== []) {
+            $att = $message->attachments[0];
+            $text = $message->getTextContent();
+
+            $attachmentData = match ($att->type) {
+                'image' => ['type' => 'image', 'payload' => ['url' => $att->url]],
+                'video' => ['type' => 'video', 'payload' => ['url' => $att->url]],
+                'audio' => ['type' => 'audio', 'payload' => ['url' => $att->url]],
+                default => ['type' => 'file', 'payload' => ['url' => $att->url]],
+            };
+
+            $response = $this->graphApiCall('me/messages', [
+                'recipient' => ['id' => $recipientId],
+                'message' => [
+                    'attachment' => $attachmentData,
+                ],
+                'messaging_type' => 'RESPONSE',
+            ]);
+
+            // Append text as a follow-up if present
+            if ($text !== '') {
+                $this->graphApiCall('me/messages', [
+                    'recipient' => ['id' => $recipientId],
+                    'message' => ['text' => $this->truncate($text)],
+                    'messaging_type' => 'RESPONSE',
+                ]);
+            }
+
+            return new SentMessage(
+                id: $response['message_id'] ?? '',
+                threadId: $threadId,
+                timestamp: (string) ($response['recipient_id'] ?? ''),
+            );
+        }
 
         if ($message->isTemplate()) {
             $template = $message->content;
@@ -302,6 +440,29 @@ class MessengerAdapter implements Adapter
         return substr($text, 0, $limit - 3).'...';
     }
 
+    /** @return Attachment[] */
+    protected function extractAttachments(array $message): array
+    {
+        $attachments = [];
+
+        foreach ($message['attachments'] ?? [] as $att) {
+            $type = match ($att['type'] ?? '') {
+                'image' => 'image',
+                'video' => 'video',
+                'audio' => 'audio',
+                default => 'file',
+            };
+
+            $attachments[] = new Attachment(
+                type: $type,
+                url: $att['payload']['url'] ?? null,
+                mimeType: $att['payload']['mime_type'] ?? null,
+            );
+        }
+
+        return $attachments;
+    }
+
     protected function graphApiCall(string $endpoint, array $params, string $method = 'POST', array $queryParams = []): array
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
@@ -335,6 +496,13 @@ class MessengerAdapter implements Adapter
 
         if (isset($data['error'])) {
             $errorMsg = $data['error']['message'] ?? 'unknown_error';
+            $errorCode = $data['error']['code'] ?? 0;
+            $errorType = $data['error']['type'] ?? '';
+
+            if (in_array($errorCode, [10, 190, 200], true) || $errorType === 'OAuthException') {
+                throw new AuthenticationException("Messenger API authentication error ({$endpoint}): {$errorMsg}");
+            }
+
             throw new AdapterException("Messenger API error ({$endpoint}): {$errorMsg}");
         }
 

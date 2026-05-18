@@ -6,6 +6,7 @@ use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Messenger\MessengerAdapter;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -392,5 +393,142 @@ class MessengerAdapterTest extends TestCase
     public function test_create_response_returns_null(): void
     {
         $this->assertNull($this->adapter->createResponse());
+    }
+
+    public function test_post_message_truncates_long_text(): void
+    {
+        $factory = new Psr17Factory;
+        $captured = [];
+
+        $mockClient = new class($captured) implements ClientInterface
+        {
+            public function __construct(private array &$captured) {}
+
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $factory = new Psr17Factory;
+                $this->captured[] = $request;
+
+                return $factory->createResponse(200)->withBody(
+                    $factory->createStream(json_encode(['recipient_id' => '123', 'message_id' => 'mid.999']))
+                );
+            }
+        };
+
+        $adapter = new MessengerAdapter(
+            pageAccessToken: 'test_token',
+            appSecret: 'test_secret',
+            verifyToken: 'verify_me',
+            httpClient: $mockClient,
+            psrFactory: $factory,
+        );
+
+        $longText = str_repeat('a', 3000);
+        $adapter->postMessage('messenger:123:456', PostableMessage::text($longText));
+
+        $this->assertCount(1, $captured);
+        $body = json_decode((string) $captured[0]->getBody(), true);
+        $this->assertStringEndsWith('...', $body['message']['text']);
+        $this->assertSame(2000, strlen($body['message']['text']));
+    }
+
+    public function test_api_call_throws_authentication_exception_on_auth_error(): void
+    {
+        $factory = new Psr17Factory;
+        $mockClient = new class implements ClientInterface
+        {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $f = new Psr17Factory;
+
+                return $f->createResponse(200)->withBody(
+                    $f->createStream(json_encode(['error' => ['type' => 'OAuthException', 'code' => 190, 'message' => 'Invalid access token']]))
+                );
+            }
+        };
+
+        $adapter = new MessengerAdapter(
+            pageAccessToken: 'bad-token',
+            appSecret: 'secret',
+            verifyToken: 'verify',
+            httpClient: $mockClient,
+            psrFactory: $factory,
+        );
+
+        $this->expectException(AuthenticationException::class);
+        $adapter->postMessage('messenger:123:456', PostableMessage::text('test'));
+    }
+
+    public function test_parse_status_delivery(): void
+    {
+        $body = json_encode([
+            'object' => 'page',
+            'entry' => [[
+                'messaging' => [[
+                    'sender' => ['id' => '12345'],
+                    'recipient' => ['id' => '67890'],
+                    'timestamp' => 1700000000,
+                    'delivery' => ['mids' => ['mid.1', 'mid.2'], 'watermark' => 1700000000],
+                ]],
+            ]],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/messenger')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseStatus($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('delivered', $result['type']);
+        $this->assertSame(['mid.1', 'mid.2'], $result['messageIds']);
+        $this->assertSame('12345', $result['userId']);
+    }
+
+    public function test_parse_status_read(): void
+    {
+        $body = json_encode([
+            'object' => 'page',
+            'entry' => [[
+                'messaging' => [[
+                    'sender' => ['id' => '12345'],
+                    'recipient' => ['id' => '67890'],
+                    'timestamp' => 1700000001,
+                    'read' => ['watermark' => 1700000001],
+                ]],
+            ]],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/messenger')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseStatus($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('read', $result['type']);
+        $this->assertSame('12345', $result['userId']);
+        $this->assertSame(1700000001, $result['timestamp']);
+    }
+
+    public function test_parse_status_not_page_object(): void
+    {
+        $body = json_encode(['object' => 'other']);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/messenger')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseStatus($request));
+    }
+
+    public function test_parse_status_no_messaging(): void
+    {
+        $body = json_encode([
+            'object' => 'page',
+            'entry' => [['messaging' => []]],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/messenger')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseStatus($request));
     }
 }

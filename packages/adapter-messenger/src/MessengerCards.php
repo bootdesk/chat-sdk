@@ -4,6 +4,17 @@ namespace BootDesk\ChatSDK\Messenger;
 
 use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
+use BootDesk\ChatSDK\Core\Cards\Divider;
+use BootDesk\ChatSDK\Core\Cards\Image;
+use BootDesk\ChatSDK\Core\Cards\Link;
+use BootDesk\ChatSDK\Core\Cards\LinkButton;
+use BootDesk\ChatSDK\Core\Cards\Table;
+use BootDesk\ChatSDK\Core\Cards\Text;
+use League\CommonMark\Environment\Environment;
+use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
+use League\CommonMark\Node\Block\Paragraph;
+use League\CommonMark\Node\Inline\Text as CommonMarkText;
+use League\CommonMark\Parser\MarkdownParser;
 
 class MessengerCards
 {
@@ -16,16 +27,21 @@ class MessengerCards
     public static function toMessengerPayload(Card $card): array
     {
         $buttons = $card->getButtons();
+        $linkButtons = $card->getLinkButtons();
 
-        if ($buttons !== [] && count($buttons) <= self::MAX_BUTTONS) {
+        $allButtons = array_merge($buttons, $linkButtons);
+
+        if ($allButtons !== [] && count($allButtons) <= self::MAX_BUTTONS) {
             $allFit = true;
             $messengerButtons = [];
-            foreach (array_slice($buttons, 0, self::MAX_BUTTONS) as $button) {
+            foreach (array_slice($allButtons, 0, self::MAX_BUTTONS) as $button) {
                 if (strlen($button->label) > self::MAX_BUTTON_TITLE) {
                     $allFit = false;
                     break;
                 }
-                $messengerButtons[] = self::convertButton($button);
+                $messengerButtons[] = $button instanceof LinkButton
+                    ? self::convertLinkButton($button)
+                    : self::convertButton($button);
             }
 
             if ($allFit && $messengerButtons !== []) {
@@ -84,13 +100,33 @@ class MessengerCards
     {
         $lines = [];
 
+        if ($card->getImageUrl() !== null) {
+            $lines[] = $card->getImageUrl();
+        }
+
         if ($card->getHeader() !== null) {
             $lines[] = $card->getHeader();
         }
 
+        foreach ($card->getChildren() as $child) {
+            if ($child instanceof Text) {
+                $lines[] = $child->content;
+            } elseif ($child instanceof Divider) {
+                $lines[] = '---';
+            } elseif ($child instanceof Image) {
+                $lines[] = $child->alt !== '' ? "{$child->alt}: {$child->url}" : $child->url;
+            } elseif ($child instanceof Link) {
+                $lines[] = "[{$child->label}]({$child->url})";
+            } elseif ($child instanceof Table) {
+                $lines[] = self::renderTableAsText($child);
+            } elseif ($child instanceof LinkButton) {
+                $lines[] = "[{$child->label}]({$child->url})";
+            }
+        }
+
         foreach ($card->getSections() as $section) {
             if ($section->getText() !== null) {
-                $lines[] = $section->getText();
+                $lines[] = self::markdownToPlainText($section->getText());
             }
 
             foreach ($section->getFields() as $label => $value) {
@@ -98,11 +134,8 @@ class MessengerCards
             }
         }
 
-        foreach ($card->getImages() as $image) {
-            $lines[] = $image->url;
-        }
-
-        foreach ($card->getButtons() as $button) {
+        $allButtons = array_merge($card->getButtons(), $card->getLinkButtons());
+        foreach ($allButtons as $button) {
             $lines[] = "[{$button->label}]";
         }
 
@@ -114,7 +147,7 @@ class MessengerCards
         $subtitle = '';
         foreach ($card->getSections() as $section) {
             if ($section->getText() !== null) {
-                $subtitle = $section->getText();
+                $subtitle = self::markdownToPlainText($section->getText());
                 break;
             }
         }
@@ -128,9 +161,8 @@ class MessengerCards
             $element['subtitle'] = self::truncate($subtitle, 80);
         }
 
-        foreach ($card->getImages() as $image) {
-            $element['image_url'] = $image->url;
-            break;
+        if ($card->getImageUrl() !== null) {
+            $element['image_url'] = $card->getImageUrl();
         }
 
         return [
@@ -163,9 +195,24 @@ class MessengerCards
     private static function buildBodyText(Card $card): string
     {
         $parts = [];
+
+        foreach ($card->getChildren() as $child) {
+            if ($child instanceof Text) {
+                $parts[] = $child->content;
+            } elseif ($child instanceof Image) {
+                $parts[] = $child->alt !== '' ? "{$child->alt}: {$child->url}" : $child->url;
+            } elseif ($child instanceof Link) {
+                $parts[] = "[{$child->label}]({$child->url})";
+            } elseif ($child instanceof Table) {
+                $parts[] = self::renderTableAsText($child);
+            } elseif ($child instanceof LinkButton) {
+                $parts[] = "[{$child->label}]({$child->url})";
+            }
+        }
+
         foreach ($card->getSections() as $section) {
             if ($section->getText() !== null) {
-                $parts[] = $section->getText();
+                $parts[] = self::markdownToPlainText($section->getText());
             }
         }
 
@@ -212,5 +259,60 @@ class MessengerCards
         }
 
         return substr($text, 0, $maxLength - 1)."\u{2026}";
+    }
+
+    private static function convertLinkButton(LinkButton $button): array
+    {
+        return [
+            'type' => 'web_url',
+            'title' => self::truncate($button->label, self::MAX_BUTTON_TITLE),
+            'url' => $button->url,
+        ];
+    }
+
+    private static function markdownToPlainText(string $markdown): string
+    {
+        $environment = new Environment(['html_input' => 'strip', 'allow_unsafe_links' => false]);
+        $environment->addExtension(new CommonMarkCoreExtension);
+        $parser = new MarkdownParser($environment);
+        $ast = $parser->parse($markdown);
+
+        $walker = $ast->walker();
+        $result = '';
+
+        while ($event = $walker->next()) {
+            $node = $event->getNode();
+
+            if ($event->isEntering()) {
+                if ($node instanceof CommonMarkText) {
+                    $result .= $node->getLiteral();
+                }
+            } elseif ($node instanceof Paragraph) {
+                $result .= "\n";
+            }
+        }
+
+        return trim($result);
+    }
+
+    private static function renderTableAsText(Table $table): string
+    {
+        $lines = [];
+        $lines[] = '| '.implode(' | ', $table->headers).' |';
+        $separators = [];
+        foreach (array_keys($table->headers) as $i) {
+            $align = $table->align[$i] ?? null;
+            $separators[] = match ($align?->value) {
+                'center' => ':---:',
+                'right' => '---:',
+                default => '---',
+            };
+        }
+        $lines[] = '| '.implode(' | ', $separators).' |';
+        foreach ($table->rows as $row) {
+            $lines[] = '| '.implode(' | ', $row).' |';
+        }
+
+        return implode("\n", $lines);
     }
 }

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 0.2.0)'
+        description: "Version to release (e.g., 0.2.0)"
         required: true
 
 jobs:
@@ -49,16 +49,43 @@ jobs:
         package:
           - { local_path: core, split_repository: chat-sdk-core }
           - { local_path: laravel, split_repository: chat-sdk-laravel }
-          - { local_path: adapter-slack, split_repository: chat-sdk-adapter-slack }
-          - { local_path: adapter-telegram, split_repository: chat-sdk-adapter-telegram }
-          - { local_path: adapter-whatsapp, split_repository: chat-sdk-adapter-whatsapp }
-          - { local_path: adapter-discord, split_repository: chat-sdk-adapter-discord }
-          - { local_path: adapter-messenger, split_repository: chat-sdk-adapter-messenger }
+          - {
+              local_path: adapter-slack,
+              split_repository: chat-sdk-adapter-slack,
+            }
+          - {
+              local_path: adapter-telegram,
+              split_repository: chat-sdk-adapter-telegram,
+            }
+          - {
+              local_path: adapter-whatsapp,
+              split_repository: chat-sdk-adapter-whatsapp,
+            }
+          - {
+              local_path: adapter-discord,
+              split_repository: chat-sdk-adapter-discord,
+            }
+          - {
+              local_path: adapter-messenger,
+              split_repository: chat-sdk-adapter-messenger,
+            }
           - { local_path: adapter-web, split_repository: chat-sdk-adapter-web }
-          - { local_path: adapter-github, split_repository: chat-sdk-adapter-github }
-          - { local_path: adapter-linear, split_repository: chat-sdk-adapter-linear }
-          - { local_path: adapter-telnyx, split_repository: chat-sdk-adapter-telnyx }
-          - { local_path: botman-compat, split_repository: chat-sdk-botman-compat }
+          - {
+              local_path: adapter-github,
+              split_repository: chat-sdk-adapter-github,
+            }
+          - {
+              local_path: adapter-linear,
+              split_repository: chat-sdk-adapter-linear,
+            }
+          - {
+              local_path: adapter-telnyx,
+              split_repository: chat-sdk-adapter-telnyx,
+            }
+          - {
+              local_path: botman-compat,
+              split_repository: chat-sdk-botman-compat,
+            }
 
     steps:
       - uses: actions/checkout@v5
@@ -72,6 +99,13 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: bootdesk
+          permission-contents: write
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.generate-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
 
       - name: Split and push package
         env:
@@ -84,6 +118,10 @@ jobs:
 
           git branch -D "$SPLIT_BRANCH" 2>/dev/null || true
           git subtree split --prefix="$PREFIX" -b "$SPLIT_BRANCH"
+
+          git config --global user.name '${{ steps.generate-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+          gh auth setup-git
 
           git push "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" \
             "$SPLIT_BRANCH:main" --force

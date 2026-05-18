@@ -150,14 +150,7 @@ class ChatHandlers implements ChatHandler
         });
 
         $chat->onNewMessage('/^channel$/i', function (MessageContext $ctx) {
-            $parts = explode(':', $ctx->thread->id, 3);
-            $channelId = $parts[1] ?? null;
-
-            if ($channelId === null) {
-                $ctx->thread->post('Could not determine channel ID.');
-
-                return;
-            }
+            $channelId = $ctx->thread->adapter->channelIdFromThreadId($ctx->thread->id);
 
             $channel = new Channel($channelId, $ctx->thread->adapter);
             $info = $channel->fetchMetadata();

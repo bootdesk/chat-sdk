@@ -109,21 +109,26 @@ jobs:
 
       - name: Split and push package
         env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+          TOKEN: ${{ steps.generate-token.outputs.token }}
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_SLUG: ${{ steps.generate-token.outputs.app-slug }}
         run: |
           REPO="bootdesk/${{ matrix.package.split_repository }}"
           TAG="v${{ inputs.version }}"
           PREFIX="packages/${{ matrix.package.local_path }}"
           SPLIT_BRANCH="split-${{ matrix.package.split_repository }}-$TAG"
 
+          git config --global user.name "$APP_SLUG[bot]"
+          git config --global user.email "$APP_ID+$APP_SLUG[bot]@users.noreply.github.com"
+
           git branch -D "$SPLIT_BRANCH" 2>/dev/null || true
           git subtree split --prefix="$PREFIX" -b "$SPLIT_BRANCH"
 
-          git config --global user.name '${{ steps.generate-token.outputs.app-slug }}[bot]'
-          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate-token.outputs.app-slug }}[bot]@users.noreply.github.com'
-          gh auth setup-git
+          git checkout "$SPLIT_BRANCH"
+          git tag -f "$TAG"
 
-          git push "https://github.com/$REPO.git" \
+          git push "https://x-access-token:${TOKEN}@github.com/${REPO}.git" \
             "$SPLIT_BRANCH:main" --force
-          git push "https://github.com/$REPO.git" \
+
+          git push "https://x-access-token:${TOKEN}@github.com/${REPO}.git" \
             "$TAG" --force

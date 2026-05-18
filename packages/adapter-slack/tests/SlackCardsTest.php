@@ -107,4 +107,87 @@ class SlackCardsTest extends TestCase
         $this->assertSame('section', $blocks[2]['type']);
         $this->assertSame('actions', $blocks[3]['type']);
     }
+
+    public function test_header_plain_text(): void
+    {
+        $card = Card::make()->header('Hello');
+        $blocks = SlackCards::toBlockKit($card);
+
+        $this->assertSame('plain_text', $blocks[0]['text']['type']);
+        $this->assertSame('Hello', $blocks[0]['text']['text']);
+        $this->assertArrayNotHasKey('emoji', $blocks[0]['text']);
+    }
+
+    public function test_button_has_emoji(): void
+    {
+        $card = Card::make()->actions([Button::primary('Go', 'go')]);
+        $blocks = SlackCards::toBlockKit($card);
+
+        $this->assertArrayHasKey('emoji', $blocks[0]['elements'][0]['text']);
+        $this->assertTrue($blocks[0]['elements'][0]['text']['emoji']);
+    }
+
+    public function test_link_button_with_style(): void
+    {
+        $card = Card::make()
+            ->linkButton('Dashboard', 'https://example.com', ButtonStyle::Primary);
+        $blocks = SlackCards::toBlockKit($card);
+
+        $this->assertSame('actions', $blocks[0]['type']);
+        $this->assertSame('https://example.com', $blocks[0]['elements'][0]['url']);
+        $this->assertSame('primary', $blocks[0]['elements'][0]['style']);
+        $this->assertArrayHasKey('emoji', $blocks[0]['elements'][0]['text']);
+    }
+
+    public function test_table_renders_native_block(): void
+    {
+        $card = Card::make()->table(
+            ['Name', 'Value'],
+            [['A', '1'], ['B', '2']],
+        );
+        $blocks = SlackCards::toBlockKit($card);
+
+        $this->assertSame('table', $blocks[0]['type']);
+        $this->assertCount(3, $blocks[0]['rows']); // header + 2 data rows
+        $this->assertSame('rich_text', $blocks[0]['rows'][0][0]['type']);
+        $this->assertSame('Name', $blocks[0]['rows'][0][0]['elements'][0]['elements'][0]['text']);
+    }
+
+    public function test_table_exceeding_rows_falls_back_to_code_block(): void
+    {
+        $rows = [];
+        for ($i = 0; $i < 105; $i++) {
+            $rows[] = ["Row {$i}", 'val'];
+        }
+        $card = Card::make()->table(['Name', 'Value'], $rows);
+        $blocks = SlackCards::toBlockKit($card);
+
+        $this->assertSame('section', $blocks[0]['type']);
+        $this->assertSame('mrkdwn', $blocks[0]['text']['type']);
+        $this->assertStringContainsString('```', $blocks[0]['text']['text']);
+    }
+
+    public function test_very_large_table_truncates_text(): void
+    {
+        $rows = [];
+        for ($i = 0; $i < 105; $i++) {
+            $rows[] = ["Row {$i} with extra padding ".str_repeat('x', 40), 'value '.str_repeat('y', 40)];
+        }
+        $card = Card::make()->table(['Name', 'Value'], $rows);
+        $blocks = SlackCards::toBlockKit($card);
+
+        $this->assertStringContainsString('more rows', $blocks[0]['text']['text']);
+        $this->assertLessThanOrEqual(3100, strlen($blocks[0]['text']['text']));
+    }
+
+    public function test_second_table_falls_back_to_code_block(): void
+    {
+        $card = Card::make()
+            ->table(['A'], [['1']])
+            ->table(['B'], [['2']]);
+        $blocks = SlackCards::toBlockKit($card);
+
+        $this->assertSame('table', $blocks[0]['type'], 'First table should be native');
+        $this->assertSame('section', $blocks[1]['type'], 'Second table should be ASCII fallback');
+    }
 }

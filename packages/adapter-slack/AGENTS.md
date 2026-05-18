@@ -7,6 +7,16 @@ Slack adapter for bootdesk/chat-sdk-core. Namespace: `BootDesk\ChatSDK\Slack`
 - `SlackFormatConverter` — Slack mrkdwn ↔ CommonMark AST
 - `SlackCards` — Card model → Block Kit layout
 - `SlackWebhookVerifier` — HMAC-SHA256 request verification
+- `SlackModalConverter` — Modal value objects → Slack Block Kit view payload
+
+## contracts implemented
+- `HandlesActions` — `parseAction()` for `block_actions` interactive payloads
+- `HandlesSlashCommands` — `parseSlashCommand()` for Slack slash commands
+- `HandlesReactions` — `parseReaction()` for `reaction_added`/`reaction_removed` events
+- `HandlesModals` — `parseModalSubmit()` for `view_submission`, `parseModalClose()` for `view_closed`
+- `HandlesOptionsLoad` — `parseOptionsLoad()` for `block_suggestion`, `respondToOptionsLoad()` returns JSON response
+- `HandlesSlackEvents` — `parseAssistantThreadStarted()`, `parseAssistantContextChanged()`, `parseAppHomeOpened()`, `parseMemberJoinedChannel()`
+- `SupportsModals` — `openModal()` calls Slack `views.open` API; uses `SlackModalConverter::toSlackView()`
 
 ## registration
 `scc/register.php` registers `'slack' => SlackAdapter::class` via `AdapterRegistry`
@@ -27,8 +37,7 @@ new SlackAdapter(
 
 ## webhook flow
 1. `verifyWebhook` — handles `url_verification` challenge, verifies HMAC signature
-2. `parseWebhook` — parses event payload, detects mentions (`<@BOTID>`), DMs (channel starts with `D`)
-3. Thread TS = `thread_ts` from event, falling back to message `ts`
+2. `handleWebhook` dispatches in order: Actions → SlashCommands → Modals → OptionsLoad → Reactions → SlackEvents → Messages
 
 ## features
 - Post/edit/delete messages, Block Kit cards
@@ -36,6 +45,10 @@ new SlackAdapter(
 - Fetch thread replies (conversations.replies), channel info (conversations.info)
 - Open DM (conversations.open), get user info (users.info)
 - Initialize resolves bot user ID via auth.test
+- File uploads via 3-step API: `files.getUploadURLExternal` → binary POST → `files.completeUploadExternal`
+- URL-based attachments rendered as image blocks / text links
+- Modal forms via `views.open` with `SlackModalConverter`
+- External select menus via `block_suggestion` → `respondToOptionsLoad()`
 - Streaming: concatenates chunks into single message
 
 ## config (laravel)

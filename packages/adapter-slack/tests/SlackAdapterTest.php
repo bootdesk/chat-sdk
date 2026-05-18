@@ -5,6 +5,9 @@ namespace BootDesk\ChatSDK\Slack\Tests;
 use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
+use BootDesk\ChatSDK\Core\Modals\Modal;
+use BootDesk\ChatSDK\Core\Modals\TextInput;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Slack\SlackAdapter;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -207,6 +210,267 @@ class SlackAdapterTest extends TestCase
         $this->assertTrue($message->isDM);
     }
 
+    public function test_parse_bot_message(): void
+    {
+        $body = json_encode([
+            'event' => [
+                'type' => 'message',
+                'text' => 'Bot reply',
+                'bot_id' => 'BOT123',
+                'ts' => '1234.5678',
+                'channel' => 'C456',
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withBody($this->factory->createStream($body));
+
+        $message = $this->adapter->parseWebhook($request);
+
+        $this->assertSame('BOT123', $message->author->id);
+        $this->assertTrue($message->author->isBot);
+        $this->assertSame('Bot reply', $message->text);
+    }
+
+    public function test_parse_self_message(): void
+    {
+        $this->adapter->initialize($this->createMock(Chat::class));
+        $this->assertSame('UBOT123', $this->adapter->getBotUserId());
+
+        $body = json_encode([
+            'event' => [
+                'type' => 'message',
+                'text' => 'Self message',
+                'user' => 'UBOT123',
+                'ts' => '1234.5678',
+                'channel' => 'C456',
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withBody($this->factory->createStream($body));
+
+        // parseWebhook doesn't filter self — Chat.processMessage does
+        $message = $this->adapter->parseWebhook($request);
+        $this->assertSame('UBOT123', $message->author->id);
+    }
+
+    public function test_parse_message_without_text(): void
+    {
+        $body = json_encode([
+            'event' => [
+                'type' => 'message',
+                'user' => 'U123',
+                'ts' => '1234.5678',
+                'channel' => 'C456',
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withBody($this->factory->createStream($body));
+
+        $message = $this->adapter->parseWebhook($request);
+        $this->assertSame('', $message->text);
+    }
+
+    public function test_parse_message_without_user(): void
+    {
+        $body = json_encode([
+            'event' => [
+                'type' => 'message',
+                'text' => 'No user',
+                'ts' => '1234.5678',
+                'channel' => 'C456',
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withBody($this->factory->createStream($body));
+
+        $message = $this->adapter->parseWebhook($request);
+        $this->assertSame('', $message->author->id);
+    }
+
+    public function test_parse_message_without_ts(): void
+    {
+        $body = json_encode([
+            'event' => [
+                'type' => 'message',
+                'text' => 'No timestamp',
+                'user' => 'U123',
+                'channel' => 'C456',
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withBody($this->factory->createStream($body));
+
+        $message = $this->adapter->parseWebhook($request);
+        $this->assertSame('', $message->id);
+    }
+
+    public function test_parse_action_detects_block_actions(): void
+    {
+        $payload = json_encode([
+            'type' => 'block_actions',
+            'user' => ['id' => 'U123', 'username' => 'test'],
+            'channel' => ['id' => 'C456'],
+            'message' => ['ts' => '1234.5678'],
+            'actions' => [['action_id' => 'order_confirm', 'value' => '{"item":"Pizza"}']],
+            'trigger_id' => 'trigger-999',
+        ]);
+
+        $body = http_build_query(['payload' => $payload]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseAction($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('order_confirm', $result['actionId']);
+        $this->assertSame('{"item":"Pizza"}', $result['value']);
+        $this->assertSame('slack:C456:1234.5678', $result['threadId']);
+        $this->assertSame('1234.5678', $result['messageId']);
+        $this->assertSame('U123', $result['userId']);
+        $this->assertSame('trigger-999', $result['triggerId']);
+    }
+
+    public function test_parse_action_returns_null_for_json_payload(): void
+    {
+        $body = json_encode(['type' => 'event_callback']);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withHeader('Content-Type', 'application/json')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseAction($request));
+    }
+
+    public function test_parse_action_returns_null_for_slash_command(): void
+    {
+        $body = http_build_query(['command' => '/help', 'text' => '']);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseAction($request));
+    }
+
+    public function test_parse_action_in_thread_uses_container_thread_ts(): void
+    {
+        $payload = json_encode([
+            'type' => 'block_actions',
+            'user' => ['id' => 'U1'],
+            'channel' => ['id' => 'C456'],
+            'container' => [
+                'type' => 'message',
+                'message_ts' => '1111.2222',
+                'channel_id' => 'C456',
+                'thread_ts' => '9999.8888',
+            ],
+            'message' => ['ts' => '1111.2222'],
+            'actions' => [['action_id' => 'btn']],
+        ]);
+
+        $body = http_build_query(['payload' => $payload]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseAction($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('slack:C456:9999.8888', $result['threadId']);
+    }
+
+    public function test_parse_slash_command_detects_form_urlencoded(): void
+    {
+        $body = http_build_query([
+            'command' => '/help',
+            'text' => 'topic search',
+            'user_id' => 'U123',
+            'channel_id' => 'C456',
+            'trigger_id' => 'trigger-789',
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseSlashCommand($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('/help', $result['command']);
+        $this->assertSame('topic search', $result['text']);
+        $this->assertSame('U123', $result['userId']);
+        $this->assertSame('slack:C456', $result['channelId']);
+        $this->assertSame('trigger-789', $result['triggerId']);
+        $this->assertFalse($result['isBot']);
+    }
+
+    public function test_parse_slash_command_returns_null_for_json_payload(): void
+    {
+        $body = json_encode(['event' => ['text' => 'hello']]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withHeader('Content-Type', 'application/json')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseSlashCommand($request));
+    }
+
+    public function test_parse_slash_command_returns_null_for_interactive_payload(): void
+    {
+        $body = http_build_query([
+            'payload' => json_encode(['type' => 'block_actions']),
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseSlashCommand($request));
+    }
+
+    public function test_parse_slash_command_returns_null_without_command(): void
+    {
+        $body = http_build_query([
+            'text' => 'hello',
+            'user_id' => 'U123',
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseSlashCommand($request));
+    }
+
+    public function test_parse_slash_command_without_trigger_id(): void
+    {
+        $body = http_build_query([
+            'command' => '/status',
+            'text' => '',
+            'user_id' => 'U456',
+            'channel_id' => 'C789',
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseSlashCommand($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('/status', $result['command']);
+        $this->assertSame('', $result['text']);
+        $this->assertNull($result['triggerId']);
+    }
+
     public function test_post_message(): void
     {
         $sent = $this->adapter->postMessage(
@@ -337,5 +601,284 @@ class SlackAdapterTest extends TestCase
     {
         $this->adapter->disconnect();
         $this->assertTrue(true);
+    }
+
+    public function test_api_call_throws_authentication_exception_on_auth_error(): void
+    {
+        $factory = new Psr17Factory;
+        $mockClient = new class implements ClientInterface
+        {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $f = new Psr17Factory;
+
+                return $f->createResponse(200)->withBody(
+                    $f->createStream(json_encode(['ok' => false, 'error' => 'invalid_auth']))
+                );
+            }
+        };
+
+        $adapter = new SlackAdapter(
+            botToken: 'xoxb-bad-token',
+            httpClient: $mockClient,
+            psrFactory: $factory,
+        );
+        $adapter->initialize($this->createMock(Chat::class));
+
+        $this->expectException(AuthenticationException::class);
+        $adapter->postMessage('slack:C123', PostableMessage::text('test'));
+    }
+
+    public function test_implements_handles_reactions(): void
+    {
+        $this->assertInstanceOf(\BootDesk\ChatSDK\Core\Contracts\HandlesReactions::class, $this->adapter);
+    }
+
+    public function test_implements_handles_modals(): void
+    {
+        $this->assertInstanceOf(\BootDesk\ChatSDK\Core\Contracts\HandlesModals::class, $this->adapter);
+    }
+
+    public function test_implements_handles_options_load(): void
+    {
+        $this->assertInstanceOf(\BootDesk\ChatSDK\Core\Contracts\HandlesOptionsLoad::class, $this->adapter);
+    }
+
+    public function test_implements_handles_slack_events(): void
+    {
+        $this->assertInstanceOf(\BootDesk\ChatSDK\Core\Contracts\HandlesSlackEvents::class, $this->adapter);
+    }
+
+    public function test_implements_supports_modals(): void
+    {
+        $this->assertInstanceOf(\BootDesk\ChatSDK\Core\Contracts\SupportsModals::class, $this->adapter);
+    }
+
+    public function test_parse_reaction_added(): void
+    {
+        $body = json_encode([
+            'event' => [
+                'type' => 'reaction_added',
+                'user' => 'U123',
+                'reaction' => '+1',
+                'item' => ['type' => 'message', 'channel' => 'C123', 'ts' => '111.222'],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseReaction($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('+1', $result['emoji']);
+        $this->assertTrue($result['added']);
+    }
+
+    public function test_parse_reaction_removed(): void
+    {
+        $body = json_encode([
+            'event' => [
+                'type' => 'reaction_removed',
+                'user' => 'U123',
+                'reaction' => 'thumbsup',
+                'item' => ['type' => 'message', 'channel' => 'C123', 'ts' => '111.222'],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseReaction($request);
+
+        $this->assertNotNull($result);
+        $this->assertFalse($result['added']);
+    }
+
+    public function test_parse_reaction_skips_non_message_item(): void
+    {
+        $body = json_encode([
+            'event' => [
+                'type' => 'reaction_added',
+                'user' => 'U123',
+                'reaction' => '+1',
+                'item' => ['type' => 'file', 'channel' => 'C123', 'ts' => '111.222'],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseReaction($request));
+    }
+
+    public function test_parse_modal_submit(): void
+    {
+        $body = http_build_query(['payload' => json_encode([
+            'type' => 'view_submission',
+            'user' => ['id' => 'U123'],
+            'view' => [
+                'id' => 'V456',
+                'callback_id' => 'feedback',
+                'private_metadata' => 'ctx_999',
+                'state' => ['values' => [
+                    'comment_block' => ['comment' => ['value' => 'Great job!']],
+                ]],
+            ],
+        ])]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseModalSubmit($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('feedback', $result['callbackId']);
+        $this->assertSame('V456', $result['viewId']);
+        $this->assertSame('ctx_999', $result['contextId']);
+        $this->assertSame('Great job!', $result['values']['comment']);
+    }
+
+    public function test_parse_modal_close(): void
+    {
+        $body = http_build_query(['payload' => json_encode([
+            'type' => 'view_closed',
+            'user' => ['id' => 'U123'],
+            'view' => [
+                'id' => 'V456',
+                'callback_id' => 'feedback',
+                'private_metadata' => 'ctx_999',
+            ],
+        ])]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseModalClose($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('feedback', $result['callbackId']);
+        $this->assertSame('ctx_999', $result['contextId']);
+    }
+
+    public function test_parse_options_load(): void
+    {
+        $body = http_build_query(['payload' => json_encode([
+            'type' => 'block_suggestion',
+            'action_id' => 'category',
+            'value' => 'bug',
+            'user' => ['id' => 'U123'],
+        ])]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseOptionsLoad($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('category', $result['actionId']);
+        $this->assertSame('bug', $result['query']);
+    }
+
+    public function test_respond_to_options_load_returns_json(): void
+    {
+        $response = $this->adapter->respondToOptionsLoad([
+            ['text' => 'Bug Report', 'value' => 'bug'],
+        ]);
+
+        $this->assertNotNull($response);
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertStringContainsString('application/json', $response->getHeaderLine('Content-Type'));
+
+        $body = json_decode((string) $response->getBody(), true);
+        $this->assertArrayHasKey('options', $body);
+        $this->assertSame('Bug Report', $body['options'][0]['text']['text']);
+    }
+
+    public function test_respond_to_options_load_null(): void
+    {
+        $this->assertNull($this->adapter->respondToOptionsLoad(null));
+    }
+
+    public function test_parse_assistant_thread_started(): void
+    {
+        $body = json_encode([
+            'event' => [
+                'type' => 'assistant_thread_started',
+                'assistant_thread' => [
+                    'channel_id' => 'C123',
+                    'thread_ts' => '111.222',
+                    'user_id' => 'U456',
+                    'context' => ['channel_id' => 'C123', 'team_id' => 'T1'],
+                ],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseAssistantThreadStarted($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('C123', $result['channelId']);
+        $this->assertSame('U456', $result['userId']);
+        $this->assertNotNull($result['context']);
+    }
+
+    public function test_parse_app_home_opened(): void
+    {
+        $body = json_encode([
+            'event' => [
+                'type' => 'app_home_opened',
+                'channel' => 'D123',
+                'user' => 'U456',
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseAppHomeOpened($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('D123', $result['channelId']);
+        $this->assertSame('U456', $result['userId']);
+    }
+
+    public function test_parse_member_joined_channel(): void
+    {
+        $body = json_encode([
+            'event' => [
+                'type' => 'member_joined_channel',
+                'channel' => 'C123',
+                'user' => 'U456',
+                'inviter' => 'U789',
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/slack')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseMemberJoinedChannel($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('C123', $result['channelId']);
+        $this->assertSame('U456', $result['userId']);
+        $this->assertSame('U789', $result['inviterId']);
+    }
+
+    public function test_open_modal_returns_view_id(): void
+    {
+        $modal = new Modal(callbackId: 'test', title: 'Test', children: [
+            new TextInput(id: 'name', label: 'Name'),
+        ]);
+
+        $result = $this->adapter->openModal('trigger123', $modal, 'ctx_999');
+
+        $this->assertNotNull($result);
+        $this->assertArrayHasKey('viewId', $result);
     }
 }

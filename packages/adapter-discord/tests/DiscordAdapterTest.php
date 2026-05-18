@@ -5,6 +5,7 @@ namespace BootDesk\ChatSDK\Discord\Tests;
 use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Discord\DiscordAdapter;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -232,6 +233,202 @@ class DiscordAdapterTest extends TestCase
         $this->assertTrue($message->isDM);
     }
 
+    public function test_parse_bot_message(): void
+    {
+        $body = json_encode([
+            'id' => 'INT004',
+            'type' => 2,
+            'channel_id' => 'C123',
+            'guild_id' => 'G456',
+            'member' => [
+                'user' => [
+                    'id' => 'BOT999',
+                    'username' => 'mybot',
+                    'bot' => true,
+                ],
+            ],
+            'data' => ['options' => [['value' => 'auto reply']]],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/discord')
+            ->withBody($this->factory->createStream($body));
+
+        $message = $this->adapter->parseWebhook($request);
+        $this->assertTrue($message->author->isBot);
+        $this->assertSame('BOT999', $message->author->id);
+    }
+
+    public function test_edit_message_in_thread(): void
+    {
+        $sent = $this->adapter->editMessage(
+            'discord:G456:C123:T789',
+            '999888',
+            PostableMessage::text('Updated in thread'),
+        );
+
+        $this->assertSame('999888', $sent->id);
+    }
+
+    public function test_delete_message_in_thread(): void
+    {
+        $this->adapter->deleteMessage('discord:G456:C123:T789', '999888');
+        $this->assertTrue(true);
+    }
+
+    public function test_add_reaction_in_thread(): void
+    {
+        $this->adapter->addReaction('discord:G456:C123:T789', '999888', '👍');
+        $this->assertTrue(true);
+    }
+
+    public function test_remove_reaction_in_thread(): void
+    {
+        $this->adapter->removeReaction('discord:G456:C123:T789', '999888', '👍');
+        $this->assertTrue(true);
+    }
+
+    public function test_start_typing_in_thread(): void
+    {
+        $this->adapter->startTyping('discord:G456:C123:T789');
+        $this->assertTrue(true);
+    }
+
+    public function test_parse_slash_command_detects_application_command(): void
+    {
+        $body = json_encode([
+            'type' => 2,
+            'data' => ['name' => 'test'],
+            'channel_id' => 'C123',
+            'guild_id' => 'G456',
+            'member' => [
+                'user' => ['id' => 'U789', 'username' => 'testuser'],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/discord')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseSlashCommand($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('/test', $result['command']);
+        $this->assertSame('U789', $result['userId']);
+        $this->assertSame('discord:G456:C123', $result['channelId']);
+    }
+
+    public function test_parse_slash_command_returns_null_for_ping(): void
+    {
+        $body = json_encode(['type' => 1]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/discord')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseSlashCommand($request));
+    }
+
+    public function test_parse_slash_command_returns_null_for_component(): void
+    {
+        $body = json_encode([
+            'type' => 3,
+            'data' => ['custom_id' => 'btn_ok'],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/discord')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertNull($this->adapter->parseSlashCommand($request));
+    }
+
+    public function test_parse_slash_command_extracts_options_as_text(): void
+    {
+        $body = json_encode([
+            'type' => 2,
+            'data' => [
+                'name' => 'echo',
+                'options' => [
+                    ['name' => 'message', 'type' => 3, 'value' => 'Hello world'],
+                ],
+            ],
+            'channel_id' => 'C123',
+            'guild_id' => 'G456',
+            'member' => [
+                'user' => ['id' => 'U1', 'username' => 'user'],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/discord')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseSlashCommand($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('/echo', $result['command']);
+        $this->assertSame('Hello world', $result['text']);
+    }
+
+    public function test_parse_slash_command_expands_subcommand_path(): void
+    {
+        $body = json_encode([
+            'type' => 2,
+            'data' => [
+                'name' => 'project',
+                'options' => [
+                    [
+                        'name' => 'issue',
+                        'type' => 2,
+                        'options' => [
+                            [
+                                'name' => 'create',
+                                'type' => 1,
+                                'options' => [
+                                    ['name' => 'title', 'type' => 3, 'value' => 'Login fails'],
+                                    ['name' => 'priority', 'type' => 3, 'value' => 'high'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'channel_id' => 'C123',
+            'guild_id' => 'G456',
+            'member' => [
+                'user' => ['id' => 'U1', 'username' => 'user'],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/discord')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseSlashCommand($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('/project issue create', $result['command']);
+        $this->assertSame('Login fails high', $result['text']);
+    }
+
+    public function test_parse_slash_command_in_thread(): void
+    {
+        $body = json_encode([
+            'type' => 2,
+            'data' => ['name' => 'status'],
+            'channel_id' => 'T123',
+            'channel' => ['id' => 'T123', 'type' => 11, 'parent_id' => 'P456'],
+            'guild_id' => 'G789',
+            'member' => [
+                'user' => ['id' => 'U1', 'username' => 'user'],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhooks/discord')
+            ->withBody($this->factory->createStream($body));
+
+        $result = $this->adapter->parseSlashCommand($request);
+
+        $this->assertNotNull($result);
+        $this->assertSame('/status', $result['command']);
+        $this->assertSame('discord:G789:P456:T123', $result['channelId']);
+    }
+
     public function test_parse_component_interaction(): void
     {
         $customId = "deploy\n\"staging\"";
@@ -415,5 +612,32 @@ class DiscordAdapterTest extends TestCase
     {
         $this->adapter->disconnect();
         $this->assertTrue(true);
+    }
+
+    public function test_api_call_throws_authentication_exception_on_auth_error(): void
+    {
+        $factory = new Psr17Factory;
+        $mockClient = new class implements ClientInterface
+        {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $f = new Psr17Factory;
+
+                return $f->createResponse(401)->withBody(
+                    $f->createStream(json_encode(['code' => 401, 'message' => '401: Unauthorized']))
+                );
+            }
+        };
+
+        $adapter = new DiscordAdapter(
+            botToken: 'bad-token',
+            publicKey: str_repeat('a', 64),
+            applicationId: 'APP123',
+            httpClient: $mockClient,
+            psrFactory: $factory,
+        );
+
+        $this->expectException(AuthenticationException::class);
+        $adapter->postMessage('discord:G456:C123', PostableMessage::text('test'));
     }
 }

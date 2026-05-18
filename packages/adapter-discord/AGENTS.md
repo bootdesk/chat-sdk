@@ -36,6 +36,9 @@ new DiscordAdapter(
 - Fetch channel messages, channel info
 - Open DM (create DM channel)
 - Slash commands via Interactions API (APPLICATION_COMMAND)
+- File uploads via multipart `files[N]` with `payload_json`
+- URL-based attachments rendered as embed images/links
+- Inbound attachment extraction from gateway/webhook events
 - Streaming: edits a single message in-place (updates gradually)
 
 ## config (laravel)

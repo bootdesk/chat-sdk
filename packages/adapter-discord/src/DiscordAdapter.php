@@ -2,12 +2,16 @@
 
 namespace BootDesk\ChatSDK\Discord;
 
+use BootDesk\ChatSDK\Core\Attachment;
 use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
+use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
+use BootDesk\ChatSDK\Core\Contracts\HandlesSlashCommands;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\FetchOptions;
 use BootDesk\ChatSDK\Core\FetchResult;
 use BootDesk\ChatSDK\Core\Message;
@@ -15,12 +19,13 @@ use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\SentMessage;
 use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Core\UserInfo;
+use Http\Message\MultipartStream\MultipartStreamBuilder;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class DiscordAdapter implements Adapter
+class DiscordAdapter implements Adapter, HandlesReactions, HandlesSlashCommands
 {
     protected ?string $botUserId = null;
 
@@ -73,6 +78,111 @@ class DiscordAdapter implements Adapter
         return null;
     }
 
+    public function parseSlashCommand(ServerRequestInterface $request): ?array
+    {
+        $body = (string) $request->getBody();
+        $interaction = json_decode($body, true);
+
+        if ($interaction === null || ($interaction['type'] ?? 0) !== 2) {
+            return null;
+        }
+
+        $commandName = $interaction['data']['name'] ?? '';
+        if ($commandName === '') {
+            return null;
+        }
+
+        $commandOptions = $interaction['data']['options'] ?? [];
+
+        $commandParts = ["/{$commandName}"];
+        $valueParts = [];
+
+        $collect = function (array $items) use (&$collect, &$commandParts, &$valueParts): void {
+            foreach ($items as $option) {
+                if (isset($option['value'])) {
+                    $valueParts[] = (string) $option['value'];
+
+                    continue;
+                }
+                if (isset($option['options']) && $option['options'] !== []) {
+                    $commandParts[] = $option['name'];
+                    $collect($option['options']);
+                }
+            }
+        };
+
+        if ($commandOptions !== []) {
+            $collect($commandOptions);
+        }
+
+        $command = implode(' ', $commandParts);
+        $text = trim(implode(' ', $valueParts));
+
+        $user = $interaction['member']['user'] ?? $interaction['user'] ?? [];
+        $channelId = $interaction['channel_id'] ?? '';
+        $guildId = $interaction['guild_id'] ?? '@me';
+
+        $channel = $interaction['channel'] ?? [];
+        $isThread = in_array($channel['type'] ?? 0, [11, 12], true);
+        $parentChannelId = ($isThread && isset($channel['parent_id'])) ? $channel['parent_id'] : $channelId;
+
+        $encodedChannelId = $this->encodeThreadId(
+            $isThread
+                ? ['guildId' => $guildId, 'channelId' => $parentChannelId, 'threadId' => $channelId]
+                : ['guildId' => $guildId, 'channelId' => $channelId]
+        );
+
+        return [
+            'command' => $command,
+            'text' => $text,
+            'userId' => $user['id'] ?? '',
+            'isBot' => $user['bot'] ?? false,
+            'channelId' => $encodedChannelId,
+            'triggerId' => null,
+            'raw' => $body,
+        ];
+    }
+
+    public function parseReaction(ServerRequestInterface $request): ?array
+    {
+        $body = (string) $request->getBody();
+        $interaction = json_decode($body, true);
+
+        if (! is_array($interaction)) {
+            return null;
+        }
+
+        $type = $interaction['type'] ?? '';
+
+        if ($type !== 'GATEWAY_MESSAGE_REACTION_ADD' && $type !== 'GATEWAY_MESSAGE_REACTION_REMOVE') {
+            return null;
+        }
+
+        $data = $interaction['data'] ?? [];
+        $emoji = $data['emoji'] ?? [];
+        $rawEmoji = $emoji['name'] ?? '';
+
+        $channelId = $data['channel_id'] ?? '';
+        $guildId = $data['guild_id'] ?? '@me';
+
+        $threadId = $this->encodeThreadId([
+            'channelId' => $channelId,
+            'guildId' => $guildId,
+        ]);
+
+        $userId = $data['user_id'] ?? '';
+
+        return [
+            'emoji' => $rawEmoji,
+            'rawEmoji' => $rawEmoji,
+            'added' => $type === 'GATEWAY_MESSAGE_REACTION_ADD',
+            'threadId' => $threadId,
+            'messageId' => $data['message_id'] ?? '',
+            'userId' => $userId,
+            'raw' => $interaction,
+        ];
+    }
+
     public function parseWebhook(ServerRequestInterface $request): Message
     {
         $body = (string) $request->getBody();
@@ -84,8 +194,7 @@ class DiscordAdapter implements Adapter
 
         $type = $interaction['type'] ?? 0;
 
-        // Type 2 = APPLICATION_COMMAND, Type 3 = MESSAGE_COMPONENT
-        // Type 4 = Gateway forwarded event
+        // Type 3 = MESSAGE_COMPONENT, Type 4 = Gateway forwarded event
         if ($type === 3 && isset($interaction['data']['custom_id'])) {
             return $this->parseComponentInteraction($interaction, $body);
         }
@@ -115,6 +224,7 @@ class DiscordAdapter implements Adapter
                 isBot: $user['bot'] ?? false,
             ),
             text: $text,
+            attachments: $this->extractAttachments($interaction['data']['resolved']['attachments'] ?? []),
             isDM: $guildId === '@me',
             raw: $body,
         );
@@ -156,7 +266,27 @@ class DiscordAdapter implements Adapter
         $decoded = $this->decodeThreadId($threadId);
         $channelId = $decoded['threadId'] ?? $decoded['channelId'];
 
+        if ($message->files !== []) {
+            return $this->postMessageWithFiles($channelId, $message);
+        }
+
         $params = $this->buildMessageParams($message);
+
+        // Add file/image URLs as embeds
+        foreach ($message->attachments as $att) {
+            if ($att->url !== null) {
+                if ($att->type === 'image') {
+                    $params['embeds'][] = [
+                        'image' => ['url' => $att->url],
+                        'title' => $att->name ?? '',
+                    ];
+                } else {
+                    $params['embeds'][] = [
+                        'description' => "[{$att->name}](".$att->url.')',
+                    ];
+                }
+            }
+        }
 
         $response = $this->apiCall("/channels/{$channelId}/messages", $params);
 
@@ -164,6 +294,54 @@ class DiscordAdapter implements Adapter
             id: $response['id'] ?? '',
             threadId: $threadId,
             timestamp: $response['timestamp'] ?? null,
+        );
+    }
+
+    protected function postMessageWithFiles(string $channelId, PostableMessage $message): SentMessage
+    {
+        $payload = $this->buildMessageParams($message);
+
+        $builder = new MultipartStreamBuilder($this->psrFactory ?? new Psr17Factory);
+
+        $builder->addData(json_encode($payload), [
+            'Content-Disposition' => 'form-data; name="payload_json"',
+            'Content-Type' => 'application/json',
+        ]);
+
+        foreach ($message->files as $i => $file) {
+            $builder->addResource("files[{$i}]", $file->data, [
+                'filename' => $file->filename,
+                'headers' => ['Content-Type' => $file->mimeType ?? 'application/octet-stream'],
+            ]);
+        }
+
+        $stream = $builder->build();
+        $boundary = $builder->getBoundary();
+
+        $factory = $this->psrFactory ?? new Psr17Factory;
+        $url = "{$this->apiUrl}/channels/{$channelId}/messages";
+        $request = $factory->createRequest('POST', $url)
+            ->withHeader('Authorization', "Bot {$this->botToken}")
+            ->withHeader('Content-Type', "multipart/form-data; boundary={$boundary}")
+            ->withBody($stream);
+
+        $psrResponse = $this->httpClient->sendRequest($request);
+        $responseBody = (string) $psrResponse->getBody();
+        $data = json_decode($responseBody, true);
+
+        if (! is_array($data)) {
+            throw new AdapterException('Invalid JSON response from Discord API');
+        }
+
+        if (isset($data['code']) && $data['code'] !== 200) {
+            $error = $data['message'] ?? $data['code'];
+            throw new AdapterException("Discord API error: {$error}");
+        }
+
+        return new SentMessage(
+            id: $data['id'] ?? '',
+            threadId: "discord:{$channelId}",
+            timestamp: $data['timestamp'] ?? null,
         );
     }
 
@@ -381,10 +559,56 @@ class DiscordAdapter implements Adapter
                 isBot: $author['bot'] ?? false,
             ),
             text: $text,
+            attachments: $this->extractAttachments($data['attachments'] ?? []),
             isMention: $isMention,
             isDM: $guildId === '@me',
             raw: $rawBody,
         );
+    }
+
+    /** @return Attachment[] */
+    protected function extractAttachments(array $attachments): array
+    {
+        $result = [];
+        foreach ($attachments as $att) {
+            $contentType = $att['content_type'] ?? $att['contentType'] ?? '';
+            $type = match (true) {
+                str_starts_with($contentType, 'image/') => 'image',
+                str_starts_with($contentType, 'video/') => 'video',
+                str_starts_with($contentType, 'audio/') => 'audio',
+                default => 'file',
+            };
+
+            $result[] = new Attachment(
+                type: $type,
+                url: $att['url'] ?? null,
+                name: $att['filename'] ?? $att['name'] ?? null,
+                mimeType: $contentType ?: null,
+                size: $att['size'] ?? null,
+                width: $att['width'] ?? null,
+                height: $att['height'] ?? null,
+            );
+        }
+
+        return $result;
+    }
+
+    protected function getAttachmentType(?string $mimeType): string
+    {
+        if ($mimeType === null) {
+            return 'file';
+        }
+        if (str_starts_with($mimeType, 'image/')) {
+            return 'image';
+        }
+        if (str_starts_with($mimeType, 'video/')) {
+            return 'video';
+        }
+        if (str_starts_with($mimeType, 'audio/')) {
+            return 'audio';
+        }
+
+        return 'file';
     }
 
     protected function buildMessageParams(PostableMessage $message): array
@@ -439,6 +663,11 @@ class DiscordAdapter implements Adapter
 
         if (isset($data['code']) && $data['code'] !== 200) {
             $error = $data['message'] ?? $data['code'];
+
+            if (in_array($data['code'], [401, 403], true)) {
+                throw new AuthenticationException("Discord API authentication error ({$endpoint}): {$error}");
+            }
+
             throw new AdapterException("Discord API error ({$endpoint}): {$error}");
         }
 

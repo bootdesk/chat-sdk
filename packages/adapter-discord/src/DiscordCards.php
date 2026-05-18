@@ -5,6 +5,11 @@ namespace BootDesk\ChatSDK\Discord;
 use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\ButtonStyle;
 use BootDesk\ChatSDK\Core\Cards\Card;
+use BootDesk\ChatSDK\Core\Cards\Link;
+use BootDesk\ChatSDK\Core\Cards\LinkButton;
+use BootDesk\ChatSDK\Core\Cards\Table;
+use BootDesk\ChatSDK\Core\Cards\Text;
+use BootDesk\ChatSDK\Core\Cards\TextStyle;
 use BootDesk\ChatSDK\Core\Exceptions\ValidationException;
 
 class DiscordCards
@@ -19,6 +24,30 @@ class DiscordCards
         }
 
         $descriptionParts = [];
+
+        foreach ($card->getChildren() as $child) {
+            if ($child instanceof Text) {
+                $descriptionParts[] = match ($child->style) {
+                    TextStyle::Bold => "**{$child->content}**",
+                    TextStyle::Muted => "*{$child->content}*",
+                    default => $child->content,
+                };
+            } elseif ($child instanceof Link) {
+                $descriptionParts[] = "[{$child->label}]({$child->url})";
+            } elseif ($child instanceof Table) {
+                $descriptionParts[] = self::convertTableToDiscord($child);
+            } elseif ($child instanceof LinkButton) {
+                $components[] = [
+                    'type' => 1,
+                    'components' => [[
+                        'type' => 2,
+                        'style' => 5,
+                        'label' => $child->label,
+                        'url' => $child->url,
+                    ]],
+                ];
+            }
+        }
 
         foreach ($card->getSections() as $section) {
             if ($section->getText() !== null) {
@@ -41,9 +70,8 @@ class DiscordCards
             $embed['description'] = implode("\n\n", $descriptionParts);
         }
 
-        foreach ($card->getImages() as $image) {
-            $embed['image'] = ['url' => $image->url];
-            break; // Discord embeds only support one image
+        if ($card->getImageUrl() !== null) {
+            $embed['image'] = ['url' => $card->getImageUrl()];
         }
 
         $buttons = $card->getButtons();
@@ -106,5 +134,26 @@ class DiscordCards
             'label' => $button->label,
             'custom_id' => self::encodeCustomId($button->actionId, json_encode($button->data) ?: null),
         ];
+    }
+
+    private static function convertTableToDiscord(Table $table): string
+    {
+        $lines = [];
+        $lines[] = '| '.implode(' | ', $table->headers).' |';
+        $separators = [];
+        foreach (array_keys($table->headers) as $i) {
+            $align = $table->align[$i] ?? null;
+            $separators[] = match ($align?->value) {
+                'center' => ':---:',
+                'right' => '---:',
+                default => '---',
+            };
+        }
+        $lines[] = '| '.implode(' | ', $separators).' |';
+        foreach ($table->rows as $row) {
+            $lines[] = '| '.implode(' | ', $row).' |';
+        }
+
+        return implode("\n", $lines);
     }
 }

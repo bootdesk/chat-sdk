@@ -2,11 +2,15 @@
 
 namespace BootDesk\ChatSDK\Core\Tests;
 
+use BootDesk\ChatSDK\Core\Attachment;
 use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\ChannelVisibility;
+use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
 use BootDesk\ChatSDK\Core\FetchOptions;
 use BootDesk\ChatSDK\Core\FetchResult;
+use BootDesk\ChatSDK\Core\FileUpload;
 use BootDesk\ChatSDK\Core\Lock;
 use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\MessageDeliveredEvent;
@@ -20,6 +24,7 @@ use BootDesk\ChatSDK\Core\Modals\TextInput;
 use BootDesk\ChatSDK\Core\QueueEntry;
 use BootDesk\ChatSDK\Core\ReactionEvent;
 use BootDesk\ChatSDK\Core\SentMessage;
+use BootDesk\ChatSDK\Core\Support\NullFileUploadConverter;
 use BootDesk\ChatSDK\Core\Thread;
 use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Core\UserInfo;
@@ -234,7 +239,7 @@ class ValueObjectsTest extends TestCase
 
     public function test_file_upload_from_string(): void
     {
-        $upload = new \BootDesk\ChatSDK\Core\FileUpload(data: 'hello', filename: 'test.txt', mimeType: 'text/plain');
+        $upload = new FileUpload(data: 'hello', filename: 'test.txt', mimeType: 'text/plain');
         $this->assertSame('test.txt', $upload->filename);
         $this->assertSame('text/plain', $upload->mimeType);
         $this->assertSame(5, $upload->getSize());
@@ -244,14 +249,14 @@ class ValueObjectsTest extends TestCase
     {
         $path = sys_get_temp_dir().'/php_test_upload_'.uniqid();
         file_put_contents($path, 'test content');
-        $upload = \BootDesk\ChatSDK\Core\FileUpload::fromFilename($path);
+        $upload = FileUpload::fromFilename($path);
         $this->assertSame('test content', $upload->getData());
         unlink($path);
     }
 
     public function test_attachment_value_object(): void
     {
-        $att = new \BootDesk\ChatSDK\Core\Attachment(type: 'image', url: 'https://example.com/photo.jpg', name: 'Photo');
+        $att = new Attachment(type: 'image', url: 'https://example.com/photo.jpg', name: 'Photo');
         $this->assertSame('image', $att->type);
         $this->assertSame('https://example.com/photo.jpg', $att->url);
         $this->assertSame('Photo', $att->name);
@@ -259,10 +264,10 @@ class ValueObjectsTest extends TestCase
 
     public function test_null_file_upload_converter_throws(): void
     {
-        $this->expectException(\BootDesk\ChatSDK\Core\Exceptions\AdapterException::class);
-        (new \BootDesk\ChatSDK\Core\Support\NullFileUploadConverter)->upload(
-            new \BootDesk\ChatSDK\Core\FileUpload(data: 'test', filename: 't.txt', mimeType: 'text/plain'),
-            $this->createStub(\BootDesk\ChatSDK\Core\Contracts\Adapter::class),
+        $this->expectException(AdapterException::class);
+        (new NullFileUploadConverter)->upload(
+            new FileUpload(data: 'test', filename: 't.txt', mimeType: 'text/plain'),
+            $this->createStub(Adapter::class),
         );
     }
 }

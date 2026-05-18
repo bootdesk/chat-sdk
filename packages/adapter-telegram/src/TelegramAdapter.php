@@ -690,7 +690,7 @@ class TelegramAdapter implements Adapter, HandlesActions, HandlesReactions, Hand
 
         $builder = new MultipartStreamBuilder($this->psrFactory ?? new Psr17Factory);
 
-        if ($file instanceof \BootDesk\ChatSDK\Core\FileUpload) {
+        if ($file instanceof FileUpload) {
             $builder->addResource('document', $file->data, [
                 'filename' => $file->filename,
                 'headers' => ['Content-Type' => $file->mimeType ?? 'application/octet-stream'],

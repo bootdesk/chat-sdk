@@ -36,31 +36,113 @@ class MiddlewareTest extends TestCase
         return new class($trackingKey) implements Adapter, AdapterHasMessagingWindow
         {
             public function __construct(private readonly string $trackingKey) {}
-            public function getName(): string { return 'whatsapp'; }
-            public function getBotUserId(): ?string { return null; }
-            public function verifyWebhook(ServerRequestInterface $request): ?ResponseInterface { return null; }
-            public function parseWebhook(ServerRequestInterface $request): Message { return new Message('', '', new Author(''), ''); }
-            public function encodeThreadId(mixed $platformData): string { return 'whatsapp:123:user123'; }
-            public function decodeThreadId(string $threadId): mixed { return ['channel' => '', 'thread_ts' => '']; }
-            public function channelIdFromThreadId(string $threadId): string { return ''; }
-            public function postMessage(string $threadId, PostableMessage $message): SentMessage { return new SentMessage('', $threadId); }
-            public function editMessage(string $threadId, string $messageId, PostableMessage $message): SentMessage { return new SentMessage($messageId, $threadId); }
+
+            public function getName(): string
+            {
+                return 'whatsapp';
+            }
+
+            public function getBotUserId(): ?string
+            {
+                return null;
+            }
+
+            public function verifyWebhook(ServerRequestInterface $request): ?ResponseInterface
+            {
+                return null;
+            }
+
+            public function parseWebhook(ServerRequestInterface $request): Message
+            {
+                return new Message('', '', new Author(''), '');
+            }
+
+            public function encodeThreadId(mixed $platformData): string
+            {
+                return 'whatsapp:123:user123';
+            }
+
+            public function decodeThreadId(string $threadId): mixed
+            {
+                return ['channel' => '', 'thread_ts' => ''];
+            }
+
+            public function channelIdFromThreadId(string $threadId): string
+            {
+                return '';
+            }
+
+            public function postMessage(string $threadId, PostableMessage $message): SentMessage
+            {
+                return new SentMessage('', $threadId);
+            }
+
+            public function editMessage(string $threadId, string $messageId, PostableMessage $message): SentMessage
+            {
+                return new SentMessage($messageId, $threadId);
+            }
+
             public function deleteMessage(string $threadId, string $messageId): void {}
+
             public function addReaction(string $threadId, string $messageId, string $emoji): void {}
+
             public function removeReaction(string $threadId, string $messageId, string $emoji): void {}
+
             public function startTyping(string $threadId): void {}
-            public function fetchMessages(string $threadId, ?FetchOptions $options = null): FetchResult { return new FetchResult([]); }
-            public function fetchThread(string $threadId): ThreadInfo { return new ThreadInfo($threadId, ''); }
-            public function fetchChannelInfo(string $channelId): ?ChannelInfo { return null; }
-            public function getUser(string $userId): ?UserInfo { return null; }
-            public function openDM(string $userId): ?string { return null; }
-            public function getFormatConverter(): ?FormatConverter { return null; }
+
+            public function fetchMessages(string $threadId, ?FetchOptions $options = null): FetchResult
+            {
+                return new FetchResult([]);
+            }
+
+            public function fetchThread(string $threadId): ThreadInfo
+            {
+                return new ThreadInfo($threadId, '');
+            }
+
+            public function fetchChannelInfo(string $channelId): ?ChannelInfo
+            {
+                return null;
+            }
+
+            public function getUser(string $userId): ?UserInfo
+            {
+                return null;
+            }
+
+            public function openDM(string $userId): ?string
+            {
+                return null;
+            }
+
+            public function getFormatConverter(): ?FormatConverter
+            {
+                return null;
+            }
+
             public function initialize(Chat $chat): void {}
+
             public function disconnect(): void {}
-            public function stream(string $threadId, iterable $textStream, array $options = []): ?SentMessage { return null; }
-            public function createResponse(): ?ResponseInterface { return null; }
-            public function getMessagingWindowSeconds(): ?int { return 86400; }
-            public function getTrackingKey(string $threadId): string { return $this->trackingKey; }
+
+            public function stream(string $threadId, iterable $textStream, array $options = []): ?SentMessage
+            {
+                return null;
+            }
+
+            public function createResponse(): ?ResponseInterface
+            {
+                return null;
+            }
+
+            public function getMessagingWindowSeconds(): ?int
+            {
+                return 86400;
+            }
+
+            public function getTrackingKey(string $threadId): string
+            {
+                return $this->trackingKey;
+            }
         };
     }
 
@@ -78,6 +160,7 @@ class MiddlewareTest extends TestCase
         $called = false;
         $result = $middleware->handle($message, $this->windowedAdapter(), function ($msg) use (&$called) {
             $called = true;
+
             return $msg;
         });
 
@@ -112,7 +195,11 @@ class MiddlewareTest extends TestCase
             PostableMessage::text('test'),
             $this->windowedAdapter(),
             'post',
-            function () use (&$nextCalled) { $nextCalled = true; return null; },
+            function () use (&$nextCalled) {
+                $nextCalled = true;
+
+                return null;
+            },
         );
 
         $this->assertTrue($nextCalled);
@@ -130,7 +217,11 @@ class MiddlewareTest extends TestCase
             PostableMessage::text('test'),
             $this->windowedAdapter(),
             'post',
-            function () use (&$nextCalled) { $nextCalled = true; return null; },
+            function () use (&$nextCalled) {
+                $nextCalled = true;
+
+                return null;
+            },
         );
 
         $this->assertFalse($nextCalled);
@@ -142,7 +233,7 @@ class MiddlewareTest extends TestCase
 
         $middleware = new EnforceMessagingWindow(
             $this->state,
-            templateFallback: fn (PostableMessage $msg) => PostableMessage::text('[Template] ' . $msg->getTextContent()),
+            templateFallback: fn (PostableMessage $msg) => PostableMessage::text('[Template] '.$msg->getTextContent()),
         );
 
         $captured = null;
@@ -151,7 +242,11 @@ class MiddlewareTest extends TestCase
             PostableMessage::text('original'),
             $this->windowedAdapter(),
             'post',
-            function ($t, $m) use (&$captured) { $captured = $m; return null; },
+            function ($t, $m) use (&$captured) {
+                $captured = $m;
+
+                return null;
+            },
         );
 
         $this->assertNotNull($captured);
@@ -170,7 +265,11 @@ class MiddlewareTest extends TestCase
             PostableMessage::text('test'),
             $adapter,
             'post',
-            function () use (&$nextCalled) { $nextCalled = true; return null; },
+            function () use (&$nextCalled) {
+                $nextCalled = true;
+
+                return null;
+            },
         );
 
         $this->assertTrue($nextCalled);
@@ -186,7 +285,11 @@ class MiddlewareTest extends TestCase
             PostableMessage::text('test'),
             $this->windowedAdapter('whatsapp:user456'),
             'post',
-            function () use (&$nextCalled) { $nextCalled = true; return null; },
+            function () use (&$nextCalled) {
+                $nextCalled = true;
+
+                return null;
+            },
         );
 
         $this->assertTrue($nextCalled);

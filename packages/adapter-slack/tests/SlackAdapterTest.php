@@ -5,6 +5,11 @@ namespace BootDesk\ChatSDK\Slack\Tests;
 use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Contracts\HandlesModals;
+use BootDesk\ChatSDK\Core\Contracts\HandlesOptionsLoad;
+use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
+use BootDesk\ChatSDK\Core\Contracts\HandlesSlackEvents;
+use BootDesk\ChatSDK\Core\Contracts\SupportsModals;
 use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\Modals\Modal;
 use BootDesk\ChatSDK\Core\Modals\TextInput;
@@ -631,27 +636,27 @@ class SlackAdapterTest extends TestCase
 
     public function test_implements_handles_reactions(): void
     {
-        $this->assertInstanceOf(\BootDesk\ChatSDK\Core\Contracts\HandlesReactions::class, $this->adapter);
+        $this->assertInstanceOf(HandlesReactions::class, $this->adapter);
     }
 
     public function test_implements_handles_modals(): void
     {
-        $this->assertInstanceOf(\BootDesk\ChatSDK\Core\Contracts\HandlesModals::class, $this->adapter);
+        $this->assertInstanceOf(HandlesModals::class, $this->adapter);
     }
 
     public function test_implements_handles_options_load(): void
     {
-        $this->assertInstanceOf(\BootDesk\ChatSDK\Core\Contracts\HandlesOptionsLoad::class, $this->adapter);
+        $this->assertInstanceOf(HandlesOptionsLoad::class, $this->adapter);
     }
 
     public function test_implements_handles_slack_events(): void
     {
-        $this->assertInstanceOf(\BootDesk\ChatSDK\Core\Contracts\HandlesSlackEvents::class, $this->adapter);
+        $this->assertInstanceOf(HandlesSlackEvents::class, $this->adapter);
     }
 
     public function test_implements_supports_modals(): void
     {
-        $this->assertInstanceOf(\BootDesk\ChatSDK\Core\Contracts\SupportsModals::class, $this->adapter);
+        $this->assertInstanceOf(SupportsModals::class, $this->adapter);
     }
 
     public function test_parse_reaction_added(): void

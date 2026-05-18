@@ -117,7 +117,7 @@ class SlackModalConverter
         if ($select->minQueryLength !== null) {
             $element['min_query_length'] = $select->minQueryLength;
         }
-        if ($select->initialOption instanceof \BootDesk\ChatSDK\Core\Modals\SelectOption) {
+        if ($select->initialOption instanceof SelectOption) {
             $element['initial_option'] = self::optionToSlack($select->initialOption);
         }
 

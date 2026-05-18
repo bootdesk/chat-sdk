@@ -23,7 +23,7 @@ class TelegramCards
 
     private static function renderMarkdown(string $markdown): string
     {
-        if (!self::$parser instanceof \League\CommonMark\Parser\MarkdownParser) {
+        if (! self::$parser instanceof MarkdownParser) {
             $environment = new Environment(['html_input' => 'strip', 'allow_unsafe_links' => true]);
             $environment->addExtension(new CommonMarkCoreExtension);
             self::$parser = new MarkdownParser($environment);

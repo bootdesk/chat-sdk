@@ -5,6 +5,7 @@ namespace BootDesk\ChatSDK\Telegram\Tests;
 use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
 use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Telegram\TelegramAdapter;
@@ -579,6 +580,6 @@ class TelegramAdapterTest extends TestCase
 
     public function test_implements_handles_reactions(): void
     {
-        $this->assertInstanceOf(\BootDesk\ChatSDK\Core\Contracts\HandlesReactions::class, $this->adapter);
+        $this->assertInstanceOf(HandlesReactions::class, $this->adapter);
     }
 }

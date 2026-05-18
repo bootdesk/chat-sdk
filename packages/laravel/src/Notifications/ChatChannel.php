@@ -3,6 +3,7 @@
 namespace BootDesk\ChatSDK\Laravel\Notifications;
 
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\SentMessage;
 use Illuminate\Notifications\Notification;
@@ -41,7 +42,7 @@ class ChatChannel
 
         if ($route->userId !== null) {
             $adapter = $this->chat->resolveAdapter($route->adapter);
-            if (!$adapter instanceof \BootDesk\ChatSDK\Core\Contracts\Adapter) {
+            if (! $adapter instanceof Adapter) {
                 return null;
             }
 

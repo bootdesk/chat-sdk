@@ -18,6 +18,7 @@ use BootDesk\ChatSDK\Core\FileUpload;
 use BootDesk\ChatSDK\Core\MemberJoinedChannelEvent;
 use BootDesk\ChatSDK\Core\MessageContext;
 use BootDesk\ChatSDK\Core\MessageDeliveredEvent;
+use BootDesk\ChatSDK\Core\MessageFailedEvent;
 use BootDesk\ChatSDK\Core\MessageReadEvent;
 use BootDesk\ChatSDK\Core\ModalCloseEvent;
 use BootDesk\ChatSDK\Core\Modals\ExternalSelect;
@@ -29,6 +30,7 @@ use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\ReactionEvent;
 use BootDesk\ChatSDK\Core\SlashCommandEvent;
 use BootDesk\ChatSDK\Laravel\Contracts\ChatHandler;
+use Illuminate\Support\Facades\Log;
 use Override;
 
 class ChatHandlers implements ChatHandler
@@ -312,11 +314,21 @@ class ChatHandlers implements ChatHandler
 
         // Message delivered/read — e.g. WhatsApp, Messenger
         $chat->onMessageDelivered(function (MessageDeliveredEvent $event) {
-            // Logged or track delivery status
+            Log::info('Message has been delivered', [
+                'message' => $event,
+            ]);
         });
 
         $chat->onMessageRead(function (MessageReadEvent $event) {
-            // Logged or track read status
+            Log::info('Message has been read', [
+                'message' => $event,
+            ]);
+        });
+
+        $chat->onMessageFailed(function (MessageFailedEvent $event) {
+            Log::error('Message failed to deliver', [
+                'message' => $event,
+            ]);
         });
     }
 }

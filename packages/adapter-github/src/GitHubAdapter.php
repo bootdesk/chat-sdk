@@ -143,10 +143,6 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
         $command = $parts[0];
         $args = $parts[1] ?? '';
 
-        $repository = $payload['repository'] ?? [];
-        $owner = $repository['owner']['login'] ?? '';
-        $repo = $repository['name'] ?? '';
-
         // Derive thread ID from the webhook payload so channel->post works
         $channelId = $this->deriveChannelId($payload, $event);
 
@@ -750,8 +746,8 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
             threadId: $threadId,
             author: new Author(
                 id: (string) ($comment['user']['id'] ?? ''),
-                isBot: ($comment['user']['type'] ?? '') === 'Bot',
                 isMe: $this->botUserId !== null && (string) ($comment['user']['id'] ?? '') === $this->botUserId,
+                isBot: ($comment['user']['type'] ?? '') === 'Bot',
             ),
             text: $comment['body'] ?? '',
             isDM: false,
@@ -782,8 +778,8 @@ class GitHubAdapter implements Adapter, HandlesSlashCommands
             threadId: $threadId,
             author: new Author(
                 id: (string) ($comment['user']['id'] ?? ''),
-                isBot: ($comment['user']['type'] ?? '') === 'Bot',
                 isMe: $this->botUserId !== null && (string) ($comment['user']['id'] ?? '') === $this->botUserId,
+                isBot: ($comment['user']['type'] ?? '') === 'Bot',
             ),
             text: $comment['body'] ?? '',
             isDM: false,

@@ -137,6 +137,7 @@ class DiscordAdapter implements Adapter, HandlesReactions, HandlesSlashCommands
             'text' => $text,
             'userId' => $user['id'] ?? '',
             'isBot' => $user['bot'] ?? false,
+            'isMe' => false,
             'channelId' => $encodedChannelId,
             'triggerId' => null,
             'raw' => $body,

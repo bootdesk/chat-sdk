@@ -18,7 +18,8 @@
         "bootdesk/chat-sdk-adapter-discord": "*",
         "bootdesk/chat-sdk-adapter-whatsapp": "*",
         "bootdesk/chat-sdk-adapter-github": "*",
-        "bootdesk/chat-sdk-botman-compat": "*"
+        "bootdesk/chat-sdk-botman-compat": "*",
+        "bootdesk/chat-sdk-adapter-telnyx": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

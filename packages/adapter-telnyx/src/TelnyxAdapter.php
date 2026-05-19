@@ -322,6 +322,17 @@ class TelnyxAdapter implements Adapter
         $body = $p['body'] ?? [];
         $messageId = $p['id'] ?? '';
 
+        // Non-message events like is_typing, read, etc.
+        if (isset($body['event_type']) && $body['event_type'] !== '') {
+            return new Message(
+                id: $messageId,
+                threadId: '',
+                author: new Author(id: '', isMe: true),
+                text: '',
+                raw: $rawBody,
+            );
+        }
+
         $text = $body['text'] ?? '';
 
         // Append suggestion response text

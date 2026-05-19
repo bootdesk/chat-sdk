@@ -54,13 +54,13 @@ return [
         //     'api_key' => env('LINEAR_API_KEY'),
         //     'webhook_secret' => env('LINEAR_WEBHOOK_SECRET'),
         // ],
-        // 'telnyx' => [
-        //     'api_key' => env('TELNYX_API_KEY'),
-        //     'messaging_profile_id' => env('TELNYX_MESSAGING_PROFILE_ID'),
-        //     'public_key' => env('TELNYX_PUBLIC_KEY'),
-        //     'from_number' => env('TELNYX_FROM_NUMBER'),
-        //     'agent_id' => env('TELNYX_AGENT_ID'),
-        // ],
+        'telnyx' => [
+            'api_key' => env('TELNYX_API_KEY'),
+            'messaging_profile_id' => env('TELNYX_MESSAGING_PROFILE_ID'),
+            'public_key' => env('TELNYX_PUBLIC_KEY'),
+            'from_number' => env('TELNYX_FROM_NUMBER'),
+            'agent_id' => env('TELNYX_AGENT_ID'),
+        ],
     ],
 
     /*

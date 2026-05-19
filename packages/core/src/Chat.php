@@ -24,6 +24,7 @@ use BootDesk\ChatSDK\Core\Events\ListenerProvider;
 use BootDesk\ChatSDK\Core\Events\MentionEvent;
 use BootDesk\ChatSDK\Core\Events\SubscribedEvent;
 use BootDesk\ChatSDK\Core\Exceptions\ResourceNotFoundException;
+use BootDesk\ChatSDK\Core\Middleware\MiddlewareDispatcher;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -37,9 +38,6 @@ class Chat
 
     private ?AdapterResolver $adapterResolver = null;
 
-    /** @var WebhookMiddleware[] */
-    private array $webhookMiddleware = [];
-
     private ?ResponseFactoryInterface $responseFactory = null;
 
     private bool $initialized = false;
@@ -50,15 +48,11 @@ class Chat
 
     private ?TranscriptsApi $transcriptsApi = null;
 
-    /** @var ReceivingMiddleware[] */
-    private array $receivingMiddleware = [];
-
-    /** @var SendingMiddleware[] */
-    private array $sendingMiddleware = [];
-
     private readonly ListenerProvider $listenerProvider;
 
     private readonly EventDispatcher $dispatcher;
+
+    private readonly MiddlewareDispatcher $middleware;
 
     /** @var array<string, callable> */
     private array $messageHandlers = [];
@@ -84,6 +78,7 @@ class Chat
         );
         $this->listenerProvider = new ListenerProvider;
         $this->dispatcher = new EventDispatcher($this->listenerProvider);
+        $this->middleware = new MiddlewareDispatcher;
 
         if ($identity !== null) {
             $this->identityResolver = $identity instanceof \Closure ? $identity : \Closure::fromCallable($identity);
@@ -1176,13 +1171,7 @@ class Chat
             return $this->webhookResponse($adapter);
         };
 
-        foreach (array_reverse($this->webhookMiddleware) as $middleware) {
-            $handler = function (ServerRequestInterface $request) use ($middleware, $handler): ResponseInterface {
-                return $middleware->handle($request, $handler);
-            };
-        }
-
-        return $handler($request);
+        return $this->middleware->processWebhook($request, $handler);
     }
 
     private function webhookResponse(Adapter $adapter): ResponseInterface
@@ -1238,43 +1227,43 @@ class Chat
 
     public function addWebhookMiddleware(WebhookMiddleware $middleware): self
     {
-        $this->webhookMiddleware[] = $middleware;
+        $this->middleware->addWebhook($middleware);
 
         return $this;
     }
 
     public function addReceivingMiddleware(ReceivingMiddleware $middleware): self
     {
-        $this->receivingMiddleware[] = $middleware;
+        $this->middleware->addReceiving($middleware);
 
         return $this;
     }
 
     public function addSendingMiddleware(SendingMiddleware $middleware): self
     {
-        $this->sendingMiddleware[] = $middleware;
+        $this->middleware->addSending($middleware);
 
         return $this;
     }
 
+    public function getMiddleware(): MiddlewareDispatcher
+    {
+        return $this->middleware;
+    }
+
     /**
      * @return SendingMiddleware[]
+     *
+     * @deprecated Use getMiddleware()->processSending() instead
      */
     public function getSendingMiddleware(): array
     {
-        return $this->sendingMiddleware;
+        return [];
     }
 
     private function runReceivingMiddleware(?Message $message, Adapter $adapter): ?Message
     {
-        foreach ($this->receivingMiddleware as $middleware) {
-            $message = $middleware->handle($message, $adapter, fn ($msg) => $msg);
-            if ($message === null) {
-                return null;
-            }
-        }
-
-        return $message;
+        return $this->middleware->processReceiving($message, $adapter, fn ($msg) => $msg);
     }
 
     private function dispatch(object $event): object

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BootDesk\ChatSDK\Core;
 
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
@@ -105,20 +107,12 @@ class Thread
 
     private function runSendingMiddleware(PostableMessage $message, string $operation): PostableMessage
     {
-        $current = $message;
-
-        foreach ($this->chat->getSendingMiddleware() as $middleware) {
-            $result = $middleware->handle($this->id, $current, $this->adapter, $operation, function ($threadId, $msg, $adapter, $op) use (&$current): null {
-                $current = $msg;
-
-                return null;
-            });
-
-            if ($result instanceof SentMessage) {
-                return $current;
-            }
-        }
-
-        return $current;
+        return $this->chat->getMiddleware()->processSending(
+            $this->id,
+            $message,
+            $this->adapter,
+            $operation,
+            fn ($tid, $msg, $adapter, $op): null => null
+        );
     }
 }

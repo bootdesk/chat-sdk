@@ -1,6 +1,8 @@
 <?php
 
-namespace BootDesk\ChatSDK\Messenger;
+declare(strict_types=1);
+
+namespace BootDesk\ChatSDK\Instagram;
 
 use BootDesk\ChatSDK\Core\Attachment;
 use BootDesk\ChatSDK\Core\Author;
@@ -27,34 +29,95 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, HandlesStatuses
+class InstagramAdapter implements Adapter, HandlesActions, HandlesReactions, HandlesStatuses
 {
     protected ?string $botUserId = null;
 
-    protected MessengerFormatConverter $formatConverter;
+    protected InstagramFormatConverter $formatConverter;
 
-    protected MessengerWebhookVerifier $webhookVerifier;
+    protected InstagramWebhookVerifier $webhookVerifier;
 
     protected FileUploadConverter $fileUploadConverter;
 
+    protected readonly string $authMode;
+
+    protected readonly string $apiUrl;
+
     public function __construct(
-        protected readonly string $pageAccessToken,
         protected readonly ClientInterface $httpClient,
-        string $appSecret,
         string $verifyToken,
+        string $appSecret,
+        // Old path (Facebook Page → graph.facebook.com)
+        protected readonly ?string $pageAccessToken = null,
+        // New path (Instagram Login → graph.instagram.com)
+        protected readonly ?string $igAccessToken = null,
+        protected readonly ?string $igUserId = null,
         protected readonly string $apiVersion = 'v25.0',
-        protected readonly string $apiUrl = 'https://graph.facebook.com',
         protected readonly ?Psr17Factory $psrFactory = null,
         ?FileUploadConverter $fileUploadConverter = null,
     ) {
-        $this->formatConverter = new MessengerFormatConverter;
-        $this->webhookVerifier = new MessengerWebhookVerifier($appSecret, $verifyToken, $psrFactory);
+        $this->formatConverter = new InstagramFormatConverter;
+        $this->webhookVerifier = new InstagramWebhookVerifier($appSecret, $verifyToken, $psrFactory);
         $this->fileUploadConverter = $fileUploadConverter ?? new NullFileUploadConverter;
+
+        $this->authMode = $pageAccessToken !== null ? 'page' : 'ig';
+        $this->apiUrl = $this->authMode === 'page'
+            ? 'https://graph.facebook.com'
+            : 'https://graph.instagram.com';
+
+        if ($this->authMode === 'page' && $this->pageAccessToken === null) {
+            throw new \InvalidArgumentException('Either pageAccessToken or igAccessToken + igUserId must be provided');
+        }
+        if ($this->authMode === 'ig' && ($this->igAccessToken === null || $this->igUserId === null)) {
+            throw new \InvalidArgumentException('igAccessToken and igUserId are required when not using a Page access token');
+        }
+    }
+
+    public static function createWithPageToken(
+        ClientInterface $httpClient,
+        string $pageAccessToken,
+        string $appSecret,
+        string $verifyToken,
+        string $apiVersion = 'v25.0',
+        ?Psr17Factory $psrFactory = null,
+        ?FileUploadConverter $fileUploadConverter = null,
+    ): self {
+        return new self(
+            httpClient: $httpClient,
+            verifyToken: $verifyToken,
+            appSecret: $appSecret,
+            pageAccessToken: $pageAccessToken,
+            apiVersion: $apiVersion,
+            psrFactory: $psrFactory,
+            fileUploadConverter: $fileUploadConverter,
+        );
+    }
+
+    public static function createWithIgToken(
+        ClientInterface $httpClient,
+        string $igAccessToken,
+        string $igUserId,
+        string $appSecret,
+        string $verifyToken,
+        string $apiVersion = 'v25.0',
+        ?Psr17Factory $psrFactory = null,
+        ?FileUploadConverter $fileUploadConverter = null,
+    ): self {
+        return new self(
+            httpClient: $httpClient,
+            verifyToken: $verifyToken,
+            appSecret: $appSecret,
+            igAccessToken: $igAccessToken,
+            igUserId: $igUserId,
+            apiVersion: $apiVersion,
+            psrFactory: $psrFactory,
+            fileUploadConverter: $fileUploadConverter,
+        );
     }
 
     public function getName(): string
     {
-        return 'messenger';
+        return 'instagram';
     }
 
     public function getBotUserId(): ?string
@@ -87,7 +150,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
         $body = (string) $request->getBody();
         $payload = json_decode($body, true);
 
-        if (! is_array($payload) || ($payload['object'] ?? '') !== 'page') {
+        if (! is_array($payload) || ($payload['object'] ?? '') !== 'instagram') {
             return null;
         }
 
@@ -124,7 +187,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
         $body = (string) $request->getBody();
         $payload = json_decode($body, true);
 
-        if (! is_array($payload) || ($payload['object'] ?? '') !== 'page') {
+        if (! is_array($payload) || ($payload['object'] ?? '') !== 'instagram') {
             return null;
         }
 
@@ -138,7 +201,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
                 $senderId = $event['sender']['id'] ?? '';
                 $threadId = $this->encodeThreadId(['recipientId' => $senderId]);
 
-                $decoded = MessengerCards::decodeCallbackData($postback['payload'] ?? null);
+                $decoded = InstagramCards::decodeCallbackData($postback['payload'] ?? null);
 
                 return [
                     'actionId' => $decoded['actionId'],
@@ -168,7 +231,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
         $body = (string) $request->getBody();
         $payload = json_decode($body, true);
 
-        if (! is_array($payload) || ($payload['object'] ?? '') !== 'page') {
+        if (! is_array($payload) || ($payload['object'] ?? '') !== 'instagram') {
             return null;
         }
 
@@ -209,8 +272,8 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
         $body = (string) $request->getBody();
         $payload = json_decode($body, true);
 
-        if ($payload === null || ($payload['object'] ?? '') !== 'page') {
-            throw new AdapterException('Invalid Messenger webhook payload');
+        if ($payload === null || ($payload['object'] ?? '') !== 'instagram') {
+            throw new AdapterException('Invalid Instagram webhook payload');
         }
 
         // Walk entries to find the first user message
@@ -239,20 +302,20 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
             }
         }
 
-        throw new AdapterException('No user message found in Messenger webhook payload');
+        throw new AdapterException('No user message found in Instagram webhook payload');
     }
 
     public function encodeThreadId(mixed $platformData): string
     {
-        return 'messenger:'.($platformData['recipientId'] ?? '');
+        return 'instagram:'.($platformData['recipientId'] ?? '');
     }
 
     public function decodeThreadId(string $threadId): mixed
     {
         $parts = explode(':', $threadId, 2);
 
-        if ($parts[0] !== 'messenger' || ! isset($parts[1]) || $parts[1] === '') {
-            throw new AdapterException("Invalid Messenger thread ID: {$threadId}");
+        if ($parts[0] !== 'instagram' || ! isset($parts[1]) || $parts[1] === '') {
+            throw new AdapterException("Invalid Instagram thread ID: {$threadId}");
         }
 
         return ['recipientId' => $parts[1]];
@@ -290,10 +353,127 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
             $basePayload['reply_to'] = ['mid' => $message->replyToMessageId];
         }
 
+        // Quick replies from metadata — Instagram supports up to 13
+        $quickReplies = $message->metadata['quick_replies'] ?? null;
+
         // Attachments take priority
         if ($message->attachments !== []) {
-            $att = $message->attachments[0];
             $text = $message->getTextContent();
+
+            // Sticker (like_heart)
+            if ($message->attachments[0]->type === 'sticker' || $message->attachments[0]->type === 'like_heart') {
+                $response = $this->graphApiCall($this->messagesEndpoint(), [
+                    ...$basePayload,
+                    'message' => [
+                        'attachment' => ['type' => 'like_heart'],
+                    ],
+                ]);
+
+                if ($text !== '') {
+                    $this->graphApiCall($this->messagesEndpoint(), [
+                        ...$basePayload,
+                        'message' => ['text' => $this->truncate($text)],
+                    ]);
+                }
+
+                return new SentMessage(
+                    id: $response['message_id'] ?? '',
+                    threadId: $threadId,
+                    timestamp: (string) time(),
+                );
+            }
+
+            // MEDIA_SHARE — send uploaded media or published post
+            $meta = $message->attachments[0]->fetchMetadata ?? [];
+            if (isset($meta['attachment_id']) || $message->attachments[0]->type === 'media_share') {
+                $id = $meta['attachment_id'] ?? $meta['id'] ?? '';
+                $response = $this->graphApiCall($this->messagesEndpoint(), [
+                    ...$basePayload,
+                    'message' => [
+                        'attachment' => [
+                            'type' => 'MEDIA_SHARE',
+                            'payload' => ['attachment_id' => $id],
+                        ],
+                    ],
+                ]);
+
+                if ($text !== '') {
+                    $this->graphApiCall($this->messagesEndpoint(), [
+                        ...$basePayload,
+                        'message' => ['text' => $this->truncate($text)],
+                    ]);
+                }
+
+                return new SentMessage(
+                    id: $response['message_id'] ?? '',
+                    threadId: $threadId,
+                    timestamp: (string) time(),
+                );
+            }
+
+            // Publish post share — MEDIA_SHARE with post ID
+            if (isset($meta['post_id'])) {
+                $response = $this->graphApiCall($this->messagesEndpoint(), [
+                    ...$basePayload,
+                    'message' => [
+                        'attachment' => [
+                            'type' => 'MEDIA_SHARE',
+                            'payload' => ['id' => $meta['post_id']],
+                        ],
+                    ],
+                ]);
+
+                if ($text !== '') {
+                    $this->graphApiCall($this->messagesEndpoint(), [
+                        ...$basePayload,
+                        'message' => ['text' => $this->truncate($text)],
+                    ]);
+                }
+
+                return new SentMessage(
+                    id: $response['message_id'] ?? '',
+                    threadId: $threadId,
+                    timestamp: (string) time(),
+                );
+            }
+
+            // Multiple images — send up to 10 in a single request (Beta)
+            $allImages = array_values(array_filter(
+                $message->attachments,
+                fn (Attachment $a): bool => $a->type === 'image',
+            ));
+            if (count($allImages) === count($message->attachments) && count($allImages) > 1) {
+                $imageAttachments = [];
+                foreach (array_slice($allImages, 0, 10) as $img) {
+                    $imageAttachments[] = [
+                        'type' => 'image',
+                        'payload' => ['url' => $img->url],
+                    ];
+                }
+
+                $response = $this->graphApiCall($this->messagesEndpoint(), [
+                    ...$basePayload,
+                    'message' => [
+                        'attachments' => $imageAttachments,
+                    ],
+                ]);
+
+                if ($text !== '') {
+                    $this->graphApiCall($this->messagesEndpoint(), [
+                        ...$basePayload,
+                        'message' => ['text' => $this->truncate($text)],
+                    ]);
+                }
+
+                return new SentMessage(
+                    id: $response['message_id'] ?? '',
+                    threadId: $threadId,
+                    timestamp: (string) time(),
+                );
+            }
+
+            // Single attachment
+            $att = $message->attachments[0];
 
             $attachmentData = match ($att->type) {
                 'image' => ['type' => 'image', 'payload' => ['url' => $att->url]],
@@ -302,16 +482,15 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
                 default => ['type' => 'file', 'payload' => ['url' => $att->url]],
             };
 
-            $response = $this->graphApiCall('me/messages', [
+            $response = $this->graphApiCall($this->messagesEndpoint(), [
                 ...$basePayload,
                 'message' => [
                     'attachment' => $attachmentData,
                 ],
             ]);
 
-            // Append text as a follow-up if present
             if ($text !== '') {
-                $this->graphApiCall('me/messages', [
+                $this->graphApiCall($this->messagesEndpoint(), [
                     ...$basePayload,
                     'message' => ['text' => $this->truncate($text)],
                 ]);
@@ -327,35 +506,43 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
         if ($message->isTemplate()) {
             $template = $message->content;
 
-            if (! $template instanceof MessengerTemplate) {
-                throw new AdapterException('Unsupported template type for Messenger adapter');
+            if (! $template instanceof InstagramTemplate) {
+                throw new AdapterException('Unsupported template type for Instagram adapter');
             }
 
-            $result = $template->toMessenger();
+            $result = $template->toInstagram();
 
-            $response = $this->graphApiCall('me/messages', [
+            $response = $this->graphApiCall($this->messagesEndpoint(), [
                 ...$basePayload,
                 'message' => $result['attachment'],
             ]);
         } elseif ($message->isCard()) {
-            $cardResult = MessengerCards::toMessengerPayload($message->content);
+            $cardResult = InstagramCards::toInstagramPayload($message->content);
 
             if ($cardResult['type'] === 'template') {
-                $response = $this->graphApiCall('me/messages', [
+                $response = $this->graphApiCall($this->messagesEndpoint(), [
                     ...$basePayload,
                     'message' => $cardResult['attachment'],
                 ]);
             } else {
-                $response = $this->graphApiCall('me/messages', [
+                $msgPayload = ['text' => $this->truncate($cardResult['text'])];
+                if ($quickReplies !== null) {
+                    $msgPayload['quick_replies'] = $quickReplies;
+                }
+                $response = $this->graphApiCall($this->messagesEndpoint(), [
                     ...$basePayload,
-                    'message' => ['text' => $this->truncate($cardResult['text'])],
+                    'message' => $msgPayload,
                 ]);
             }
         } else {
             $text = $this->formatConverter->renderPostable($message);
-            $response = $this->graphApiCall('me/messages', [
+            $msgPayload = ['text' => $this->truncate($text)];
+            if ($quickReplies !== null) {
+                $msgPayload['quick_replies'] = $quickReplies;
+            }
+            $response = $this->graphApiCall($this->messagesEndpoint(), [
                 ...$basePayload,
-                'message' => ['text' => $this->truncate($text)],
+                'message' => $msgPayload,
             ]);
         }
 
@@ -368,30 +555,54 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
 
     public function editMessage(string $threadId, string $messageId, PostableMessage $message): SentMessage
     {
-        throw new AdapterException('Messenger does not support editing messages');
+        throw new AdapterException('Instagram does not support editing messages');
     }
 
     public function deleteMessage(string $threadId, string $messageId): void
     {
-        throw new AdapterException('Messenger does not support deleting messages');
+        throw new AdapterException('Instagram does not support deleting messages');
     }
 
     public function addReaction(string $threadId, string $messageId, string $emoji): void
     {
-        throw new AdapterException('Messenger does not support reactions via API');
+        $decoded = $this->decodeThreadId($threadId);
+        $this->graphApiCall($this->messagesEndpoint(), [
+            'recipient' => ['id' => $decoded['recipientId']],
+            'sender_action' => 'react',
+            'payload' => [
+                'message_id' => $messageId,
+                'reaction' => $emoji,
+            ],
+        ]);
     }
 
     public function removeReaction(string $threadId, string $messageId, string $emoji): void
     {
-        throw new AdapterException('Messenger does not support reactions via API');
+        $decoded = $this->decodeThreadId($threadId);
+        $this->graphApiCall($this->messagesEndpoint(), [
+            'recipient' => ['id' => $decoded['recipientId']],
+            'sender_action' => 'unreact',
+            'payload' => [
+                'message_id' => $messageId,
+            ],
+        ]);
     }
 
     public function startTyping(string $threadId): void
     {
         $decoded = $this->decodeThreadId($threadId);
-        $this->graphApiCall('me/messages', [
+        $this->graphApiCall($this->messagesEndpoint(), [
             'recipient' => ['id' => $decoded['recipientId']],
             'sender_action' => 'typing_on',
+        ]);
+    }
+
+    public function markSeen(string $threadId): void
+    {
+        $decoded = $this->decodeThreadId($threadId);
+        $this->graphApiCall($this->messagesEndpoint(), [
+            'recipient' => ['id' => $decoded['recipientId']],
+            'sender_action' => 'mark_seen',
         ]);
     }
 
@@ -412,26 +623,33 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
     public function fetchChannelInfo(string $channelId): ?ChannelInfo
     {
         $decoded = $this->decodeThreadId($channelId);
-        $response = $this->graphApiCall($decoded['recipientId'], [], 'GET', ['fields' => 'first_name,last_name']);
 
-        $name = trim(($response['first_name'] ?? '').' '.($response['last_name'] ?? ''));
+        $fields = $this->authMode === 'ig' ? 'name,username,profile_pic' : 'username,profile_pic';
+        $response = $this->graphApiCall($decoded['recipientId'], [], 'GET', ['fields' => $fields]);
+
+        $name = $this->authMode === 'ig'
+            ? ($response['name'] ?? $response['username'] ?? $channelId)
+            : ($response['username'] ?? $channelId);
 
         return new ChannelInfo(
             id: $channelId,
-            name: $name ?: $channelId,
+            name: $name,
             isPrivate: true,
         );
     }
 
     public function getUser(string $userId): ?UserInfo
     {
-        $response = $this->graphApiCall($userId, [], 'GET', ['fields' => 'first_name,last_name,profile_pic']);
+        $fields = $this->authMode === 'ig' ? 'name,username,profile_pic' : 'username,profile_pic';
+        $response = $this->graphApiCall($userId, [], 'GET', ['fields' => $fields]);
 
-        $name = trim(($response['first_name'] ?? '').' '.($response['last_name'] ?? ''));
+        $name = $this->authMode === 'ig'
+            ? ($response['name'] ?? $response['username'] ?? $userId)
+            : ($response['username'] ?? $userId);
 
         return new UserInfo(
             id: $userId,
-            name: $name ?: $userId,
+            name: $name,
         );
     }
 
@@ -447,6 +665,12 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
 
     public function initialize(Chat $chat): void
     {
+        if ($this->authMode === 'ig') {
+            $this->botUserId = $this->igUserId;
+
+            return;
+        }
+
         try {
             $me = $this->graphApiCall('me', [], 'GET');
             $this->botUserId = $me['id'] ?? null;
@@ -479,7 +703,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
         return $this->postMessage($threadId, PostableMessage::text($fullText));
     }
 
-    protected function truncate(string $text, int $limit = 2000): string
+    protected function truncate(string $text, int $limit = 1000): string
     {
         if (strlen($text) <= $limit) {
             return $text;
@@ -498,6 +722,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
 
             $type = match ($rawType) {
                 'image', 'video', 'audio', 'file', 'fallback' => $rawType,
+                'media', 'story_mention', 'story', 'ig_story' => $rawType,
                 'reel', 'ig_reel', 'post', 'ig_post', 'appointment_booking', 'template' => $rawType,
                 default => 'file',
             };
@@ -537,22 +762,45 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
         return $attachments;
     }
 
+    protected function messagesEndpoint(): string
+    {
+        return $this->authMode === 'page' ? 'me/messages' : "{$this->igUserId}/messages";
+    }
+
     protected function graphApiCall(string $endpoint, array $params, string $method = 'POST', array $queryParams = []): array
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
-        $url = "{$this->apiUrl}/{$this->apiVersion}/{$endpoint}?access_token={$this->pageAccessToken}";
 
-        if ($queryParams !== []) {
-            $url .= '&'.http_build_query($queryParams);
-        }
+        if ($this->authMode === 'ig') {
+            $url = "{$this->apiUrl}/{$this->apiVersion}/{$endpoint}";
+            if ($queryParams !== []) {
+                $url .= '?'.http_build_query($queryParams);
+            }
 
-        if ($method === 'GET') {
-            $request = $factory->createRequest('GET', $url);
-        } else {
-            $body = json_encode(array_filter($params, fn ($v): bool => $v !== null));
             $request = $factory->createRequest($method, $url)
-                ->withHeader('Content-Type', 'application/json')
-                ->withBody($factory->createStream($body));
+                ->withHeader('Authorization', "Bearer {$this->igAccessToken}");
+
+            if ($method !== 'GET') {
+                $body = json_encode(array_filter($params, fn ($v): bool => $v !== null));
+                $request = $request
+                    ->withHeader('Content-Type', 'application/json')
+                    ->withBody($factory->createStream($body));
+            }
+        } else {
+            $url = "{$this->apiUrl}/{$this->apiVersion}/{$endpoint}?access_token={$this->pageAccessToken}";
+
+            if ($queryParams !== []) {
+                $url .= '&'.http_build_query($queryParams);
+            }
+
+            if ($method === 'GET') {
+                $request = $factory->createRequest('GET', $url);
+            } else {
+                $body = json_encode(array_filter($params, fn ($v): bool => $v !== null));
+                $request = $factory->createRequest($method, $url)
+                    ->withHeader('Content-Type', 'application/json')
+                    ->withBody($factory->createStream($body));
+            }
         }
 
         $psrResponse = $this->httpClient->sendRequest($request);
@@ -565,7 +813,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
         }
 
         if (! is_array($data)) {
-            throw new AdapterException("Invalid JSON response from Messenger API: {$endpoint}");
+            throw new AdapterException("Invalid JSON response from Instagram API: {$endpoint}");
         }
 
         if (isset($data['error'])) {
@@ -574,10 +822,10 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesReactions, Han
             $errorType = $data['error']['type'] ?? '';
 
             if (in_array($errorCode, [10, 190, 200], true) || $errorType === 'OAuthException') {
-                throw new AuthenticationException("Messenger API authentication error ({$endpoint}): {$errorMsg}");
+                throw new AuthenticationException("Instagram API authentication error ({$endpoint}): {$errorMsg}");
             }
 
-            throw new AdapterException("Messenger API error ({$endpoint}): {$errorMsg}");
+            throw new AdapterException("Instagram API error ({$endpoint}): {$errorMsg}");
         }
 
         return $data;

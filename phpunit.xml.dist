@@ -30,6 +30,9 @@
         <testsuite name="Messenger">
             <directory>packages/adapter-messenger/tests</directory>
         </testsuite>
+        <testsuite name="Instagram">
+            <directory>packages/adapter-instagram/tests</directory>
+        </testsuite>
         <testsuite name="GitHub">
             <directory>packages/adapter-github/tests</directory>
         </testsuite>
@@ -53,6 +56,7 @@
             <directory>packages/adapter-discord/src</directory>
             <directory>packages/adapter-web/src</directory>
             <directory>packages/adapter-messenger/src</directory>
+            <directory>packages/adapter-instagram/src</directory>
             <directory>packages/adapter-github/src</directory>
             <directory>packages/adapter-linear/src</directory>
             <directory>packages/adapter-telnyx/src</directory>

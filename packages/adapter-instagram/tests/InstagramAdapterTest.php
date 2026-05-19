@@ -1,23 +1,24 @@
 <?php
 
-namespace BootDesk\ChatSDK\Messenger\Tests;
+namespace BootDesk\ChatSDK\Instagram\Tests;
 
+use BootDesk\ChatSDK\Core\Attachment;
 use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
 use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
 use BootDesk\ChatSDK\Core\PostableMessage;
-use BootDesk\ChatSDK\Messenger\MessengerAdapter;
+use BootDesk\ChatSDK\Instagram\InstagramAdapter;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
-class MessengerAdapterTest extends TestCase
+class InstagramAdapterTest extends TestCase
 {
-    private MessengerAdapter $adapter;
+    private InstagramAdapter $adapter;
 
     private Psr17Factory $factory;
 
@@ -65,8 +66,7 @@ class MessengerAdapterTest extends TestCase
                     return $factory->createResponse(200)->withBody(
                         $factory->createStream(json_encode([
                             'id' => '123456',
-                            'first_name' => 'John',
-                            'last_name' => 'Doe',
+                            'username' => 'johndoe',
                         ]))
                     );
                 }
@@ -77,7 +77,7 @@ class MessengerAdapterTest extends TestCase
             }
         };
 
-        $this->adapter = new MessengerAdapter(
+        $this->adapter = new InstagramAdapter(
             pageAccessToken: 'test-page-token',
             appSecret: 'test_app_secret',
             verifyToken: 'test_verify_token',
@@ -90,7 +90,7 @@ class MessengerAdapterTest extends TestCase
 
     public function test_get_name(): void
     {
-        $this->assertSame('messenger', $this->adapter->getName());
+        $this->assertSame('instagram', $this->adapter->getName());
     }
 
     public function test_initialize_sets_bot_user_id(): void
@@ -105,30 +105,30 @@ class MessengerAdapterTest extends TestCase
     public function test_thread_id_encode(): void
     {
         $id = $this->adapter->encodeThreadId(['recipientId' => '123456']);
-        $this->assertSame('messenger:123456', $id);
+        $this->assertSame('instagram:123456', $id);
     }
 
     public function test_thread_id_decode(): void
     {
-        $decoded = $this->adapter->decodeThreadId('messenger:123456');
+        $decoded = $this->adapter->decodeThreadId('instagram:123456');
         $this->assertSame('123456', $decoded['recipientId']);
     }
 
     public function test_thread_id_decode_invalid(): void
     {
         $this->expectException(AdapterException::class);
-        $this->adapter->decodeThreadId('not-messenger');
+        $this->adapter->decodeThreadId('not-instagram');
     }
 
     public function test_thread_id_decode_empty_recipient(): void
     {
         $this->expectException(AdapterException::class);
-        $this->adapter->decodeThreadId('messenger:');
+        $this->adapter->decodeThreadId('instagram:');
     }
 
     public function test_channel_id_is_thread_id(): void
     {
-        $this->assertSame('messenger:123', $this->adapter->channelIdFromThreadId('messenger:123'));
+        $this->assertSame('instagram:123', $this->adapter->channelIdFromThreadId('instagram:123'));
     }
 
     // --- Webhook verification ---
@@ -153,7 +153,7 @@ class MessengerAdapterTest extends TestCase
 
     public function test_post_valid_signature(): void
     {
-        $body = json_encode(['object' => 'page', 'entry' => []]);
+        $body = json_encode(['object' => 'instagram', 'entry' => []]);
         $hash = hash_hmac('sha256', $body, 'test_app_secret');
 
         $request = $this->factory->createServerRequest('POST', '/webhook')
@@ -166,7 +166,7 @@ class MessengerAdapterTest extends TestCase
 
     public function test_post_invalid_signature(): void
     {
-        $body = '{"object":"page"}';
+        $body = '{"object":"instagram"}';
         $request = $this->factory->createServerRequest('POST', '/webhook')
             ->withHeader('x-hub-signature-256', 'sha256=badhash')
             ->withBody($this->factory->createStream($body));
@@ -182,7 +182,7 @@ class MessengerAdapterTest extends TestCase
         $this->adapter->initialize($this->createMock(Chat::class));
 
         $body = json_encode([
-            'object' => 'page',
+            'object' => 'instagram',
             'entry' => [
                 [
                     'id' => 'PAGE1',
@@ -207,7 +207,7 @@ class MessengerAdapterTest extends TestCase
         $message = $this->adapter->parseWebhook($request);
 
         $this->assertSame('mid.abc', $message->id);
-        $this->assertSame('messenger:123456', $message->threadId);
+        $this->assertSame('instagram:123456', $message->threadId);
         $this->assertSame('123456', $message->author->id);
         $this->assertSame('Hello bot', $message->text);
         $this->assertTrue($message->isDM);
@@ -216,7 +216,7 @@ class MessengerAdapterTest extends TestCase
     public function test_parse_webhook_skips_echo(): void
     {
         $body = json_encode([
-            'object' => 'page',
+            'object' => 'instagram',
             'entry' => [
                 [
                     'messaging' => [
@@ -248,7 +248,7 @@ class MessengerAdapterTest extends TestCase
         $this->expectException(AdapterException::class);
 
         $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream('{"object":"not_page"}'));
+            ->withBody($this->factory->createStream('{"object":"not_instagram"}'));
 
         $this->adapter->parseWebhook($request);
     }
@@ -258,7 +258,7 @@ class MessengerAdapterTest extends TestCase
         $this->expectException(AdapterException::class);
 
         $body = json_encode([
-            'object' => 'page',
+            'object' => 'instagram',
             'entry' => [
                 ['messaging' => [
                     ['sender' => ['id' => 'P1'], 'message' => ['mid' => 'm1', 'is_echo' => true]],
@@ -276,10 +276,10 @@ class MessengerAdapterTest extends TestCase
 
     public function test_post_message(): void
     {
-        $sent = $this->adapter->postMessage('messenger:123456', PostableMessage::text('Hello'));
+        $sent = $this->adapter->postMessage('instagram:123456', PostableMessage::text('Hello'));
 
         $this->assertSame('mid.123456', $sent->id);
-        $this->assertSame('messenger:123456', $sent->threadId);
+        $this->assertSame('instagram:123456', $sent->threadId);
     }
 
     public function test_post_message_with_card_template(): void
@@ -289,27 +289,27 @@ class MessengerAdapterTest extends TestCase
             ->section(fn ($s) => $s->text('Build passed'))
             ->actions([Button::primary('Deploy', 'deploy')]);
 
-        $sent = $this->adapter->postMessage('messenger:123456', PostableMessage::card($card));
+        $sent = $this->adapter->postMessage('instagram:123456', PostableMessage::card($card));
         $this->assertSame('mid.123456', $sent->id);
     }
 
     public function test_post_message_with_card_text_fallback(): void
     {
         $card = Card::make()->section(fn ($s) => $s->text('Just text'));
-        $sent = $this->adapter->postMessage('messenger:123456', PostableMessage::card($card));
+        $sent = $this->adapter->postMessage('instagram:123456', PostableMessage::card($card));
         $this->assertSame('mid.123456', $sent->id);
     }
 
     public function test_stream_collects_and_posts(): void
     {
-        $sent = $this->adapter->stream('messenger:123456', ['Hello ', 'World']);
+        $sent = $this->adapter->stream('instagram:123456', ['Hello ', 'World']);
         $this->assertNotNull($sent);
         $this->assertSame('mid.123456', $sent->id);
     }
 
     public function test_stream_empty_returns_null(): void
     {
-        $this->assertNull($this->adapter->stream('messenger:123456', []));
+        $this->assertNull($this->adapter->stream('instagram:123456', []));
     }
 
     // --- Unsupported operations ---
@@ -317,52 +317,52 @@ class MessengerAdapterTest extends TestCase
     public function test_edit_message_throws(): void
     {
         $this->expectException(AdapterException::class);
-        $this->adapter->editMessage('messenger:123', 'm1', PostableMessage::text('x'));
+        $this->adapter->editMessage('instagram:123', 'm1', PostableMessage::text('x'));
     }
 
     public function test_delete_message_throws(): void
     {
         $this->expectException(AdapterException::class);
-        $this->adapter->deleteMessage('messenger:123', 'm1');
+        $this->adapter->deleteMessage('instagram:123', 'm1');
     }
 
-    public function test_add_reaction_throws(): void
+    public function test_add_reaction(): void
     {
-        $this->expectException(AdapterException::class);
-        $this->adapter->addReaction('messenger:123', 'm1', '👍');
+        $this->adapter->addReaction('instagram:123456', 'm1', 'love');
+        $this->assertTrue(true);
     }
 
-    public function test_remove_reaction_throws(): void
+    public function test_remove_reaction(): void
     {
-        $this->expectException(AdapterException::class);
-        $this->adapter->removeReaction('messenger:123', 'm1', '👍');
+        $this->adapter->removeReaction('instagram:123456', 'm1', 'love');
+        $this->assertTrue(true);
     }
 
     // --- Supported operations ---
 
     public function test_start_typing(): void
     {
-        $this->adapter->startTyping('messenger:123456');
+        $this->adapter->startTyping('instagram:123456');
         $this->assertTrue(true);
     }
 
     public function test_fetch_messages_returns_empty(): void
     {
-        $result = $this->adapter->fetchMessages('messenger:123');
+        $result = $this->adapter->fetchMessages('instagram:123');
         $this->assertCount(0, $result->messages);
     }
 
     public function test_fetch_thread(): void
     {
-        $info = $this->adapter->fetchThread('messenger:123');
-        $this->assertSame('messenger:123', $info->id);
+        $info = $this->adapter->fetchThread('instagram:123');
+        $this->assertSame('instagram:123', $info->id);
     }
 
     public function test_fetch_channel_info(): void
     {
-        $info = $this->adapter->fetchChannelInfo('messenger:123456');
-        $this->assertSame('messenger:123456', $info->id);
-        $this->assertSame('John Doe', $info->name);
+        $info = $this->adapter->fetchChannelInfo('instagram:123456');
+        $this->assertSame('instagram:123456', $info->id);
+        $this->assertSame('johndoe', $info->name);
         $this->assertTrue($info->isPrivate);
     }
 
@@ -370,13 +370,13 @@ class MessengerAdapterTest extends TestCase
     {
         $user = $this->adapter->getUser('123456');
         $this->assertSame('123456', $user->id);
-        $this->assertSame('John Doe', $user->name);
+        $this->assertSame('johndoe', $user->name);
     }
 
     public function test_open_dm(): void
     {
         $threadId = $this->adapter->openDM('123456');
-        $this->assertSame('messenger:123456', $threadId);
+        $this->assertSame('instagram:123456', $threadId);
     }
 
     public function test_get_format_converter(): void
@@ -415,7 +415,7 @@ class MessengerAdapterTest extends TestCase
             }
         };
 
-        $adapter = new MessengerAdapter(
+        $adapter = new InstagramAdapter(
             pageAccessToken: 'test_token',
             appSecret: 'test_secret',
             verifyToken: 'verify_me',
@@ -424,12 +424,12 @@ class MessengerAdapterTest extends TestCase
         );
 
         $longText = str_repeat('a', 3000);
-        $adapter->postMessage('messenger:123:456', PostableMessage::text($longText));
+        $adapter->postMessage('instagram:123:456', PostableMessage::text($longText));
 
         $this->assertCount(1, $captured);
         $body = json_decode((string) $captured[0]->getBody(), true);
         $this->assertStringEndsWith('...', $body['message']['text']);
-        $this->assertSame(2000, strlen($body['message']['text']));
+        $this->assertSame(1000, strlen($body['message']['text']));
     }
 
     public function test_api_call_throws_authentication_exception_on_auth_error(): void
@@ -447,7 +447,7 @@ class MessengerAdapterTest extends TestCase
             }
         };
 
-        $adapter = new MessengerAdapter(
+        $adapter = new InstagramAdapter(
             pageAccessToken: 'bad-token',
             appSecret: 'secret',
             verifyToken: 'verify',
@@ -456,13 +456,13 @@ class MessengerAdapterTest extends TestCase
         );
 
         $this->expectException(AuthenticationException::class);
-        $adapter->postMessage('messenger:123:456', PostableMessage::text('test'));
+        $adapter->postMessage('instagram:123:456', PostableMessage::text('test'));
     }
 
     public function test_parse_status_delivery(): void
     {
         $body = json_encode([
-            'object' => 'page',
+            'object' => 'instagram',
             'entry' => [[
                 'messaging' => [[
                     'sender' => ['id' => '12345'],
@@ -473,7 +473,7 @@ class MessengerAdapterTest extends TestCase
             ]],
         ]);
 
-        $request = $this->factory->createServerRequest('POST', '/webhooks/messenger')
+        $request = $this->factory->createServerRequest('POST', '/webhooks/instagram')
             ->withBody($this->factory->createStream($body));
 
         $result = $this->adapter->parseStatus($request);
@@ -487,7 +487,7 @@ class MessengerAdapterTest extends TestCase
     public function test_parse_status_read(): void
     {
         $body = json_encode([
-            'object' => 'page',
+            'object' => 'instagram',
             'entry' => [[
                 'messaging' => [[
                     'sender' => ['id' => '12345'],
@@ -498,7 +498,7 @@ class MessengerAdapterTest extends TestCase
             ]],
         ]);
 
-        $request = $this->factory->createServerRequest('POST', '/webhooks/messenger')
+        $request = $this->factory->createServerRequest('POST', '/webhooks/instagram')
             ->withBody($this->factory->createStream($body));
 
         $result = $this->adapter->parseStatus($request);
@@ -509,11 +509,11 @@ class MessengerAdapterTest extends TestCase
         $this->assertSame(1700000001, $result['timestamp']);
     }
 
-    public function test_parse_status_not_page_object(): void
+    public function test_parse_status_not_instagram_object(): void
     {
         $body = json_encode(['object' => 'other']);
 
-        $request = $this->factory->createServerRequest('POST', '/webhooks/messenger')
+        $request = $this->factory->createServerRequest('POST', '/webhooks/instagram')
             ->withBody($this->factory->createStream($body));
 
         $this->assertNull($this->adapter->parseStatus($request));
@@ -522,250 +522,25 @@ class MessengerAdapterTest extends TestCase
     public function test_parse_status_no_messaging(): void
     {
         $body = json_encode([
-            'object' => 'page',
+            'object' => 'instagram',
             'entry' => [['messaging' => []]],
         ]);
 
-        $request = $this->factory->createServerRequest('POST', '/webhooks/messenger')
+        $request = $this->factory->createServerRequest('POST', '/webhooks/instagram')
             ->withBody($this->factory->createStream($body));
 
         $this->assertNull($this->adapter->parseStatus($request));
     }
 
-    // --- ParseAction (postback handling) ---
+    // --- Instagram-specific features ---
 
-    public function test_parse_action_with_encoded_postback(): void
+    public function test_mark_seen(): void
     {
-        $payload = [
-            'object' => 'page',
-            'entry' => [[
-                'id' => '100000000000001',
-                'time' => 1772998084000,
-                'messaging' => [[
-                    'sender' => ['id' => '200000000000001'],
-                    'recipient' => ['id' => '100000000000001'],
-                    'timestamp' => 1772998084000,
-                    'postback' => [
-                        'title' => 'Say Hello',
-                        'payload' => 'chat:{"a":"hello"}',
-                    ],
-                ]],
-            ]],
-        ];
-
-        $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream(json_encode($payload)));
-
-        $result = $this->adapter->parseAction($request);
-
-        $this->assertNotNull($result);
-        $this->assertSame('hello', $result['actionId']);
-        $this->assertNull($result['value']);
-        $this->assertSame('messenger:200000000000001', $result['threadId']);
-        $this->assertSame('200000000000001', $result['userId']);
-        $this->assertFalse($result['isBot']);
-        $this->assertFalse($result['isMe']);
-        $this->assertNull($result['triggerId']);
-        $this->assertNull($result['callbackQueryId']);
+        $this->adapter->markSeen('instagram:123456');
+        $this->assertTrue(true);
     }
 
-    public function test_parse_action_with_encoded_postback_with_value(): void
-    {
-        $payload = [
-            'object' => 'page',
-            'entry' => [[
-                'id' => '100000000000001',
-                'time' => 1772998104000,
-                'messaging' => [[
-                    'sender' => ['id' => '200000000000001'],
-                    'recipient' => ['id' => '100000000000001'],
-                    'timestamp' => 1772998104000,
-                    'postback' => [
-                        'mid' => 'm_POSTBACK_001',
-                        'title' => 'Buy Now',
-                        'payload' => 'chat:{"a":"buy","v":"sku_123"}',
-                    ],
-                ]],
-            ]],
-        ];
-
-        $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream(json_encode($payload)));
-
-        $result = $this->adapter->parseAction($request);
-
-        $this->assertNotNull($result);
-        $this->assertSame('buy', $result['actionId']);
-        $this->assertSame('sku_123', $result['value']);
-        $this->assertSame('m_POSTBACK_001', $result['messageId']);
-    }
-
-    public function test_parse_action_with_legacy_payload(): void
-    {
-        $payload = [
-            'object' => 'page',
-            'entry' => [[
-                'id' => '100000000000001',
-                'time' => 1772998094000,
-                'messaging' => [[
-                    'sender' => ['id' => '200000000000001'],
-                    'recipient' => ['id' => '100000000000001'],
-                    'timestamp' => 1772998094000,
-                    'postback' => [
-                        'title' => 'Get Started',
-                        'payload' => 'GET_STARTED',
-                    ],
-                ]],
-            ]],
-        ];
-
-        $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream(json_encode($payload)));
-
-        $result = $this->adapter->parseAction($request);
-
-        $this->assertNotNull($result);
-        $this->assertSame('GET_STARTED', $result['actionId']);
-        $this->assertSame('GET_STARTED', $result['value']);
-    }
-
-    public function test_parse_action_no_postback_returns_null(): void
-    {
-        $payload = [
-            'object' => 'page',
-            'entry' => [[
-                'messaging' => [[
-                    'sender' => ['id' => 'U1'],
-                    'message' => ['mid' => 'm1', 'text' => 'hi'],
-                ]],
-            ]],
-        ];
-
-        $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream(json_encode($payload)));
-
-        $this->assertNull($this->adapter->parseAction($request));
-    }
-
-    public function test_parse_action_wrong_object_returns_null(): void
-    {
-        $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream('{"object":"not_page"}'));
-
-        $this->assertNull($this->adapter->parseAction($request));
-    }
-
-    public function test_acknowledge_action_returns_null(): void
-    {
-        $this->assertNull($this->adapter->acknowledgeAction('some_id'));
-        $this->assertNull($this->adapter->acknowledgeAction(null));
-    }
-
-    // --- Attachment type preservation ---
-
-    public function test_extract_rich_attachment_types(): void
-    {
-        $payload = [
-            'object' => 'page',
-            'entry' => [[
-                'id' => '100000000000001',
-                'time' => 1772998124000,
-                'messaging' => [[
-                    'sender' => ['id' => '200000000000001'],
-                    'recipient' => ['id' => '100000000000001'],
-                    'timestamp' => 1772998124000,
-                    'message' => [
-                        'mid' => 'm_RICH_001',
-                        'attachments' => [
-                            [
-                                'type' => 'fallback',
-                                'payload' => [
-                                    'url' => 'https://example.com/link',
-                                    'title' => 'Check this out',
-                                ],
-                            ],
-                            [
-                                'type' => 'reel',
-                                'payload' => [
-                                    'url' => 'https://example.com/reel',
-                                    'title' => 'My Reel',
-                                    'reel_video_id' => 12345,
-                                ],
-                            ],
-                            [
-                                'type' => 'post',
-                                'payload' => [
-                                    'url' => 'https://example.com/post',
-                                    'title' => 'My Post',
-                                    'id' => 67890,
-                                ],
-                            ],
-                            [
-                                'type' => 'appointment_booking',
-                                'payload' => [
-                                    'booking_id' => 'booking_001',
-                                    'status' => 'confirmed',
-                                    'start_time' => 1739612400,
-                                    'end_time' => 1739616000,
-                                    'timezone' => 'America/Los_Angeles',
-                                ],
-                            ],
-                            [
-                                'type' => 'image',
-                                'payload' => [
-                                    'url' => 'https://example.com/sticker',
-                                    'sticker_id' => 369239263222822,
-                                ],
-                            ],
-                        ],
-                    ],
-                ]],
-            ]],
-        ];
-
-        $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream(json_encode($payload)));
-
-        $message = $this->adapter->parseWebhook($request);
-        $attachments = $message->attachments;
-
-        $this->assertCount(5, $attachments);
-
-        // fallback
-        $this->assertSame('fallback', $attachments[0]->type);
-        $this->assertSame('https://example.com/link', $attachments[0]->url);
-        $this->assertSame(['title' => 'Check this out'], $attachments[0]->fetchMetadata);
-
-        // reel
-        $this->assertSame('reel', $attachments[1]->type);
-        $this->assertSame('https://example.com/reel', $attachments[1]->url);
-        $this->assertSame(['title' => 'My Reel', 'reel_video_id' => 12345], $attachments[1]->fetchMetadata);
-
-        // post
-        $this->assertSame('post', $attachments[2]->type);
-        $this->assertSame('https://example.com/post', $attachments[2]->url);
-        $this->assertSame(['title' => 'My Post', 'id' => 67890], $attachments[2]->fetchMetadata);
-
-        // appointment_booking
-        $this->assertSame('appointment_booking', $attachments[3]->type);
-        $this->assertNull($attachments[3]->url);
-        $this->assertSame([
-            'booking_id' => 'booking_001',
-            'status' => 'confirmed',
-            'start_time' => 1739612400,
-            'end_time' => 1739616000,
-            'timezone' => 'America/Los_Angeles',
-        ], $attachments[3]->fetchMetadata);
-
-        // image with sticker_id
-        $this->assertSame('image', $attachments[4]->type);
-        $this->assertSame('https://example.com/sticker', $attachments[4]->url);
-        $this->assertSame(['sticker_id' => 369239263222822], $attachments[4]->fetchMetadata);
-    }
-
-    // --- reply_to in outgoing messages ---
-
-    public function test_post_message_with_reply_to(): void
+    public function test_post_text_with_quick_replies(): void
     {
         $captured = [];
         $factory = new Psr17Factory;
@@ -781,14 +556,14 @@ class MessengerAdapterTest extends TestCase
 
                 return $factory->createResponse(200)->withBody(
                     $factory->createStream(json_encode([
-                        'message_id' => 'mid.reply_001',
+                        'message_id' => 'mid.qr_001',
                         'recipient_id' => 'U999',
                     ]))
                 );
             }
         };
 
-        $adapter = new MessengerAdapter(
+        $adapter = new InstagramAdapter(
             pageAccessToken: 'test_token',
             appSecret: 'test_secret',
             verifyToken: 'verify_me',
@@ -797,22 +572,28 @@ class MessengerAdapterTest extends TestCase
         );
 
         $adapter->postMessage(
-            'messenger:123456',
+            'instagram:123456',
             new PostableMessage(
-                content: 'Hello reply',
-                replyToMessageId: 'm_ORIGINAL_001',
+                content: 'Pick an option',
+                metadata: [
+                    'quick_replies' => [
+                        ['content_type' => 'text', 'title' => 'Yes', 'payload' => 'YES'],
+                        ['content_type' => 'text', 'title' => 'No', 'payload' => 'NO'],
+                    ],
+                ],
             ),
         );
 
         $this->assertCount(1, $captured);
         $body = json_decode((string) $captured[0]->getBody(), true);
 
-        $this->assertArrayHasKey('reply_to', $body);
-        $this->assertSame(['mid' => 'm_ORIGINAL_001'], $body['reply_to']);
-        $this->assertSame('Hello reply', $body['message']['text']);
+        $this->assertArrayHasKey('quick_replies', $body['message']);
+        $this->assertCount(2, $body['message']['quick_replies']);
+        $this->assertSame('Yes', $body['message']['quick_replies'][0]['title']);
+        $this->assertSame('NO', $body['message']['quick_replies'][1]['payload']);
     }
 
-    public function test_post_message_without_reply_to(): void
+    public function test_post_sticker_via_like_heart(): void
     {
         $captured = [];
         $factory = new Psr17Factory;
@@ -828,14 +609,14 @@ class MessengerAdapterTest extends TestCase
 
                 return $factory->createResponse(200)->withBody(
                     $factory->createStream(json_encode([
-                        'message_id' => 'mid.001',
+                        'message_id' => 'mid.sticker_001',
                         'recipient_id' => 'U999',
                     ]))
                 );
             }
         };
 
-        $adapter = new MessengerAdapter(
+        $adapter = new InstagramAdapter(
             pageAccessToken: 'test_token',
             appSecret: 'test_secret',
             verifyToken: 'verify_me',
@@ -843,161 +624,328 @@ class MessengerAdapterTest extends TestCase
             psrFactory: $factory,
         );
 
-        $adapter->postMessage('messenger:123456', PostableMessage::text('No reply'));
+        $adapter->postMessage(
+            'instagram:123456',
+            new PostableMessage(
+                content: '',
+                attachments: [new Attachment(type: 'sticker')],
+            ),
+        );
 
         $this->assertCount(1, $captured);
         $body = json_decode((string) $captured[0]->getBody(), true);
 
-        $this->assertArrayNotHasKey('reply_to', $body);
+        $this->assertSame('like_heart', $body['message']['attachment']['type']);
     }
 
-    // --- SentMessage.timestamp ---
-
-    public function test_post_message_timestamp_is_time(): void
+    public function test_post_media_share_via_attachment_id(): void
     {
-        $before = (string) time();
-        $sent = $this->adapter->postMessage('messenger:123456', PostableMessage::text('Hello'));
-        $after = (string) (time() + 1);
+        $captured = [];
+        $factory = new Psr17Factory;
 
-        $this->assertGreaterThanOrEqual($before, $sent->timestamp);
-        $this->assertLessThanOrEqual($after, $sent->timestamp);
+        $mockClient = new class($captured) implements ClientInterface
+        {
+            public function __construct(private array &$captured) {}
+
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $factory = new Psr17Factory;
+                $this->captured[] = $request;
+
+                return $factory->createResponse(200)->withBody(
+                    $factory->createStream(json_encode([
+                        'message_id' => 'mid.media_001',
+                        'recipient_id' => 'U999',
+                    ]))
+                );
+            }
+        };
+
+        $adapter = new InstagramAdapter(
+            pageAccessToken: 'test_token',
+            appSecret: 'test_secret',
+            verifyToken: 'verify_me',
+            httpClient: $mockClient,
+            psrFactory: $factory,
+        );
+
+        $attachment = new Attachment(
+            type: 'media_share',
+            fetchMetadata: ['attachment_id' => 'ATTACHMENT_123'],
+        );
+
+        $adapter->postMessage(
+            'instagram:123456',
+            new PostableMessage(content: '', attachments: [$attachment]),
+        );
+
+        $this->assertCount(1, $captured);
+        $body = json_decode((string) $captured[0]->getBody(), true);
+
+        $this->assertSame('MEDIA_SHARE', $body['message']['attachment']['type']);
+        $this->assertSame('ATTACHMENT_123', $body['message']['attachment']['payload']['attachment_id']);
     }
 
-    // --- parseReaction messageId ---
-
-    public function test_parse_reaction_uses_mid_for_message_id(): void
+    public function test_post_multiple_images(): void
     {
-        $payload = [
-            'object' => 'page',
-            'entry' => [[
-                'id' => '100000000000001',
-                'time' => 1772998064000,
-                'messaging' => [[
-                    'sender' => ['id' => '200000000000001'],
-                    'recipient' => ['id' => '100000000000001'],
-                    'timestamp' => 1772998064000,
-                    'reaction' => [
-                        'mid' => 'm_FAKE_MSG_ID_001',
-                        'action' => 'react',
-                        'emoji' => '❤',
-                        'reaction' => 'love',
-                    ],
-                ]],
-            ]],
-        ];
+        $captured = [];
+        $factory = new Psr17Factory;
 
-        $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream(json_encode($payload)));
+        $mockClient = new class($captured) implements ClientInterface
+        {
+            public function __construct(private array &$captured) {}
 
-        $result = $this->adapter->parseReaction($request);
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $factory = new Psr17Factory;
+                $this->captured[] = $request;
 
-        $this->assertNotNull($result);
-        $this->assertSame('m_FAKE_MSG_ID_001', $result['messageId']);
-        $this->assertSame('❤', $result['emoji']);
-        $this->assertTrue($result['added']);
+                return $factory->createResponse(200)->withBody(
+                    $factory->createStream(json_encode([
+                        'message_id' => 'mid.multi_001',
+                        'recipient_id' => 'U999',
+                    ]))
+                );
+            }
+        };
+
+        $adapter = new InstagramAdapter(
+            pageAccessToken: 'test_token',
+            appSecret: 'test_secret',
+            verifyToken: 'verify_me',
+            httpClient: $mockClient,
+            psrFactory: $factory,
+        );
+
+        $adapter->postMessage(
+            'instagram:123456',
+            new PostableMessage(
+                content: '',
+                attachments: [
+                    new Attachment(type: 'image', url: 'https://example.com/1.jpg'),
+                    new Attachment(type: 'image', url: 'https://example.com/2.jpg'),
+                    new Attachment(type: 'image', url: 'https://example.com/3.jpg'),
+                ],
+            ),
+        );
+
+        $this->assertCount(1, $captured);
+        $body = json_decode((string) $captured[0]->getBody(), true);
+
+        $this->assertArrayHasKey('attachments', $body['message']);
+        $this->assertCount(3, $body['message']['attachments']);
+        $this->assertSame('image', $body['message']['attachments'][0]['type']);
+        $this->assertSame('https://example.com/2.jpg', $body['message']['attachments'][1]['payload']['url']);
     }
 
-    public function test_parse_reaction_unreact(): void
+    public function test_post_single_image_uses_singular_attachment(): void
     {
-        $payload = [
-            'object' => 'page',
-            'entry' => [[
-                'id' => '100000000000001',
-                'time' => 1772998074000,
-                'messaging' => [[
-                    'sender' => ['id' => '200000000000001'],
-                    'recipient' => ['id' => '100000000000001'],
-                    'timestamp' => 1772998074000,
-                    'reaction' => [
-                        'mid' => 'm_FAKE_MSG_ID_001',
-                        'action' => 'unreact',
-                        'emoji' => '❤',
-                        'reaction' => 'love',
-                    ],
-                ]],
-            ]],
-        ];
+        $captured = [];
+        $factory = new Psr17Factory;
 
-        $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream(json_encode($payload)));
+        $mockClient = new class($captured) implements ClientInterface
+        {
+            public function __construct(private array &$captured) {}
 
-        $result = $this->adapter->parseReaction($request);
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $factory = new Psr17Factory;
+                $this->captured[] = $request;
 
-        $this->assertNotNull($result);
-        $this->assertSame('m_FAKE_MSG_ID_001', $result['messageId']);
-        $this->assertFalse($result['added']);
+                return $factory->createResponse(200)->withBody(
+                    $factory->createStream(json_encode([
+                        'message_id' => 'mid.single_img',
+                        'recipient_id' => 'U999',
+                    ]))
+                );
+            }
+        };
+
+        $adapter = new InstagramAdapter(
+            pageAccessToken: 'test_token',
+            appSecret: 'test_secret',
+            verifyToken: 'verify_me',
+            httpClient: $mockClient,
+            psrFactory: $factory,
+        );
+
+        $adapter->postMessage(
+            'instagram:123456',
+            new PostableMessage(
+                content: '',
+                attachments: [
+                    new Attachment(type: 'image', url: 'https://example.com/1.jpg'),
+                ],
+            ),
+        );
+
+        $this->assertCount(1, $captured);
+        $body = json_decode((string) $captured[0]->getBody(), true);
+
+        $this->assertArrayHasKey('attachment', $body['message']);
+        $this->assertArrayNotHasKey('attachments', $body['message']);
+        $this->assertSame('image', $body['message']['attachment']['type']);
     }
 
-    // --- parseStatus watermark as int ---
+    // --- Dual-path: Instagram Login (graph.instagram.com) ---
 
-    public function test_parse_status_delivery_watermark_is_int(): void
+    public function test_create_with_ig_token(): void
     {
-        $payload = [
-            'object' => 'page',
-            'entry' => [[
-                'messaging' => [[
-                    'sender' => ['id' => '12345'],
-                    'recipient' => ['id' => '67890'],
-                    'timestamp' => 1700000000,
-                    'delivery' => [
-                        'mids' => ['mid.1'],
-                        'watermark' => 1700000000,
-                    ],
-                ]],
-            ]],
-        ];
+        $client = $this->createMock(ClientInterface::class);
 
-        $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream(json_encode($payload)));
+        $adapter = InstagramAdapter::createWithIgToken(
+            httpClient: $client,
+            igAccessToken: 'ig_token_123',
+            igUserId: '123456789',
+            appSecret: 'test_secret',
+            verifyToken: 'verify_me',
+        );
 
-        $result = $this->adapter->parseStatus($request);
-
-        $this->assertNotNull($result);
-        $this->assertIsInt($result['timestamp']);
-        $this->assertSame(1700000000, $result['timestamp']);
+        $this->assertSame('instagram', $adapter->getName());
     }
 
-    public function test_parse_status_read_watermark_is_int(): void
+    public function test_ig_path_initializes_with_ig_user_id(): void
     {
-        $payload = [
-            'object' => 'page',
-            'entry' => [[
-                'messaging' => [[
-                    'sender' => ['id' => '12345'],
-                    'recipient' => ['id' => '67890'],
-                    'timestamp' => 1700000001,
-                    'read' => ['watermark' => 1700000001],
-                ]],
-            ]],
-        ];
+        $client = $this->createMock(ClientInterface::class);
 
-        $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream(json_encode($payload)));
+        $adapter = InstagramAdapter::createWithIgToken(
+            httpClient: $client,
+            igAccessToken: 'ig_token_123',
+            igUserId: 'IG_ACCOUNT_001',
+            appSecret: 'test_secret',
+            verifyToken: 'verify_me',
+        );
 
-        $result = $this->adapter->parseStatus($request);
+        $chat = $this->createMock(Chat::class);
+        $adapter->initialize($chat);
 
-        $this->assertNotNull($result);
-        $this->assertIsInt($result['timestamp']);
-        $this->assertSame(1700000001, $result['timestamp']);
+        $this->assertSame('IG_ACCOUNT_001', $adapter->getBotUserId());
     }
 
-    // --- Fixture-based integration test ---
+    public function test_ig_path_sends_message_via_instagram_domain(): void
+    {
+        $captured = [];
+        $factory = new Psr17Factory;
+
+        $mockClient = new class($captured) implements ClientInterface
+        {
+            public function __construct(private array &$captured) {}
+
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $factory = new Psr17Factory;
+                $this->captured[] = [
+                    'uri' => (string) $request->getUri(),
+                    'headers' => $request->getHeaders(),
+                    'body' => (string) $request->getBody(),
+                ];
+
+                return $factory->createResponse(200)->withBody(
+                    $factory->createStream(json_encode([
+                        'message_id' => 'mid.ig_001',
+                        'recipient_id' => 'IGSID_001',
+                    ]))
+                );
+            }
+        };
+
+        $adapter = InstagramAdapter::createWithIgToken(
+            httpClient: $mockClient,
+            igAccessToken: 'ig_token_123',
+            igUserId: 'IG_ACCOUNT_001',
+            appSecret: 'test_secret',
+            verifyToken: 'verify_me',
+            psrFactory: $factory,
+        );
+
+        $adapter->postMessage('instagram:IGSID_001', PostableMessage::text('Hello from IG API'));
+
+        $this->assertCount(1, $captured);
+        $request = $captured[0];
+
+        // Uses graph.instagram.com
+        $this->assertStringContainsString('graph.instagram.com', $request['uri']);
+        $this->assertStringContainsString('/IG_ACCOUNT_001/messages', $request['uri']);
+
+        // Uses Authorization header instead of access_token query param
+        $this->assertStringNotContainsString('access_token=', $request['uri']);
+        $this->assertSame('Bearer ig_token_123', $request['headers']['Authorization'][0]);
+
+        // Body is correct
+        $body = json_decode($request['body'], true);
+        $this->assertSame('Hello from IG API', $body['message']['text']);
+    }
+
+    public function test_ig_path_fetches_user_profile_with_correct_fields(): void
+    {
+        $captured = [];
+        $factory = new Psr17Factory;
+
+        $mockClient = new class($captured) implements ClientInterface
+        {
+            public function __construct(private array &$captured) {}
+
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $factory = new Psr17Factory;
+                $this->captured[] = $request;
+
+                return $factory->createResponse(200)->withBody(
+                    $factory->createStream(json_encode([
+                        'id' => 'IGSID_001',
+                        'name' => 'Peter Chang',
+                        'username' => 'peter_chang_live',
+                        'profile_pic' => 'https://example.com/pic.jpg',
+                    ]))
+                );
+            }
+        };
+
+        $adapter = InstagramAdapter::createWithIgToken(
+            httpClient: $mockClient,
+            igAccessToken: 'ig_token_123',
+            igUserId: 'IG_ACCOUNT_001',
+            appSecret: 'test_secret',
+            verifyToken: 'verify_me',
+            psrFactory: $factory,
+        );
+
+        $user = $adapter->getUser('IGSID_001');
+
+        $this->assertSame('IGSID_001', $user->id);
+        $this->assertSame('Peter Chang', $user->name);
+    }
+
+    public function test_create_with_page_token_factory(): void
+    {
+        $client = $this->createMock(ClientInterface::class);
+
+        $adapter = InstagramAdapter::createWithPageToken(
+            httpClient: $client,
+            pageAccessToken: 'page_token_123',
+            appSecret: 'test_secret',
+            verifyToken: 'verify_me',
+        );
+
+        $this->assertSame('instagram', $adapter->getName());
+    }
+
+    // --- Fixture-based integration tests ---
 
     public function test_fixture_first_message(): void
     {
         $fixture = json_decode(
-            file_get_contents(__DIR__.'/fixtures/messenger.json'),
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
             true
         );
 
-        $payload = $fixture['firstMessage'];
         $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream(json_encode($payload)));
+            ->withBody($this->factory->createStream(json_encode($fixture['firstMessage'])));
 
         $message = $this->adapter->parseWebhook($request);
 
         $this->assertSame('m_FAKE_MSG_ID_001', $message->id);
-        $this->assertSame('messenger:200000000000001', $message->threadId);
+        $this->assertSame('instagram:200000000000001', $message->threadId);
         $this->assertSame('What is Vercel?', $message->text);
         $this->assertTrue($message->isDM);
     }
@@ -1005,7 +953,7 @@ class MessengerAdapterTest extends TestCase
     public function test_fixture_delivery(): void
     {
         $fixture = json_decode(
-            file_get_contents(__DIR__.'/fixtures/messenger.json'),
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
             true
         );
 
@@ -1020,27 +968,26 @@ class MessengerAdapterTest extends TestCase
         $this->assertIsInt($result['timestamp']);
     }
 
-    public function test_fixture_read(): void
+    public function test_fixture_seen(): void
     {
         $fixture = json_decode(
-            file_get_contents(__DIR__.'/fixtures/messenger.json'),
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
             true
         );
 
         $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream(json_encode($fixture['readConfirmation'])));
+            ->withBody($this->factory->createStream(json_encode($fixture['seenConfirmation'])));
 
         $result = $this->adapter->parseStatus($request);
 
         $this->assertNotNull($result);
         $this->assertSame('read', $result['type']);
-        $this->assertIsInt($result['timestamp']);
     }
 
     public function test_fixture_reaction_added(): void
     {
         $fixture = json_decode(
-            file_get_contents(__DIR__.'/fixtures/messenger.json'),
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
             true
         );
 
@@ -1053,13 +1000,13 @@ class MessengerAdapterTest extends TestCase
         $this->assertSame('m_FAKE_MSG_ID_001', $result['messageId']);
         $this->assertSame('❤', $result['emoji']);
         $this->assertTrue($result['added']);
-        $this->assertSame('messenger:200000000000001', $result['threadId']);
+        $this->assertSame('instagram:200000000000001', $result['threadId']);
     }
 
     public function test_fixture_reaction_removed(): void
     {
         $fixture = json_decode(
-            file_get_contents(__DIR__.'/fixtures/messenger.json'),
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
             true
         );
 
@@ -1075,7 +1022,7 @@ class MessengerAdapterTest extends TestCase
     public function test_fixture_postback_encoded(): void
     {
         $fixture = json_decode(
-            file_get_contents(__DIR__.'/fixtures/messenger.json'),
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
             true
         );
 
@@ -1086,13 +1033,13 @@ class MessengerAdapterTest extends TestCase
 
         $this->assertNotNull($result);
         $this->assertSame('hello', $result['actionId']);
-        $this->assertSame('messenger:200000000000001', $result['threadId']);
+        $this->assertSame('instagram:200000000000001', $result['threadId']);
     }
 
     public function test_fixture_postback_legacy(): void
     {
         $fixture = json_decode(
-            file_get_contents(__DIR__.'/fixtures/messenger.json'),
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
             true
         );
 
@@ -1109,7 +1056,7 @@ class MessengerAdapterTest extends TestCase
     public function test_fixture_image_attachment(): void
     {
         $fixture = json_decode(
-            file_get_contents(__DIR__.'/fixtures/messenger.json'),
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
             true
         );
 
@@ -1126,7 +1073,7 @@ class MessengerAdapterTest extends TestCase
     public function test_fixture_echo_skipped(): void
     {
         $fixture = json_decode(
-            file_get_contents(__DIR__.'/fixtures/messenger.json'),
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
             true
         );
 
@@ -1137,32 +1084,72 @@ class MessengerAdapterTest extends TestCase
         $this->adapter->parseWebhook($request);
     }
 
-    public function test_fixture_rich_attachments(): void
+    public function test_fixture_deleted_message(): void
     {
         $fixture = json_decode(
-            file_get_contents(__DIR__.'/fixtures/messenger.json'),
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
             true
         );
 
         $request = $this->factory->createServerRequest('POST', '/webhook')
-            ->withBody($this->factory->createStream(json_encode($fixture['richAttachmentTypes'])));
+            ->withBody($this->factory->createStream(json_encode($fixture['deletedMessage'])));
+
+        $message = $this->adapter->parseWebhook($request);
+
+        $this->assertSame('m_DELETED_001', $message->id);
+        $this->assertSame('', $message->text);
+    }
+
+    public function test_fixture_media_attachments(): void
+    {
+        $fixture = json_decode(
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
+            true
+        );
+
+        $request = $this->factory->createServerRequest('POST', '/webhook')
+            ->withBody($this->factory->createStream(json_encode($fixture['mediaAttachment'])));
 
         $message = $this->adapter->parseWebhook($request);
         $attachments = $message->attachments;
 
         $this->assertCount(6, $attachments);
+        $this->assertSame('media', $attachments[0]->type);
+        $this->assertSame('audio', $attachments[1]->type);
+        $this->assertSame('file', $attachments[2]->type);
+        $this->assertSame('ig_reel', $attachments[3]->type);
+        $this->assertSame('story_mention', $attachments[4]->type);
+        $this->assertSame('ig_post', $attachments[5]->type);
+    }
 
-        $this->assertSame('fallback', $attachments[0]->type);
-        $this->assertSame('reel', $attachments[1]->type);
-        $this->assertSame('post', $attachments[2]->type);
-        $this->assertSame('appointment_booking', $attachments[3]->type);
-        $this->assertSame('template', $attachments[4]->type);
-        $this->assertSame('image', $attachments[5]->type);
+    public function test_fixture_quick_reply(): void
+    {
+        $fixture = json_decode(
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
+            true
+        );
 
-        // Verify metadata
-        $this->assertSame(['title' => 'Check this out'], $attachments[0]->fetchMetadata);
-        $this->assertSame(['title' => 'My Reel', 'reel_video_id' => 12345], $attachments[1]->fetchMetadata);
-        $this->assertArrayHasKey('product', $attachments[4]->fetchMetadata);
-        $this->assertSame(['sticker_id' => 369239263222822], $attachments[5]->fetchMetadata);
+        $request = $this->factory->createServerRequest('POST', '/webhook')
+            ->withBody($this->factory->createStream(json_encode($fixture['messageWithQuickReply'])));
+
+        $message = $this->adapter->parseWebhook($request);
+
+        $this->assertSame('m_QR_001', $message->id);
+        $this->assertSame('Option 1', $message->text);
+    }
+
+    public function test_fixture_message_edit(): void
+    {
+        $fixture = json_decode(
+            file_get_contents(__DIR__.'/fixtures/instagram.json'),
+            true
+        );
+
+        $request = $this->factory->createServerRequest('POST', '/webhook')
+            ->withBody($this->factory->createStream(json_encode($fixture['messageEdit'])));
+
+        // message_edit events should not be parsed as regular messages
+        $this->expectException(AdapterException::class);
+        $this->adapter->parseWebhook($request);
     }
 }

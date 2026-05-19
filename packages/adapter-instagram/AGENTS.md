@@ -24,14 +24,11 @@ new MessengerAdapter(
 ```
 
 ## thread ID format
-`messenger:{recipientId}` — e.g. `messenger:987654321` (PSID only)
+`messenger:{pageId}:{senderId}` — e.g. `messenger:123:987654321`
 
 ## webhook flow
-1. `verifyWebhook` — responds to `hub.verify_token` challenge; verifies HMAC-SHA256 on POST
-2. `parseWebhook` — extracts user messages (skips echo)
-3. `parseAction` — extracts `messaging_postbacks` (postback buttons, Get Started, persistent menu); implements `HandlesActions`
-4. `parseReaction` — extracts `message_reactions` (react/unreact); implements `HandlesReactions`
-5. `parseStatus` — extracts `message_deliveries` and `message_reads`; implements `HandlesStatuses`
+1. `verifyWebhook` — responds to `hub.verify_token` challenge
+2. `parseWebhook` — extracts messages, postbacks, message_deliveries, optins
 
 ## features
 - Send text, generic templates, button templates, quick replies

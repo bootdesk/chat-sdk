@@ -14,6 +14,7 @@ use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
 use BootDesk\ChatSDK\Core\Contracts\HandlesActions;
 use BootDesk\ChatSDK\Core\Contracts\HandlesBatchedWebhooks;
 use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
+use BootDesk\ChatSDK\Core\Contracts\HandlesSlashCommands;
 use BootDesk\ChatSDK\Core\Contracts\HandlesStatuses;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
 use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
@@ -31,7 +32,7 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class InstagramAdapter implements Adapter, HandlesActions, HandlesBatchedWebhooks, HandlesReactions, HandlesStatuses
+class InstagramAdapter implements Adapter, HandlesActions, HandlesBatchedWebhooks, HandlesReactions, HandlesSlashCommands, HandlesStatuses
 {
     protected ?string $botUserId = null;
 
@@ -276,6 +277,51 @@ class InstagramAdapter implements Adapter, HandlesActions, HandlesBatchedWebhook
         return null;
     }
 
+    public function parseSlashCommand(ServerRequestInterface $request): ?array
+    {
+        $body = (string) $request->getBody();
+        $payload = json_decode($body, true);
+
+        if (! is_array($payload) || ($payload['object'] ?? '') !== 'instagram') {
+            return null;
+        }
+
+        foreach ($payload['entry'] ?? [] as $entry) {
+            foreach ($entry['messaging'] ?? [] as $event) {
+                $message = $event['message'] ?? null;
+                if ($message === null || ($message['is_echo'] ?? false)) {
+                    continue;
+                }
+
+                $rawText = $message['text'] ?? '';
+
+                if ($rawText === '' || $rawText[0] !== '/') {
+                    continue;
+                }
+
+                $senderId = $event['sender']['id'] ?? '';
+                $threadId = $this->encodeThreadId(['recipientId' => $senderId]);
+
+                $parts = explode(' ', $rawText, 2);
+                $command = $parts[0];
+                $text = $parts[1] ?? '';
+
+                return [
+                    'command' => $command,
+                    'text' => $text,
+                    'userId' => $senderId,
+                    'isBot' => false,
+                    'isMe' => false,
+                    'channelId' => $threadId,
+                    'triggerId' => null,
+                    'raw' => $body,
+                ];
+            }
+        }
+
+        return null;
+    }
+
     public function parseWebhook(ServerRequestInterface $request): Message
     {
         $body = (string) $request->getBody();
@@ -418,21 +464,45 @@ class InstagramAdapter implements Adapter, HandlesActions, HandlesBatchedWebhook
                 if ($message !== null && ! ($message['is_echo'] ?? false)) {
                     $text = $message['text'] ?? '';
                     $mid = $message['mid'] ?? uniqid('msg_');
-                    $events[] = new WebhookEvent(
-                        type: WebhookEvent::TYPE_MESSAGE,
-                        threadId: $threadId,
-                        payload: new Message(
-                            id: $mid,
+
+                    // Check if this is a slash command
+                    if ($text !== '' && $text[0] === '/') {
+                        $parts = explode(' ', $text, 2);
+                        $command = $parts[0];
+                        $cmdText = $parts[1] ?? '';
+
+                        $events[] = new WebhookEvent(
+                            type: WebhookEvent::TYPE_SLASH_COMMAND,
                             threadId: $threadId,
-                            author: new Author(id: $senderId, isBot: false),
-                            text: $text,
-                            attachments: $this->extractAttachments($message),
-                            isDM: true,
-                            raw: $body,
+                            payload: [
+                                'command' => $command,
+                                'text' => $cmdText,
+                                'userId' => $senderId,
+                                'isBot' => false,
+                                'isMe' => false,
+                                'channelId' => $threadId,
+                                'triggerId' => null,
+                                'raw' => $payload,
+                            ],
                             originId: $originId,
-                        ),
-                        originId: $originId,
-                    );
+                        );
+                    } else {
+                        $events[] = new WebhookEvent(
+                            type: WebhookEvent::TYPE_MESSAGE,
+                            threadId: $threadId,
+                            payload: new Message(
+                                id: $mid,
+                                threadId: $threadId,
+                                author: new Author(id: $senderId, isBot: false),
+                                text: $text,
+                                attachments: $this->extractAttachments($message),
+                                isDM: true,
+                                raw: $body,
+                                originId: $originId,
+                            ),
+                            originId: $originId,
+                        );
+                    }
                 }
             }
         }

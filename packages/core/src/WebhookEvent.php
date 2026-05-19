@@ -14,8 +14,10 @@ class WebhookEvent
 
     public const TYPE_STATUS = 'status';
 
+    public const TYPE_SLASH_COMMAND = 'slash_command';
+
     /**
-     * @param  'message'|'action'|'reaction'|'status'  $type
+     * @param  'message'|'action'|'reaction'|'status'|'slash_command'  $type
      * @param  mixed  $payload  Message for TYPE_MESSAGE, array for all others
      */
     public function __construct(

@@ -12,6 +12,7 @@ use BootDesk\ChatSDK\Core\Contracts\FileUploadConverter;
 use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
 use BootDesk\ChatSDK\Core\Contracts\HandlesBatchedWebhooks;
 use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
+use BootDesk\ChatSDK\Core\Contracts\HandlesSlashCommands;
 use BootDesk\ChatSDK\Core\Contracts\HandlesStatuses;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
@@ -30,7 +31,7 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatchedWebhooks, HandlesReactions, HandlesStatuses
+class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatchedWebhooks, HandlesReactions, HandlesSlashCommands, HandlesStatuses
 {
     protected ?string $botUserId = null;
 
@@ -206,6 +207,58 @@ class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatc
         return null;
     }
 
+    public function parseSlashCommand(ServerRequestInterface $request): ?array
+    {
+        $body = (string) $request->getBody();
+        $payload = json_decode($body, true);
+
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        foreach ($payload['entry'] ?? [] as $entry) {
+            foreach ($entry['changes'] ?? [] as $change) {
+                if (($change['field'] ?? '') !== 'messages') {
+                    continue;
+                }
+
+                $value = $change['value'] ?? [];
+                $messages = $value['messages'] ?? [];
+                $phoneNumberId = $value['metadata']['phone_number_id'] ?? $this->phoneNumberId;
+
+                foreach ($messages as $msg) {
+                    $rawText = $msg['text']['body'] ?? '';
+
+                    if ($rawText === '' || $rawText[0] !== '/') {
+                        continue;
+                    }
+
+                    $parts = explode(' ', $rawText, 2);
+                    $command = $parts[0];
+                    $text = $parts[1] ?? '';
+
+                    $threadId = $this->encodeThreadId([
+                        'phoneNumberId' => $phoneNumberId,
+                        'userWaId' => $msg['from'],
+                    ]);
+
+                    return [
+                        'command' => $command,
+                        'text' => $text,
+                        'userId' => $msg['from'],
+                        'isBot' => false,
+                        'isMe' => false,
+                        'channelId' => $threadId,
+                        'triggerId' => null,
+                        'raw' => $body,
+                    ];
+                }
+            }
+        }
+
+        return null;
+    }
+
     public function parseWebhook(ServerRequestInterface $request): Message
     {
         $body = (string) $request->getBody();
@@ -288,15 +341,42 @@ class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatc
                             originId: $originId,
                         );
                     } else {
-                        $events[] = new WebhookEvent(
-                            type: WebhookEvent::TYPE_MESSAGE,
-                            threadId: $this->encodeThreadId([
-                                'phoneNumberId' => $phoneNumberId,
-                                'userWaId' => $msg['from'],
-                            ]),
-                            payload: $this->parseInboundMessage($msg, $contacts[0] ?? null, $phoneNumberId, $body, $originId),
-                            originId: $originId,
-                        );
+                        $threadId = $this->encodeThreadId([
+                            'phoneNumberId' => $phoneNumberId,
+                            'userWaId' => $msg['from'],
+                        ]);
+
+                        $rawText = $msg['text']['body'] ?? '';
+
+                        // Check if this is a slash command
+                        if ($rawText !== '' && $rawText[0] === '/') {
+                            $parts = explode(' ', $rawText, 2);
+                            $command = $parts[0];
+                            $text = $parts[1] ?? '';
+
+                            $events[] = new WebhookEvent(
+                                type: WebhookEvent::TYPE_SLASH_COMMAND,
+                                threadId: $threadId,
+                                payload: [
+                                    'command' => $command,
+                                    'text' => $text,
+                                    'userId' => $msg['from'],
+                                    'isBot' => false,
+                                    'isMe' => false,
+                                    'channelId' => $threadId,
+                                    'triggerId' => null,
+                                    'raw' => $payload,
+                                ],
+                                originId: $originId,
+                            );
+                        } else {
+                            $events[] = new WebhookEvent(
+                                type: WebhookEvent::TYPE_MESSAGE,
+                                threadId: $threadId,
+                                payload: $this->parseInboundMessage($msg, $contacts[0] ?? null, $phoneNumberId, $body, $originId),
+                                originId: $originId,
+                            );
+                        }
                     }
                 }
 

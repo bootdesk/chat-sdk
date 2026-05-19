@@ -1246,6 +1246,19 @@ class Chat
                 raw: $event->payload['raw'] ?? null,
                 originId: $event->originId,
             ),
+            WebhookEvent::TYPE_SLASH_COMMAND => $this->processSlashCommand(
+                adapter: $adapter,
+                channelId: $event->payload['channelId'],
+                command: $event->payload['command'],
+                text: $event->payload['text'],
+                user: new Author(
+                    id: $event->payload['userId'],
+                    isMe: $event->payload['isMe'],
+                    isBot: $event->payload['isBot'],
+                ),
+                raw: $event->payload['raw'] ?? null,
+                triggerId: $event->payload['triggerId'] ?? null,
+            ),
             WebhookEvent::TYPE_STATUS => $this->dispatchStatusEvent($event),
         };
     }

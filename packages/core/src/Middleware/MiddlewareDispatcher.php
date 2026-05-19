@@ -16,38 +16,57 @@ use Psr\Http\Message\ServerRequestInterface;
 
 final class MiddlewareDispatcher
 {
-    /** @var array<string, array{direction: 'onion'|'forward', middlewares: array}> */
-    private array $config = [
-        'webhook' => ['direction' => 'onion', 'middlewares' => []],
-        'receiving' => ['direction' => 'forward', 'middlewares' => []],
-        'sending' => ['direction' => 'forward', 'middlewares' => []],
+    /** @var array{webhook: array, receiving: array, sending: array} */
+    private array $middlewares = [
+        'webhook' => [],
+        'receiving' => [],
+        'sending' => [],
     ];
 
     public function addWebhook(WebhookMiddleware $middleware): void
     {
-        $this->config['webhook']['middlewares'][] = $middleware;
+        $this->middlewares['webhook'][] = $middleware;
     }
 
     public function addReceiving(ReceivingMiddleware $middleware): void
     {
-        $this->config['receiving']['middlewares'][] = $middleware;
+        $this->middlewares['receiving'][] = $middleware;
     }
 
     public function addSending(SendingMiddleware $middleware): void
     {
-        $this->config['sending']['middlewares'][] = $middleware;
+        $this->middlewares['sending'][] = $middleware;
     }
 
+    /**
+     * @param  'webhook'|'receiving'|'sending'  $type
+     */
+    public function getMiddlewares(string $type): array
+    {
+        return $this->middlewares[$type];
+    }
+
+    /**
+     * @param  callable(ServerRequestInterface): ResponseInterface  $handler
+     */
     public function processWebhook(ServerRequestInterface $request, callable $handler): ResponseInterface
     {
         return $this->process('webhook', $request, $handler);
     }
 
+    /**
+     * @param  callable(?Message, Adapter): ?Message  $handler
+     */
     public function processReceiving(?Message $message, Adapter $adapter, callable $handler): ?Message
     {
-        return $this->process('receiving', [$message, $adapter], $handler);
+        $result = $this->process('receiving', [$message, $adapter], $handler);
+
+        return $result instanceof Message ? $result : null;
     }
 
+    /**
+     * @param  callable(string, PostableMessage, Adapter, string): PostableMessage  $handler
+     */
     public function processSending(string $threadId, PostableMessage $message, Adapter $adapter, string $operation, callable $handler): PostableMessage
     {
         $result = $this->process('sending', [$threadId, $message, $adapter, $operation], $handler);
@@ -55,99 +74,83 @@ final class MiddlewareDispatcher
         return $result instanceof PostableMessage ? $result : $message;
     }
 
+    /**
+     * @param  'webhook'|'receiving'|'sending'  $type
+     */
     private function process(string $type, mixed $context, callable $handler): mixed
     {
-        $cfg = $this->config[$type] ?? throw new \InvalidArgumentException("Unknown middleware type: {$type}");
-        $middlewares = $cfg['middlewares'];
+        $middlewares = $this->middlewares[$type];
 
         if ($middlewares === []) {
-            return $this->callHandler($type, $handler, $context);
+            return $type === 'webhook' ? $handler($context) : $handler(...$context);
         }
 
-        return $cfg['direction'] === 'onion'
-            ? $this->processOnion($type, $context, $handler)
-            : $this->processForward($type, $context);
+        $first = $middlewares[0] ?? throw new \InvalidArgumentException("No middleware found for type: {$type}");
+
+        return $first instanceof OnionDirection
+            ? $this->processOnion($middlewares, $context, $handler)
+            : $this->processForward($middlewares, $context);
     }
 
-    private function processOnion(string $type, mixed $context, callable $handler): mixed
+    /**
+     * @param  array<mixed>  $middlewares
+     */
+    private function processOnion(array $middlewares, mixed $context, callable $handler): mixed
     {
-        $pipeline = fn ($ctx): mixed => $this->callHandler($type, $handler, $ctx);
-        $middlewares = array_reverse($this->config[$type]['middlewares']);
+        $pipeline = $handler;
 
-        foreach ($middlewares as $m) {
-            $pipeline = fn ($ctx): mixed => $this->callMiddleware($type, $m, $ctx, $pipeline);
+        foreach (array_reverse($middlewares) as $middleware) {
+            $prev = $pipeline;
+            $pipeline = fn ($ctx): mixed => $middleware->handle($ctx, $prev);
         }
 
         return $pipeline($context);
     }
 
-    private function processForward(string $type, mixed $context): mixed
+    /**
+     * @param  array<mixed>  $middlewares
+     */
+    private function processForward(array $middlewares, mixed $context): mixed
     {
         $current = $context;
 
-        foreach ($this->config[$type]['middlewares'] as $m) {
-            $next = function (...$args) use ($type, &$current): mixed {
-                $current = $this->rebuildContext($type, $args);
+        foreach ($middlewares as $m) {
+            $next = function (...$args) use (&$current, $m): mixed {
+                $current = $args;
 
-                return $type === 'sending' ? null : $current[0];
+                return $m instanceof SendingMiddleware ? null : $args[0];
             };
 
-            $result = $this->callMiddleware($type, $m, $current, $next);
+            $result = $this->callMiddleware($m, $current, $next);
 
             if ($result === null || $result instanceof SentMessage) {
                 return $result;
             }
 
-            $current = $this->updateContext($type, $current, $result);
+            $current = $this->updateContext($m, $current, $result);
         }
 
-        return $this->extractResult($type, $current);
+        return $this->extractResult($current);
     }
 
-    private function rebuildContext(string $type, array $args): mixed
+    private function callMiddleware(object $m, mixed $context, callable $next): mixed
     {
-        return match ($type) {
-            'receiving' => [$args[0], $args[1]],
-            'sending' => [$args[0], $args[1], $args[2], $args[3]],
-            default => $args[0] ?? null,
-        };
+        return $m instanceof WebhookMiddleware
+            ? $m->handle($context, $next)
+            : ($m instanceof ReceivingMiddleware
+                ? $m->handle($context[0], $context[1], $next)
+                : $m->handle($context[0], $context[1], $context[2], $context[3], $next));
     }
 
-    private function extractResult(string $type, mixed $context): mixed
+    private function extractResult(mixed $context): mixed
     {
-        return match ($type) {
-            'receiving' => $context[0],
-            'sending' => $context[1],
-            default => $context,
-        };
+        return is_array($context) ? $context[0] ?? $context[1] : $context;
     }
 
-    private function callMiddleware(string $type, object $m, mixed $context, callable $next): mixed
+    private function updateContext(object $m, mixed $context, mixed $result): mixed
     {
-        return match ($type) {
-            'webhook' => $m->handle($context, $next),
-            'receiving' => $m->handle($context[0], $context[1], $next),
-            'sending' => $m->handle($context[0], $context[1], $context[2], $context[3], $next),
-            default => throw new \InvalidArgumentException("Unknown middleware type: {$type}"),
-        };
-    }
-
-    private function callHandler(string $type, callable $handler, mixed $context): mixed
-    {
-        return match ($type) {
-            'webhook' => $handler($context),
-            'receiving' => $handler($context[0], $context[1]),
-            'sending' => $handler($context[0], $context[1], $context[2], $context[3]),
-            default => throw new \InvalidArgumentException("Unknown middleware type: {$type}"),
-        };
-    }
-
-    private function updateContext(string $type, mixed $context, mixed $result): mixed
-    {
-        return match ($type) {
-            'receiving' => [$result, $context[1]],
-            'sending' => [$context[0], $result ?? $context[1], $context[2], $context[3]],
-            default => $context,
-        };
+        return $m instanceof ReceivingMiddleware
+            ? [$result, $context[1]]
+            : [$context[0], $result ?? $context[1], $context[2], $context[3]];
     }
 }

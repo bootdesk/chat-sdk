@@ -89,7 +89,10 @@ class Thread
 
     public function fetchMessages(?FetchOptions $options = null): FetchResult
     {
-        return $this->adapter->fetchMessages($this->id, $options);
+        return $this->adapter->fetchMessages(
+            threadId: $this->id,
+            options: $options
+        );
     }
 
     private function normalizePostable(string|PostableMessage|Cards\Card $message): PostableMessage
@@ -108,11 +111,11 @@ class Thread
     private function runSendingMiddleware(PostableMessage $message, string $operation): PostableMessage
     {
         return $this->chat->getMiddleware()->processSending(
-            $this->id,
-            $message,
-            $this->adapter,
-            $operation,
-            fn ($tid, $msg, $adapter, $op): null => null
+            threadId: $this->id,
+            message: $message,
+            adapter: $this->adapter,
+            operation: $operation,
+            handler: fn ($tid, PostableMessage $msg, $adapter, $op): PostableMessage => $msg
         );
     }
 }

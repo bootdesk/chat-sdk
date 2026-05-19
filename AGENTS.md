@@ -13,7 +13,8 @@ composer lint                    # pint --test (Laravel preset)
 composer lint:fix                # pint (auto-fix)
 composer format                  # rector process
 composer format:check            # rector --dry-run
-composer all                     # lint -> analyse -> test
+composer docs                     # phpDocumentor (generates docs/_build/)
+composer all                      # lint -> analyse -> test
 composer check                   # lint -> analyse -> test:coverage
 ```
 

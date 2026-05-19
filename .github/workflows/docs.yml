@@ -21,11 +21,10 @@ jobs:
       - uses: tryvin/setup-php@f89a301251ea3f109745bab3a62be58575f216bf #v2.36.0-main
         with:
           php-version: 8.4
+      - name: Install dependencies
+        run: composer install --no-interaction
       - name: Generate API docs
-        run: |
-          wget -q https://phpdoc.org/phpDocumentor.phar
-          chmod +x phpDocumentor.phar
-          ./phpDocumentor.phar run -c phpdoc.dist.xml -t docs/_build
+        run: composer docs
       - uses: actions/upload-pages-artifact@v5
         with:
           path: docs/_build

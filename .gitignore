@@ -5,3 +5,5 @@ composer.lock
 .phpunit.result.cache
 /coverage
 .claude/*local.json
+docs/_build
+.phpdoc

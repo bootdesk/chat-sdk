@@ -1,0 +1,1 @@
+../../packages/adapter-slack/README.md

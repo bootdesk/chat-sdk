@@ -1,0 +1,1 @@
+../../packages/adapter-whatsapp/README.md

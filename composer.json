@@ -21,7 +21,8 @@
         "orchestra/testbench": "^9.0|^10.0|^11.0",
         "phpstan/phpstan": "^2.1",
         "rector/rector": "^2.4",
-        "captainhook/captainhook": "^5.29"
+        "captainhook/captainhook": "^5.29",
+        "phpdocumentor/shim": "*"
     },
     "autoload": {
         "psr-4": {
@@ -87,14 +88,16 @@
             "@lint",
             "@analyse",
             "@test:coverage"
-        ]
+        ],
+        "docs": "vendor/bin/phpdoc -c phpdoc.dist.xml"
     },
     "license": "MIT",
     "minimum-stability": "dev",
     "prefer-stable": true,
     "config": {
         "allow-plugins": {
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "phpdocumentor/shim": true
         }
     }
 }

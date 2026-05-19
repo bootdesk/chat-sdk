@@ -1,1 +1,0 @@
-../../packages/adapter-github/README.md

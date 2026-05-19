@@ -120,9 +120,9 @@ RadioSelect::make('priority', 'Priority')
 
 ## Platform Support
 
-| Feature | Slack |
-|---------|-------|
-| Text Input | ✓ |
-| Select | ✓ |
-| External Select | ✓ |
-| Radio Select | ✓ |
+| Feature         | Slack |
+| --------------- | ----- |
+| Text Input      | ✓     |
+| Select          | ✓     |
+| External Select | ✓     |
+| Radio Select    | ✓     |

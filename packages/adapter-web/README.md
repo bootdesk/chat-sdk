@@ -10,9 +10,9 @@ composer require bootdesk/chat-sdk-adapter-web
 
 ## Configuration
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `user_name` | Display name for the bot (optional) | `Bot` |
+| Variable    | Description                         | Example |
+| ----------- | ----------------------------------- | ------- |
+| `user_name` | Display name for the bot (optional) | `Bot`   |
 
 ```php
 use BootDesk\ChatSDK\Web\WebAdapter;
@@ -34,8 +34,8 @@ $adapter->postMessage('web:session-abc123', 'Hello from laravel-bootdesk!');
 
 ## Thread ID Format
 
-| Format | Description |
-|--------|-------------|
+| Format            | Description           |
+| ----------------- | --------------------- |
 | `web:{sessionId}` | Per-session threading |
 
 ## Webhook
@@ -44,25 +44,26 @@ Accepts POST requests with a JSON body containing `text`, `userId`, and `session
 
 ## Feature Matrix
 
-| Feature | Supported |
-|---------|-----------|
-| Post messages | ✓ |
-| Edit messages | ✗ |
-| Delete messages | ✗ |
-| Reactions | ✗ |
-| Typing indicator | ✗ |
-| Fetch messages | ✗ |
-| Fetch thread info | ✗ |
-| Fetch channel info | ✗ |
-| Get user | ✗ |
-| Open DM | ✗ |
-| Stream | ✓ |
+| Feature            | Supported |
+| ------------------ | --------- |
+| Post messages      | ✓         |
+| Edit messages      | ✗         |
+| Delete messages    | ✗         |
+| Reactions          | ✗         |
+| Typing indicator   | ✗         |
+| Fetch messages     | ✗         |
+| Fetch thread info  | ✗         |
+| Fetch channel info | ✗         |
+| Get user           | ✗         |
+| Open DM            | ✗         |
+| Stream             | ✓         |
 
 ## Notes
 
 Generic adapter for web/REST integrations. Use as a foundation for building custom adapters.
 
 ## Documentationn
+
 Full API documentation: https://bootdesk.github.io/chat-sdk
 
 ## License

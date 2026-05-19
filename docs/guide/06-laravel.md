@@ -16,7 +16,18 @@ Publish the config file:
 php artisan vendor:publish --tag=chat-config
 ```
 
-This creates `config/chat.php`:
+This creates `config/chat.php` with these options:
+
+| Option         | Default    | Description                                           |
+| -------------- | ---------- | ----------------------------------------------------- |
+| `user_name`    | `'Bot'`    | Bot display name                                      |
+| `adapters`     | `[]`       | Per-adapter credentials                               |
+| `state.store`  | `'file'`   | Cache store for state                                 |
+| `state.prefix` | `'chat:'`  | Key prefix for state                                  |
+| `handlers`     | `[]`       | Handler classes to register                           |
+| `concurrency`  | `'drop'`   | Concurrency strategy (drop/queue/debounce/concurrent) |
+| `lock_scope`   | `'thread'` | Lock scope for concurrency ('thread' or 'channel')    |
+| `transcripts`  | `null`     | Transcript config (requires identity resolver)        |
 
 ```php
 return [

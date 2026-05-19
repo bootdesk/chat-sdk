@@ -5,6 +5,7 @@
   <paths>
     <output>docs/_build</output>
   </paths>
+  <setting name="template.color" value="blue"/>
   <versions>
     <version>
       <number>1.0.0</number>

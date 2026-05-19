@@ -33,6 +33,7 @@ Represents a conversation with a specific user. Created per-platform with a cano
 ```
 
 Examples:
+
 - `slack:C123:1234567890.123456`
 - `telegram:-456:789`
 - `discord:987:654`
@@ -53,6 +54,27 @@ Interface for platform-specific implementations. Each adapter handles auth, webh
 
 The SDK normalizes markdown across all platforms using a CommonMark pipeline. Every adapter has a `FormatConverter` that converts between the SDK's internal AST and the platform's native format. See the [Markdown guide](08-markdown.html) for details on supported features and per-platform behavior.
 
+## Concurrency Strategies
+
+Control how simultaneous messages from the same thread are handled via the `concurrency` config:
+
+| Strategy     | Behavior                                       | Use Case                                      |
+| ------------ | ---------------------------------------------- | --------------------------------------------- |
+| `drop`       | Drop new messages while one is being processed | Default, prevents duplicate processing        |
+| `queue`      | Queue messages, process sequentially           | Preserve all messages, process in order       |
+| `debounce`   | Reset timer, process only the latest           | Reduce redundant processing for rapid updates |
+| `concurrent` | Process all messages simultaneously            | High-throughput scenarios                     |
+
+```php
+// config/chat.php
+'concurrency' => 'drop',        // Strategy
+'debounceMs' => 1500,           // Wait time for debounce (ms)
+'maxConcurrent' => 5,           // Max concurrent threads (when strategy=concurrent)
+'lock_scope' => 'thread',       // 'thread' or 'channel'
+```
+
+**`lock_scope: channel`** is required for platforms like WhatsApp/Telegram where the thread ID format doesn't distinguish between threads (one phone number = one conversation).
+
 ## State System
 
 Pluggable via `StateAdapter`:
@@ -60,7 +82,7 @@ Pluggable via `StateAdapter`:
 - `MemoryStateAdapter` — In-memory (testing, single-process)
 - `CacheStateAdapter` — Laravel cache (Redis, database, file)
 
-Used for: conversation state, deduplication, modal context, rate limiting.
+Used for: conversation state, deduplication, modal context, rate limiting, locks, queues.
 
 ## Middleware
 

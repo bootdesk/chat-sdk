@@ -1,1 +1,0 @@
-../../packages/adapter-telnyx/README.md

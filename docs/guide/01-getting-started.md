@@ -67,8 +67,43 @@ $thread->post(PostableMessage::text('**bold** text'));
 $thread->post(PostableMessage::card($card));
 ```
 
+**Edit and delete** (if the platform supports it):
+
+```php
+$sent = $thread->post('Wait, let me fix that...');
+$thread->edit($sent->id, 'Fixed message');
+$thread->delete($sent->id);
+```
+
+**Reactions and typing:**
+
+```php
+$thread->startTyping();  // Show typing indicator
+$thread->addReaction($messageId, 'thumbsup');
+$thread->removeReaction($messageId, 'thumbsup');
+```
+
+## Concurrency Config
+
+Control how simultaneous messages from the same thread are handled:
+
+```php
+$chat = new Chat(
+    state: new MemoryStateAdapter,
+    adapters: [$adapter],
+    config: [
+        'concurrency' => 'drop',  // drop, queue, debounce, concurrent
+        'debounceMs' => 1500,
+        'maxConcurrent' => 5,
+    ],
+);
+```
+
+See [Quirks & Gotchas](09-quirks-gotchas.md) for platform-specific recommendations.
+
 ## Next Steps
 
-- [Architecture Overview](architecture.md)
-- [Creating Cards](cards.md)
-- [Building Modals](modals.md)
+- [Architecture Overview](02-architecture.md)
+- [Creating Cards](04-cards.md)
+- [Building Modals](05-modals.md)
+- [Quirks & Gotchas](09-quirks-gotchas.md)

@@ -4,11 +4,11 @@ The SDK has three middleware pipelines for intercepting and transforming message
 
 ## Pipelines
 
-| Pipeline | Interface | Purpose |
-|----------|-----------|---------|
-| `WebhookMiddleware` | `WebhookMiddleware` | Intercept raw webhooks before any processing |
+| Pipeline              | Interface             | Purpose                                          |
+| --------------------- | --------------------- | ------------------------------------------------ |
+| `WebhookMiddleware`   | `WebhookMiddleware`   | Intercept raw webhooks before any processing     |
 | `ReceivingMiddleware` | `ReceivingMiddleware` | Transform incoming messages before handlers fire |
-| `SendingMiddleware` | `SendingMiddleware` | Transform outgoing messages before they're sent |
+| `SendingMiddleware`   | `SendingMiddleware`   | Transform outgoing messages before they're sent  |
 
 ## Webhook Middleware
 
@@ -66,7 +66,7 @@ $chat->addReceivingMiddleware(new TrackMessagingWindow($state));
 
 Transform or block outgoing messages before they're sent to the platform:
 
-```php
+````php
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
 use BootDesk\ChatSDK\Core\PostableMessage;
@@ -87,9 +87,9 @@ class LogSentMessage implements SendingMiddleware
     }
 }
 
-### Built-in: EnforceMessagingWindow (Laravel)
+### Built-in: EnforceMessagingWindow
 
-Blocks messages when the 24h messaging window has expired. Optionally converts to a template fallback:
+Blocks or converts messages when the 24h messaging window has expired:
 
 ```php
 use BootDesk\ChatSDK\Laravel\Middleware\EnforceMessagingWindow;
@@ -100,22 +100,11 @@ $chat->addSendingMiddleware(new EnforceMessagingWindow(
         'You have a new message waiting.'
     ),
 ));
-```
+````
 
-See [Messaging Window](02-architecture.html) for the contract overview and [Laravel guide](06-laravel.html) for setup.
+**Without templateFallback:** Messages are silently dropped. **With templateFallback:** Original message is replaced with the fallback text.
 
-### Built-in: EnforceMessagingWindow
-
-Blocks or converts messages when the 24h messaging window has expired:
-
-```php
-$chat->addSendingMiddleware(new EnforceMessagingWindow(
-    state: $state,
-    templateFallback: fn (PostableMessage $msg) => PostableMessage::text(
-        'You have a new message waiting.'
-    ),
-));
-```
+Requires adapter to implement `AdapterHasMessagingWindow` (WhatsApp does). See [Architecture](02-architecture.md) for contract details and [Laravel guide](06-laravel.md) for setup.
 
 ## Middleware Order
 

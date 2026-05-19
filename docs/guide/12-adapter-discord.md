@@ -1,1 +1,0 @@
-../../packages/adapter-discord/README.md

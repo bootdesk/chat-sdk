@@ -70,17 +70,20 @@ public function encodeThreadId(mixed $platformData): string
 
 Add capabilities by implementing optional contracts:
 
-| Contract | Purpose |
-|----------|---------|
-| `HandlesActions` | Parse interactive callbacks |
-| `HandlesSlashCommands` | Parse messages starting with `/` |
-| `HandlesReactions` | Parse emoji reactions |
-| `HandlesModals` | Parse modal submissions |
-| `HandlesStatuses` | Parse delivery/read receipts |
-| `HandlesOptionsLoad` | Parse external select queries |
-| `SupportsEditMessages` | Support editing sent messages |
-| `SupportsDeleteMessages` | Support deleting sent messages |
-| `AdapterHasMessagingWindow` | Support 24h messaging windows |
+| Contract                    | Purpose                                     |
+| --------------------------- | ------------------------------------------- |
+| `HandlesActions`            | Parse interactive callbacks                 |
+| `HandlesSlashCommands`      | Parse messages starting with `/`            |
+| `HandlesReactions`          | Parse emoji reactions                       |
+| `HandlesModals`             | Parse modal submissions                     |
+| `HandlesStatuses`           | Parse delivery/read receipts                |
+| `HandlesOptionsLoad`        | Parse external select queries               |
+| `SupportsEditMessages`      | Support editing sent messages               |
+| `SupportsDeleteMessages`    | Support deleting sent messages              |
+| `AdapterHasMessagingWindow` | Support 24h messaging windows               |
+| `SupportsModals`            | Support opening modals (Slack-only for now) |
+
+**Note:** Even if you don't implement a contract, the `Adapter` interface requires all methods (e.g., `editMessage`, `deleteMessage`). Throw `AdapterException` for unsupported operations.
 
 ## Step 5: Registration File
 
@@ -90,7 +93,26 @@ Create `src/register.php`:
 BootDesk\ChatSDK\Core\Support\AdapterRegistry::register('myplatform', MyPlatformAdapter::class);
 ```
 
-## Step 6: Create Tests
+## Step 6: Error Handling
+
+Adapters should throw appropriate exceptions:
+
+```php
+use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
+use BootDesk\ChatSDK\Core\Exceptions\ValidationException;
+
+// Auth failure
+throw new AuthenticationException('Invalid API credentials');
+
+// Invalid input
+throw new ValidationException('Thread ID format invalid');
+
+// API or platform error
+throw new AdapterException('Platform API error: connection timeout');
+```
+
+## Step 7: Create Tests
 
 ```php
 class MyPlatformAdapterTest extends TestCase
@@ -100,6 +122,12 @@ class MyPlatformAdapterTest extends TestCase
         // Mock HTTP client
         // Call postMessage
         // Assert correct API call
+    }
+
+    public function test_throws_on_invalid_thread_id(): void
+    {
+        $this->expectException(ValidationException::class);
+        $adapter->postMessage('invalid-format', $message);
     }
 }
 ```

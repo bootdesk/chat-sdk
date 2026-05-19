@@ -1,1 +1,0 @@
-../../packages/laravel/README.md

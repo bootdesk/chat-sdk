@@ -1,1 +1,0 @@
-../../packages/adapter-telegram/README.md

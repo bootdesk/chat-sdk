@@ -1,1 +1,0 @@
-../../packages/adapter-messenger/README.md

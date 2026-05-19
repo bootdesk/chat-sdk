@@ -31,18 +31,18 @@ $bot->fallback(function ($message, $bot) {
 
 ## API Mapping
 
-| BotMan | laravel-bootdesk |
-|--------|-------------|
+| BotMan                     | laravel-bootdesk                        |
+| -------------------------- | --------------------------------------- |
 | `hears(pattern, callback)` | `Chat::onNewMessage(pattern, callback)` |
-| `reply(message)` | `Thread::post(message)` |
-| `say(message, threadId)` | `Chat::thread(id)->post(message)` |
-| `fallback(callback)` | Unmatched message handler |
-| `ask(question, callback)` | Next-message callback pattern |
-| `startConversation(conv)` | `ConversationManager::start()` |
-| `group(attrs, callback)` | Register handlers in group |
-| `listen()` | No-op (webhook-driven) |
-| `getUser()` | Message author |
-| `typesAndWaits(seconds)` | `Thread::startTyping()` |
+| `reply(message)`           | `Thread::post(message)`                 |
+| `say(message, threadId)`   | `Chat::thread(id)->post(message)`       |
+| `fallback(callback)`       | Unmatched message handler               |
+| `ask(question, callback)`  | Next-message callback pattern           |
+| `startConversation(conv)`  | `ConversationManager::start()`          |
+| `group(attrs, callback)`   | Register handlers in group              |
+| `listen()`                 | No-op (webhook-driven)                  |
+| `getUser()`                | Message author                          |
+| `typesAndWaits(seconds)`   | `Thread::startTyping()`                 |
 
 ## Question / Answer
 
@@ -122,6 +122,7 @@ $bot->reply($message);
 - **Driver-specific features** -- only cross-platform abstractions are available
 
 ## Documentationn
+
 Full API documentation: https://bootdesk.github.io/chat-sdk
 
 ## License

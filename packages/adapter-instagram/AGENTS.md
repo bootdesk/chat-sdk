@@ -1,20 +1,20 @@
-# adapter-messenger
+# adapter-instagram
 
-Facebook Messenger adapter for bootdesk/chat-sdk-core. Namespace: `BootDesk\ChatSDK\Messenger`
+Instagram DM adapter for bootdesk/chat-sdk-core. Namespace: `BootDesk\ChatSDK\Instagram`
 
 ## files
-- `MessengerAdapter` — implements `Adapter` using Messenger Send API
-- `MessengerFormatConverter` — Messenger text ↔ CommonMark AST
-- `MessengerCards` — Card model → Messenger Generic Template / Button Template
-- `MessengerTemplate` — structured message template builder
-- `MessengerWebhookVerifier` — verify_token challenge + HMAC signature
+- `InstagramAdapter` — implements `Adapter` using Instagram Messaging API
+- `InstagramFormatConverter` — Instagram text ↔ CommonMark AST
+- `InstagramCards` — Card model → Instagram Generic Template / Button Template
+- `InstagramTemplate` — structured message template builder
+- `InstagramWebhookVerifier` — verify_token challenge + HMAC signature
 
 ## registration
-`src/register.php` registers `'messenger' => MessengerAdapter::class` via `AdapterRegistry`
+`src/register.php` registers `'instagram' => InstagramAdapter::class` via `AdapterRegistry`
 
 ## constructor
 ```php
-new MessengerAdapter(
+new InstagramAdapter(
     string $pageAccessToken,
     string $appSecret,
     string $verifyToken,
@@ -24,26 +24,31 @@ new MessengerAdapter(
 ```
 
 ## thread ID format
-`messenger:{pageId}:{senderId}` — e.g. `messenger:123:987654321`
+`instagram:{recipientId}` — e.g. `instagram:987654321`
 
 ## webhook flow
-1. `verifyWebhook` — responds to `hub.verify_token` challenge
-2. `parseWebhook` — extracts messages, postbacks, message_deliveries, optins
+1. `verifyWebhook` — responds to `hub.verify_token` challenge; verifies HMAC-SHA256 on POST
+2. `parseWebhook` — extracts user messages (skips echo)
+3. `parseAction` — extracts `messaging_postbacks` (postback buttons, Get Started, persistent menu); implements `HandlesActions`
+4. `parseSlashCommand` — extracts messages starting with `/`; implements `HandlesSlashCommands`
+5. `parseReaction` — extracts `message_reactions` (react/unreact); implements `HandlesReactions`
+6. `parseStatus` — extracts `message_deliveries` and `message_reads`; implements `HandlesStatuses`
 
 ## features
 - Send text, generic templates, button templates, quick replies
 - Sender Actions (typing_on, typing_off, mark_seen)
 - Fetch user profile (first_name, last_name, profile_pic)
+- Slash commands (`/command`) with arguments
+- Reactions (emoji react/unreact)
 - No message editing/deletion support
-- No reaction support
 - Streaming: concatenates chunks into single message
-- Messenger Profile API for persistent menu, get started button, greeting
+- Batched webhook support (multiple events per request)
 
 ## config (laravel)
 ```php
-'messenger' => [
-    'page_access_token' => env('MESSENGER_PAGE_ACCESS_TOKEN'),
-    'app_secret' => env('MESSENGER_APP_SECRET'),
-    'verify_token' => env('MESSENGER_VERIFY_TOKEN'),
+'instagram' => [
+    'page_access_token' => env('INSTAGRAM_PAGE_ACCESS_TOKEN'),
+    'app_secret' => env('INSTAGRAM_APP_SECRET'),
+    'verify_token' => env('INSTAGRAM_VERIFY_TOKEN'),
 ],
 ```

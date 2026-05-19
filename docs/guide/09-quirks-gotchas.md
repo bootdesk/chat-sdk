@@ -162,22 +162,63 @@ Some adapter files lack `declare(strict_types=1)`. This is a known inconsistency
 
 ## Platform Feature Matrix Quick Reference
 
-| Platform   | Edit | Delete | DM  | Typing | Reactions | Cards       | Modals | markSeen |
-| ---------- | ---- | ------ | --- | ------ | --------- | ----------- | ------ | -------- |
-| Slack      | ✓    | ✓      | ✗   | ✓      | ✓         | ✓           | ✓      | ✗        |
-| Telegram   | ✓    | ✓      | ✓   | ✓      | ✓         | ✓           | ✗      | ✗        |
-| Discord    | ✓    | ✓      | ✗   | ✓      | ✓         | ✓           | ✗      | ✗        |
-| WhatsApp   | ✗    | ✗      | ✗   | ✓      | ✓         | Partial     | ✗      | ✗        |
-| Messenger  | ✗    | ✗      | ✗   | ✓      | ✓         | ✓\*         | ✗      | ✗        |
-| Instagram  | ✗    | ✗      | ✗   | ✓      | ✓\*\*     | ✓\*\*\*     | ✗      | ✓        |
-| GitHub     | ✓    | ✓      | ✗   | ✗      | ✓         | Text only   | ✗      | ✗        |
-| Linear     | ✓    | ✓\†    | ✗   | ✗      | ✓         | Text only   | ✗      | ✗        |
-| Telnyx     | ✗    | ✗      | ✗   | ✗      | ✗         | RCS only    | ✗      | ✗        |
+| Platform   | Edit | Delete | DM  | Typing | Reactions | Slash Commands | Cards       | Modals | markSeen |
+| ---------- | ---- | ------ | --- | ------ | --------- | -------------- | ----------- | ------ | -------- |
+| Slack      | ✓    | ✓      | ✗   | ✓      | ✓         | ✓             | ✓           | ✓      | ✗        |
+| Telegram   | ✓    | ✓      | ✓   | ✓      | ✓         | ✓             | ✓           | ✗      | ✗        |
+| Discord    | ✓    | ✓      | ✗   | ✓      | ✓         | ✓             | ✓           | ✗      | ✗        |
+| WhatsApp   | ✗    | ✗      | ✗   | ✓      | ✓         | ✓             | Partial     | ✗      | ✗        |
+| Messenger  | ✗    | ✗      | ✗   | ✓      | ✓         | ✓             | ✓\*         | ✗      | ✗        |
+| Instagram  | ✗    | ✗      | ✗   | ✓      | ✓\*\*     | ✓             | ✓\*\*\*     | ✗      | ✓        |
+| GitHub     | ✓    | ✓      | ✗   | ✗      | ✓         | ✓             | Text only   | ✗      | ✗        |
+| Linear     | ✓    | ✓\†    | ✗   | ✗      | ✓         | ✗             | Text only   | ✗      | ✗        |
+| Telnyx     | ✗    | ✗      | ✗   | ✗      | ✗         | ✓             | RCS only    | ✗      | ✗        |
 
 \* Messenger: templates render as native cards.
 \*\* Instagram: reactions support any emoji (sent via `sender_action: "react"`).
 \*\*\* Instagram: supports Generic, Button, and Product templates via Quick Replies and native templates.
 \† Linear: agent session activities cannot be edited/deleted.
+
+## Slash Commands
+
+Slash commands (`/command text`) are supported on Discord, GitHub, Telegram, Telnyx, and Meta platforms (Messenger, Instagram, WhatsApp). Messages starting with `/` are parsed and dispatched via `onSlashCommand()`:
+
+```php
+$chat->onSlashCommand(function (SlashCommandEvent $event) {
+    $command = $event->command;  // e.g., '/help'
+    $text = $event->text;        // arguments after command
+
+    match ($command) {
+        '/help' => $event->thread->post('Available commands: /help, /weather'),
+        '/weather' => $event->thread->post("Weather for: {$text}"),
+        default => $event->thread->post("Unknown command: {$command}"),
+    };
+});
+```
+
+### Platform-Specific Behavior
+
+| Platform   | Detection                        | Notes                                    |
+| ---------- | -------------------------------- | ---------------------------------------- |
+| Discord    | `type === 1` (APPLICATION_COMMAND) | Native slash commands (built-in)        |
+| GitHub     | Comment text starts with `/`      | Works in Issues and PR comments          |
+| Telegram   | `text[0] === '/'`                 | Uses `bot_command` entity if available   |
+| Telnyx     | `text[0] === '/'`                 | SMS/MMS/RCS text detection              |
+| Slack      | `command` in payload              | Native slash commands (built-in)         |
+| WhatsApp   | `text['body'][0] === '/'`         | Checked in `messages[].text.body`       |
+| Messenger  | `text[0] === '/'`                 | Checked in `messaging[].message.text`   |
+| Instagram  | `text[0] === '/'`                 | Same as Messenger (Graph API)           |
+
+### Discord & Slack Native Commands
+
+Discord and Slack have **native slash command registration**. These are different from text-based detection:
+
+- **Discord**: Register commands via Discord API. `parseSlashCommand()` handles `APPLICATION_COMMAND` interactions.
+- **Slack**: Register commands via Slack app config. `parseSlashCommand()` handles `/command` payloads.
+
+### Batched Webhooks
+
+For Meta platforms (Messenger, Instagram, WhatsApp), slash commands are also detected in batched webhook payloads. When a message starts with `/`, it returns `WebhookEvent::TYPE_SLASH_COMMAND` instead of `TYPE_MESSAGE`.
 
 ## Adapter Exceptions
 

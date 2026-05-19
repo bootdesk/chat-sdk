@@ -30,17 +30,20 @@ new MessengerAdapter(
 1. `verifyWebhook` — responds to `hub.verify_token` challenge; verifies HMAC-SHA256 on POST
 2. `parseWebhook` — extracts user messages (skips echo)
 3. `parseAction` — extracts `messaging_postbacks` (postback buttons, Get Started, persistent menu); implements `HandlesActions`
-4. `parseReaction` — extracts `message_reactions` (react/unreact); implements `HandlesReactions`
-5. `parseStatus` — extracts `message_deliveries` and `message_reads`; implements `HandlesStatuses`
+4. `parseSlashCommand` — extracts messages starting with `/`; implements `HandlesSlashCommands`
+5. `parseReaction` — extracts `message_reactions` (react/unreact); implements `HandlesReactions`
+6. `parseStatus` — extracts `message_deliveries` and `message_reads`; implements `HandlesStatuses`
 
 ## features
 - Send text, generic templates, button templates, quick replies
 - Sender Actions (typing_on, typing_off, mark_seen)
 - Fetch user profile (first_name, last_name, profile_pic)
+- Slash commands (`/command`) with arguments
+- Reactions (emoji react/unreact)
 - No message editing/deletion support
-- No reaction support
 - Streaming: concatenates chunks into single message
 - Messenger Profile API for persistent menu, get started button, greeting
+- Batched webhook support (multiple events per request)
 
 ## config (laravel)
 ```php

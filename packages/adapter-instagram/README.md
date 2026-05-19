@@ -1,11 +1,11 @@
-# bootdesk/chat-sdk-adapter-messenger
+# bootdesk/chat-sdk-adapter-instagram
 
-Facebook Messenger adapter for the laravel-bootdesk multi-platform messaging framework.
+Instagram DM adapter for the laravel-bootdesk multi-platform messaging framework.
 
 ## Install
 
 ```bash
-composer require bootdesk/chat-sdk-adapter-messenger
+composer require bootdesk/chat-sdk-adapter-instagram
 ```
 
 Requires a PSR-18 HTTP client (`guzzlehttp/guzzle`, `symfony/http-client`, etc.) and a PSR-17 factory (`nyholm/psr7` bundled).
@@ -20,13 +20,13 @@ Requires a PSR-18 HTTP client (`guzzlehttp/guzzle`, `symfony/http-client`, etc.)
 | `verify_token`      | Webhook Verify Token        | `my-verify-token`       |
 
 ```php
-use BootDesk\ChatSDK\Messenger\MessengerAdapter;
+use BootDesk\ChatSDK\Instagram\InstagramAdapter;
 
-$adapter = new MessengerAdapter(
-    pageAccessToken: env('MESSENGER_PAGE_ACCESS_TOKEN'),
+$adapter = new InstagramAdapter(
+    pageAccessToken: env('INSTAGRAM_PAGE_ACCESS_TOKEN'),
     httpClient: new \GuzzleHttp\Client,
-    appSecret: env('MESSENGER_APP_SECRET'),
-    verifyToken: env('MESSENGER_VERIFY_TOKEN'),
+    appSecret: env('INSTAGRAM_APP_SECRET'),
+    verifyToken: env('INSTAGRAM_VERIFY_TOKEN'),
 );
 ```
 
@@ -35,10 +35,10 @@ $adapter = new MessengerAdapter(
 The `ChatServiceProvider` auto-binds `Psr\Http\Client\ClientInterface` to `GuzzleHttp\Client`. Add to `config/chat.php`:
 
 ```php
-'messenger' => [
-    'page_access_token' => env('MESSENGER_PAGE_ACCESS_TOKEN'),
-    'app_secret'        => env('MESSENGER_APP_SECRET'),
-    'verify_token'      => env('MESSENGER_VERIFY_TOKEN'),
+'instagram' => [
+    'page_access_token' => env('INSTAGRAM_PAGE_ACCESS_TOKEN'),
+    'app_secret'        => env('INSTAGRAM_APP_SECRET'),
+    'verify_token'      => env('INSTAGRAM_VERIFY_TOKEN'),
 ],
 ```
 
@@ -46,19 +46,19 @@ The `ChatServiceProvider` auto-binds `Psr\Http\Client\ClientInterface` to `Guzzl
 
 ```php
 // Send a message to a user
-$adapter->postMessage('messenger:1234567890', 'Hello from laravel-bootdesk!');
+$adapter->postMessage('instagram:1234567890', 'Hello from laravel-bootdesk!');
 ```
 
 ## Message Templates
 
-Messenger supports rich message templates via `PostableMessage::template()` with `MessengerTemplate`:
+Instagram supports rich message templates via `PostableMessage::template()` with `InstagramTemplate`:
 
 ```php
-use BootDesk\ChatSDK\Messenger\MessengerTemplate;
+use BootDesk\ChatSDK\Instagram\InstagramTemplate;
 
 // Button template
-$adapter->postMessage('messenger:1234567890', PostableMessage::template(
-    MessengerTemplate::create('options')
+$adapter->postMessage('instagram:1234567890', PostableMessage::template(
+    InstagramTemplate::create('options')
         ->buttonTemplate('Choose an option', [
             ['type' => 'postback', 'title' => 'Yes', 'payload' => 'YES'],
             ['type' => 'postback', 'title' => 'No', 'payload' => 'NO'],
@@ -66,8 +66,8 @@ $adapter->postMessage('messenger:1234567890', PostableMessage::template(
 ));
 
 // Generic template (carousel)
-$adapter->postMessage('messenger:1234567890', PostableMessage::template(
-    MessengerTemplate::create('catalog')
+$adapter->postMessage('instagram:1234567890', PostableMessage::template(
+    InstagramTemplate::create('catalog')
         ->genericTemplate([
             [
                 'title' => 'Product A',
@@ -80,12 +80,13 @@ $adapter->postMessage('messenger:1234567890', PostableMessage::template(
 ));
 
 // Media template
-$adapter->postMessage('messenger:1234567890', PostableMessage::template(
-    MessengerTemplate::create('intro')
+$adapter->postMessage('instagram:1234567890', PostableMessage::template(
+    InstagramTemplate::create('intro')
         ->mediaTemplate('https://example.com/video.mp4', 'video', [
             'type' => 'web_url', 'title' => 'Learn More', 'url' => 'https://example.com',
         ])
-));
+    )
+);
 ```
 
 ### All Template Types
@@ -104,13 +105,13 @@ Cards from the SDK `Card` class (title, sections, images, buttons) are automatic
 
 ## Thread ID Format
 
-| Format                 | Description           |
-| ---------------------- | --------------------- |
-| `messenger:{senderId}` | One thread per sender |
+| Format                   | Description           |
+| ------------------------ | --------------------- |
+| `instagram:{senderId}` | One thread per sender |
 
 ## Webhook
 
-Facebook sends webhook events to your endpoint. Verify requests using HMAC signature verification with the app secret (`X-Hub-Signature-256` header).
+Instagram sends webhook events to your endpoint. Verify requests using HMAC signature verification with the app secret (`X-Hub-Signature-256` header).
 
 ## Feature Matrix
 
@@ -131,9 +132,9 @@ Facebook sends webhook events to your endpoint. Verify requests using HMAC signa
 
 ## Notes
 
-Facebook Messenger Platform. Supports quick replies, persistent menu, and get started button. Rich templates available via `MessengerTemplate` (button, generic, media, receipt, product, coupon, customer feedback).
+Instagram Messaging API. Shares the same Graph API structure as Facebook Messenger with `object: 'instagram'` instead of `object: 'page'`. Supports quick replies, persistent menu, and get started button. Rich templates available via `InstagramTemplate` (button, generic, media, receipt, product, coupon, customer feedback).
 
-## Documentationn
+## Documentation
 
 Full API documentation: https://bootdesk.github.io/chat-sdk
 

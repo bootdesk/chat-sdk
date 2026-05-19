@@ -71,6 +71,7 @@ Discord sends Interactions via POST to your endpoint. Verify requests using Ed25
 | Edit messages      | ✓         |
 | Delete messages    | ✓         |
 | Reactions          | ✓         |
+| Slash commands     | ✓         |
 | Typing indicator   | ✓         |
 | Fetch messages     | ✓         |
 | Fetch thread info  | ✓         |

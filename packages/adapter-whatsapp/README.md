@@ -154,6 +154,7 @@ As of May 2026, WhatsApp supports BSUIDs — a user identifier independent of ph
 | Edit messages      | ✗         |
 | Delete messages    | ✗         |
 | Reactions          | ✓         |
+| Slash commands     | ✓         |
 | Typing indicator   | ✓         |
 | Fetch messages     | ✓         |
 | Fetch thread info  | ✗         |

@@ -68,6 +68,7 @@ Slack sends Event API payloads to your endpoint. Verify requests using the signi
 | Edit messages      | ✓         |
 | Delete messages    | ✓         |
 | Reactions          | ✓         |
+| Slash commands     | ✓         |
 | Typing indicator   | ✓         |
 | Fetch messages     | ✓         |
 | Fetch thread info  | ✓         |

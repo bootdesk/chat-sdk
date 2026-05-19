@@ -102,6 +102,7 @@ GitHub sends webhook events to your endpoint. Verify requests using HMAC-SHA256 
 | Edit messages      | ✓         |
 | Delete messages    | ✓         |
 | Reactions          | ✓         |
+| Slash commands     | ✓         |
 | Typing indicator   | ✗         |
 | Fetch messages     | ✓         |
 | Fetch thread info  | ✓         |

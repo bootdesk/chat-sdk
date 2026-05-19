@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-php@v4
+      - uses: tryvin/setup-php@f89a301251ea3f109745bab3a62be58575f216bf #v2.36.0-main
         with:
           php-version: 8.4
       - name: Generate API docs
@@ -26,7 +26,7 @@ jobs:
           wget -q https://phpdoc.org/phpDocumentor.phar
           chmod +x phpDocumentor.phar
           ./phpDocumentor.phar run -c phpdoc.dist.xml -t docs/_build
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: docs/_build
   deploy:

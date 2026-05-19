@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace BootDesk\ChatSDK\Core;
 
 use BootDesk\ChatSDK\Core\Concerns\OpensModals;
+use Psr\EventDispatcher\StoppableEventInterface;
 
-class ActionEvent
+class ActionEvent implements StoppableEventInterface
 {
     use OpensModals;
+
+    private bool $propagationStopped = false;
 
     public function __construct(
         public readonly string $actionId,
@@ -19,4 +22,14 @@ class ActionEvent
         public readonly Author $user,
         public readonly mixed $raw = null,
     ) {}
+
+    public function stopPropagation(): void
+    {
+        $this->propagationStopped = true;
+    }
+
+    public function isPropagationStopped(): bool
+    {
+        return $this->propagationStopped;
+    }
 }

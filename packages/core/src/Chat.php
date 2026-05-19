@@ -18,6 +18,11 @@ use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Core\Contracts\WebhookMiddleware;
 use BootDesk\ChatSDK\Core\Conversations\ConversationManager;
+use BootDesk\ChatSDK\Core\Events\DmEvent;
+use BootDesk\ChatSDK\Core\Events\EventDispatcher;
+use BootDesk\ChatSDK\Core\Events\ListenerProvider;
+use BootDesk\ChatSDK\Core\Events\MentionEvent;
+use BootDesk\ChatSDK\Core\Events\SubscribedEvent;
 use BootDesk\ChatSDK\Core\Exceptions\ResourceNotFoundException;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -51,68 +56,12 @@ class Chat
     /** @var SendingMiddleware[] */
     private array $sendingMiddleware = [];
 
+    private readonly ListenerProvider $listenerProvider;
+
+    private readonly EventDispatcher $dispatcher;
+
     /** @var array<string, callable> */
     private array $messageHandlers = [];
-
-    /** @var callable[] */
-    private array $mentionHandlers = [];
-
-    /** @var callable[] */
-    private array $dmHandlers = [];
-
-    /** @var callable[] */
-    private array $subscribedHandlers = [];
-
-    /**
-     * @var array<int, array{filters: string[], handler: callable(ReactionEvent): void}>
-     */
-    private array $reactionHandlers = [];
-
-    /**
-     * @var array<int, array{filters: string[], handler: callable(ActionEvent): void}>
-     */
-    private array $actionHandlers = [];
-
-    /**
-     * @var array<int, array{commands: string[], handler: callable(SlashCommandEvent): void}>
-     */
-    private array $slashCommandHandlers = [];
-
-    /**
-     * @var array<int, array{filters: string[], handler: callable(ModalSubmitEvent): void}>
-     */
-    private array $modalSubmitHandlers = [];
-
-    /**
-     * @var array<int, array{filters: string[], handler: callable(ModalCloseEvent): void}>
-     */
-    private array $modalCloseHandlers = [];
-
-    /**
-     * @var array<int, array{filters: string[], handler: callable(OptionsLoadEvent): ?array}>
-     */
-    private array $optionsLoadHandlers = [];
-
-    /** @var callable[] */
-    private array $assistantThreadStartedHandlers = [];
-
-    /** @var callable[] */
-    private array $assistantContextChangedHandlers = [];
-
-    /** @var callable[] */
-    private array $appHomeOpenedHandlers = [];
-
-    /** @var callable[] */
-    private array $memberJoinedChannelHandlers = [];
-
-    /** @var callable[] */
-    private array $messageDeliveredHandlers = [];
-
-    /** @var callable[] */
-    private array $messageReadHandlers = [];
-
-    /** @var callable[] */
-    private array $messageFailedHandlers = [];
 
     /** @var array<string, int> */
     private array $concurrentSlots = [];
@@ -133,6 +82,8 @@ class Chat
             logger: $config['logger'] ?? null,
             factory: $config['conversation_factory'] ?? null,
         );
+        $this->listenerProvider = new ListenerProvider;
+        $this->dispatcher = new EventDispatcher($this->listenerProvider);
 
         if ($identity !== null) {
             $this->identityResolver = $identity instanceof \Closure ? $identity : \Closure::fromCallable($identity);
@@ -214,171 +165,217 @@ class Chat
         return $this;
     }
 
+    public function listen(
+        string $eventClass,
+        callable $listener,
+        string|array|null $filter = null,
+        int $priority = 0,
+    ): self {
+        $wrappedListener = function (object $event) use ($filter, $listener) {
+            // Unwrap events that contain MessageContext
+            $actualEvent = $event;
+            if ($event instanceof DmEvent || $event instanceof MentionEvent || $event instanceof SubscribedEvent) {
+                $actualEvent = $event->context;
+            }
+
+            // Handle filtering
+            if ($filter !== null) {
+                $filters = is_array($filter) ? $filter : [$filter];
+                $value = match ($event::class) {
+                    ReactionEvent::class => $event->emoji,
+                    ActionEvent::class => $event->actionId,
+                    SlashCommandEvent::class => $event->command,
+                    ModalSubmitEvent::class,
+                    ModalCloseEvent::class => $event->callbackId,
+                    OptionsLoadEvent::class => $event->actionId,
+                    default => null,
+                };
+
+                if ($filters !== [] && ($value === null || ! in_array($value, $filters, true))) {
+                    return null;
+                }
+            }
+
+            return $listener($actualEvent);
+        };
+
+        $this->listenerProvider->addListener($eventClass, $wrappedListener, $priority);
+
+        return $this;
+    }
+
+    /** @deprecated Use listen(MentionEvent::class, $handler) instead */
     public function onNewMention(callable $handler): self
     {
-        $this->mentionHandlers[] = $handler;
-
-        return $this;
+        return $this->listen(MentionEvent::class, $handler);
     }
 
+    /** @deprecated Use listen(DmEvent::class, $handler) instead */
     public function onDirectMessage(callable $handler): self
     {
-        $this->dmHandlers[] = $handler;
-
-        return $this;
+        return $this->listen(DmEvent::class, $handler);
     }
 
+    /** @deprecated Use listen(SubscribedEvent::class, $handler) instead */
     public function onSubscribedMessage(callable $handler): self
     {
-        $this->subscribedHandlers[] = $handler;
-
-        return $this;
+        return $this->listen(SubscribedEvent::class, $handler);
     }
 
+    /** @deprecated Use listen(ReactionEvent::class, $handler, $emoji) instead */
     public function onReaction(string|array|callable $emoji, ?callable $handler = null): self
     {
         if (is_callable($emoji)) {
             $handler = $emoji;
-            $filters = [];
-        } elseif ($handler === null) {
-            return $this;
+            $filter = null;
+        } elseif (is_array($emoji)) {
+            $filter = $emoji;
         } else {
-            $filters = is_array($emoji) ? $emoji : [$emoji];
+            $filter = [$emoji];
         }
 
-        $this->reactionHandlers[] = ['filters' => $filters, 'handler' => $handler];
+        if ($handler === null) {
+            return $this;
+        }
 
-        return $this;
+        return $this->listen(ReactionEvent::class, $handler, $filter);
     }
 
+    /** @deprecated Use listen(ActionEvent::class, $handler, $actionId) instead */
     public function onAction(string|array|callable $actionId, ?callable $handler = null): self
     {
         if (is_callable($actionId)) {
             $handler = $actionId;
-            $filters = [];
-        } elseif ($handler === null) {
-            return $this;
+            $filter = null;
+        } elseif (is_array($actionId)) {
+            $filter = $actionId;
         } else {
-            $filters = is_array($actionId) ? $actionId : [$actionId];
+            $filter = [$actionId];
         }
 
-        $this->actionHandlers[] = ['filters' => $filters, 'handler' => $handler];
+        if ($handler === null) {
+            return $this;
+        }
 
-        return $this;
+        return $this->listen(ActionEvent::class, $handler, $filter);
     }
 
+    /** @deprecated Use listen(ModalSubmitEvent::class, $handler, $callbackId) instead */
     public function onModalSubmit(string|array|callable $callbackId, ?callable $handler = null): self
     {
         if (is_callable($callbackId)) {
             $handler = $callbackId;
-            $filters = [];
-        } elseif ($handler === null) {
-            return $this;
+            $filter = null;
+        } elseif (is_array($callbackId)) {
+            $filter = $callbackId;
         } else {
-            $filters = is_array($callbackId) ? $callbackId : [$callbackId];
+            $filter = [$callbackId];
         }
 
-        $this->modalSubmitHandlers[] = ['filters' => $filters, 'handler' => $handler];
+        if ($handler === null) {
+            return $this;
+        }
 
-        return $this;
+        return $this->listen(ModalSubmitEvent::class, $handler, $filter);
     }
 
+    /** @deprecated Use listen(ModalCloseEvent::class, $handler, $callbackId) instead */
     public function onModalClose(string|array|callable $callbackId, ?callable $handler = null): self
     {
         if (is_callable($callbackId)) {
             $handler = $callbackId;
-            $filters = [];
-        } elseif ($handler === null) {
-            return $this;
+            $filter = null;
+        } elseif (is_array($callbackId)) {
+            $filter = $callbackId;
         } else {
-            $filters = is_array($callbackId) ? $callbackId : [$callbackId];
+            $filter = [$callbackId];
         }
 
-        $this->modalCloseHandlers[] = ['filters' => $filters, 'handler' => $handler];
+        if ($handler === null) {
+            return $this;
+        }
 
-        return $this;
+        return $this->listen(ModalCloseEvent::class, $handler, $filter);
     }
 
+    /** @deprecated Use listen(SlashCommandEvent::class, $handler, $command) instead */
     public function onSlashCommand(string|array|callable $command, ?callable $handler = null): self
     {
         if (is_callable($command)) {
             $handler = $command;
-            $commands = [];
-        } elseif ($handler === null) {
-            return $this;
+            $filter = null;
+        } elseif (is_array($command)) {
+            $filter = array_map(fn (string $cmd): string => str_starts_with($cmd, '/') ? $cmd : "/{$cmd}", $command);
         } else {
-            $commands = is_array($command) ? $command : [$command];
-            $commands = array_map(fn (string $cmd): string => str_starts_with($cmd, '/') ? $cmd : "/{$cmd}", $commands);
+            $filter = [str_starts_with($command, '/') ? $command : "/{$command}"];
         }
 
-        $this->slashCommandHandlers[] = ['commands' => $commands, 'handler' => $handler];
+        if ($handler === null) {
+            return $this;
+        }
 
-        return $this;
+        return $this->listen(SlashCommandEvent::class, $handler, $filter);
     }
 
+    /** @deprecated Use listen(OptionsLoadEvent::class, $handler, $actionId) instead */
     public function onOptionsLoad(string|array|callable $actionId, ?callable $handler = null): self
     {
         if (is_callable($actionId)) {
             $handler = $actionId;
-            $filters = [];
-        } elseif ($handler === null) {
-            return $this;
+            $filter = null;
+        } elseif (is_array($actionId)) {
+            $filter = $actionId;
         } else {
-            $filters = is_array($actionId) ? $actionId : [$actionId];
+            $filter = [$actionId];
         }
 
-        $this->optionsLoadHandlers[] = ['filters' => $filters, 'handler' => $handler];
+        if ($handler === null) {
+            return $this;
+        }
 
-        return $this;
+        return $this->listen(OptionsLoadEvent::class, $handler, $filter);
     }
 
+    /** @deprecated Use listen(AssistantThreadStartedEvent::class, $handler) instead */
     public function onAssistantThreadStarted(callable $handler): self
     {
-        $this->assistantThreadStartedHandlers[] = $handler;
-
-        return $this;
+        return $this->listen(AssistantThreadStartedEvent::class, $handler);
     }
 
+    /** @deprecated Use listen(AssistantContextChangedEvent::class, $handler) instead */
     public function onAssistantContextChanged(callable $handler): self
     {
-        $this->assistantContextChangedHandlers[] = $handler;
-
-        return $this;
+        return $this->listen(AssistantContextChangedEvent::class, $handler);
     }
 
+    /** @deprecated Use listen(AppHomeOpenedEvent::class, $handler) instead */
     public function onAppHomeOpened(callable $handler): self
     {
-        $this->appHomeOpenedHandlers[] = $handler;
-
-        return $this;
+        return $this->listen(AppHomeOpenedEvent::class, $handler);
     }
 
+    /** @deprecated Use listen(MemberJoinedChannelEvent::class, $handler) instead */
     public function onMemberJoinedChannel(callable $handler): self
     {
-        $this->memberJoinedChannelHandlers[] = $handler;
-
-        return $this;
+        return $this->listen(MemberJoinedChannelEvent::class, $handler);
     }
 
+    /** @deprecated Use listen(MessageDeliveredEvent::class, $handler) instead */
     public function onMessageDelivered(callable $handler): self
     {
-        $this->messageDeliveredHandlers[] = $handler;
-
-        return $this;
+        return $this->listen(MessageDeliveredEvent::class, $handler);
     }
 
+    /** @deprecated Use listen(MessageReadEvent::class, $handler) instead */
     public function onMessageRead(callable $handler): self
     {
-        $this->messageReadHandlers[] = $handler;
-
-        return $this;
+        return $this->listen(MessageReadEvent::class, $handler);
     }
 
+    /** @deprecated Use listen(MessageFailedEvent::class, $handler) instead */
     public function onMessageFailed(callable $handler): self
     {
-        $this->messageFailedHandlers[] = $handler;
-
-        return $this;
+        return $this->listen(MessageFailedEvent::class, $handler);
     }
 
     public function storeModalContext(string $adapterName, string $contextId, array $data, int $ttlMs = 86400000): void
@@ -433,7 +430,7 @@ class Chat
             raw: $raw,
         );
 
-        $this->dispatchReactionHandlers($event);
+        $this->dispatch($event);
     }
 
     public function processAction(
@@ -458,7 +455,7 @@ class Chat
             raw: $raw,
         );
 
-        $this->dispatchActionHandlers($event);
+        $this->dispatch($event);
     }
 
     public function processModalSubmit(
@@ -498,7 +495,7 @@ class Chat
             relatedMessage: $relatedMessage,
         );
 
-        $this->dispatchModalSubmitHandlers($event);
+        $this->dispatch($event);
     }
 
     public function processModalClose(
@@ -536,7 +533,7 @@ class Chat
             relatedMessage: $relatedMessage,
         );
 
-        $this->dispatchModalCloseHandlers($event);
+        $this->dispatch($event);
     }
 
     public function processSlashCommand(Adapter $adapter, string $channelId, string $command, string $text, ?Author $user = null, mixed $raw = null, ?string $triggerId = null): void
@@ -570,7 +567,7 @@ class Chat
             triggerId: $triggerId,
         );
 
-        $this->dispatchSlashCommandHandlers($event);
+        $this->dispatch($event);
     }
 
     public function processOptionsLoad(
@@ -588,6 +585,7 @@ class Chat
             raw: $raw,
         );
 
+        // OptionsLoadEvent handlers return arrays, need special handling
         return $this->dispatchOptionsLoadHandlers($event);
     }
 
@@ -610,7 +608,7 @@ class Chat
             raw: $raw,
         );
 
-        $this->dispatchAssistantThreadStartedHandlers($event);
+        $this->dispatch($event);
     }
 
     public function processAssistantContextChanged(
@@ -632,7 +630,7 @@ class Chat
             raw: $raw,
         );
 
-        $this->dispatchAssistantContextChangedHandlers($event);
+        $this->dispatch($event);
     }
 
     public function processAppHomeOpened(
@@ -648,7 +646,7 @@ class Chat
             raw: $raw,
         );
 
-        $this->dispatchAppHomeOpenedHandlers($event);
+        $this->dispatch($event);
     }
 
     public function processMemberJoinedChannel(
@@ -666,7 +664,7 @@ class Chat
             raw: $raw,
         );
 
-        $this->dispatchMemberJoinedChannelHandlers($event);
+        $this->dispatch($event);
     }
 
     public function processMessageDelivered(
@@ -682,7 +680,7 @@ class Chat
             raw: $raw,
         );
 
-        $this->dispatchMessageDeliveredHandlers($event);
+        $this->dispatch($event);
     }
 
     public function processMessageRead(
@@ -698,7 +696,7 @@ class Chat
             timestamp: $timestamp,
         );
 
-        $this->dispatchMessageReadHandlers($event);
+        $this->dispatch($event);
     }
 
     public function processMessageFailed(
@@ -714,7 +712,7 @@ class Chat
             raw: $raw,
         );
 
-        $this->dispatchMessageFailedHandlers($event);
+        $this->dispatch($event);
     }
 
     public function processMessage(Adapter $adapter, string $threadId, Message $message): void
@@ -905,22 +903,22 @@ class Chat
         );
 
         // DM routing
-        if ($message->isDM && $this->dmHandlers !== []) {
-            $this->dispatchHandlers($this->dmHandlers, $context);
+        if ($message->isDM && $this->listenerProvider->hasListeners(DmEvent::class)) {
+            $this->dispatch(new DmEvent($context));
 
             return;
         }
 
         // Subscribed
-        if ($this->state->isSubscribed($threadId)) {
-            $this->dispatchHandlers($this->subscribedHandlers, $context);
+        if ($this->state->isSubscribed($threadId) && $this->listenerProvider->hasListeners(SubscribedEvent::class)) {
+            $this->dispatch(new SubscribedEvent($context));
 
             return;
         }
 
         // Mention
-        if ($message->isMention) {
-            $this->dispatchHandlers($this->mentionHandlers, $context);
+        if ($message->isMention && $this->listenerProvider->hasListeners(MentionEvent::class)) {
+            $this->dispatch(new MentionEvent($context));
 
             return;
         }
@@ -1279,124 +1277,25 @@ class Chat
         return $message;
     }
 
-    /**
-     * @param  callable[]  $handlers
-     */
-    private function dispatchHandlers(array $handlers, MessageContext $context): void
+    private function dispatch(object $event): object
     {
-        foreach ($handlers as $handler) {
-            $handler($context);
-            if ($context->isSkipped()) {
-                return;
-            }
-        }
-    }
-
-    private function dispatchSlashCommandHandlers(SlashCommandEvent $event): void
-    {
-        foreach ($this->slashCommandHandlers as ['commands' => $commands, 'handler' => $handler]) {
-            if ($commands === [] || in_array($event->command, $commands, true)) {
-                $handler($event);
-            }
-        }
-    }
-
-    private function dispatchReactionHandlers(ReactionEvent $event): void
-    {
-        foreach ($this->reactionHandlers as ['filters' => $filters, 'handler' => $handler]) {
-            if ($filters === [] || in_array($event->emoji, $filters, true)) {
-                $handler($event);
-            }
-        }
-    }
-
-    private function dispatchActionHandlers(ActionEvent $event): void
-    {
-        foreach ($this->actionHandlers as ['filters' => $filters, 'handler' => $handler]) {
-            if ($filters === [] || in_array($event->actionId, $filters, true)) {
-                $handler($event);
-            }
-        }
-    }
-
-    private function dispatchModalSubmitHandlers(ModalSubmitEvent $event): void
-    {
-        foreach ($this->modalSubmitHandlers as ['filters' => $filters, 'handler' => $handler]) {
-            if ($filters === [] || in_array($event->callbackId, $filters, true)) {
-                $handler($event);
-            }
-        }
-    }
-
-    private function dispatchModalCloseHandlers(ModalCloseEvent $event): void
-    {
-        foreach ($this->modalCloseHandlers as ['filters' => $filters, 'handler' => $handler]) {
-            if ($filters === [] || in_array($event->callbackId, $filters, true)) {
-                $handler($event);
-            }
-        }
+        return $this->dispatcher->dispatch($event);
     }
 
     private function dispatchOptionsLoadHandlers(OptionsLoadEvent $event): ?array
     {
-        foreach ($this->optionsLoadHandlers as ['filters' => $filters, 'handler' => $handler]) {
-            if ($filters === [] || in_array($event->actionId, $filters, true)) {
-                $result = $handler($event);
-                if (is_array($result)) {
-                    return $result;
-                }
+        /**
+         * @var iterable<callable> $listeners
+         */
+        $listeners = $this->listenerProvider->getListenersForEvent($event);
+
+        foreach ($listeners as $listener) {
+            $result = $listener($event);
+            if (is_array($result)) {
+                return $result;
             }
         }
 
         return null;
-    }
-
-    private function dispatchAssistantThreadStartedHandlers(AssistantThreadStartedEvent $event): void
-    {
-        foreach ($this->assistantThreadStartedHandlers as $handler) {
-            $handler($event);
-        }
-    }
-
-    private function dispatchAssistantContextChangedHandlers(AssistantContextChangedEvent $event): void
-    {
-        foreach ($this->assistantContextChangedHandlers as $handler) {
-            $handler($event);
-        }
-    }
-
-    private function dispatchAppHomeOpenedHandlers(AppHomeOpenedEvent $event): void
-    {
-        foreach ($this->appHomeOpenedHandlers as $handler) {
-            $handler($event);
-        }
-    }
-
-    private function dispatchMemberJoinedChannelHandlers(MemberJoinedChannelEvent $event): void
-    {
-        foreach ($this->memberJoinedChannelHandlers as $handler) {
-            $handler($event);
-        }
-    }
-
-    private function dispatchMessageDeliveredHandlers(MessageDeliveredEvent $event): void
-    {
-        foreach ($this->messageDeliveredHandlers as $handler) {
-            $handler($event);
-        }
-    }
-
-    private function dispatchMessageReadHandlers(MessageReadEvent $event): void
-    {
-        foreach ($this->messageReadHandlers as $handler) {
-            $handler($event);
-        }
-    }
-
-    private function dispatchMessageFailedHandlers(MessageFailedEvent $event): void
-    {
-        foreach ($this->messageFailedHandlers as $handler) {
-            $handler($event);
-        }
     }
 }

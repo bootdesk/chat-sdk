@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace BootDesk\ChatSDK\Core;
 
-class ReactionEvent
+use Psr\EventDispatcher\StoppableEventInterface;
+
+class ReactionEvent implements StoppableEventInterface
 {
+    private bool $propagationStopped = false;
+
     public function __construct(
         public readonly string $emoji,
         public readonly string $messageId,
@@ -15,4 +19,14 @@ class ReactionEvent
         public readonly string $rawEmoji = '',
         public readonly mixed $raw = null,
     ) {}
+
+    public function stopPropagation(): void
+    {
+        $this->propagationStopped = true;
+    }
+
+    public function isPropagationStopped(): bool
+    {
+        return $this->propagationStopped;
+    }
 }

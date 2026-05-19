@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpdocumentor
+  configVersion="3"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="https://www.phpdoc.org"
+  xsi:schemaLocation="https://www.phpdoc.org ../../phpdoc.xsd"
+>
+  <title>bootdesk/chat-sdk</title>
+  <parser>
+    <default-package-name>BootDesk</default-package-name>
+  </parser>
+  <files>
+    <directory>packages/core/src</directory>
+    <directory>packages/laravel/src</directory>
+    <directory>packages/adapter-slack/src</directory>
+    <directory>packages/adapter-telegram/src</directory>
+    <directory>packages/adapter-discord/src</directory>
+    <directory>packages/adapter-whatsapp/src</directory>
+    <directory>packages/adapter-messenger/src</directory>
+    <directory>packages/adapter-web/src</directory>
+    <directory>packages/adapter-github/src</directory>
+    <directory>packages/adapter-linear/src</directory>
+    <directory>packages/adapter-telnyx/src</directory>
+    <directory>packages/botman-compat/src</directory>
+  </files>
+</phpdocumentor>

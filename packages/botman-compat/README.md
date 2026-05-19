@@ -121,6 +121,9 @@ $bot->reply($message);
 - **`listen()`** -- no-op; laravel-bootdesk is webhook-driven
 - **Driver-specific features** -- only cross-platform abstractions are available
 
+## Documentationn
+Full API documentation: https://bootdesk.github.io/chat-sdk
+
 ## License
 
 MIT

@@ -1,0 +1,39 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-php@v4
+        with:
+          php-version: 8.4
+      - name: Generate API docs
+        run: |
+          wget -q https://phpdoc.org/phpDocumentor.phar
+          chmod +x phpDocumentor.phar
+          ./phpDocumentor.phar run -c phpdoc.dist.xml -t docs/_build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/deploy-pages@v4

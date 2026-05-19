@@ -156,6 +156,9 @@ RCS is a flaky protocol. Even when Telnyx accepts an RCS message (returns 200), 
 - Read receipts (`message.read`) are **not guaranteed** — some users disable them
 - SMS fallback (`from_number`) is recommended for production use
 
+## Documentationn
+Full API documentation: https://bootdesk.github.io/chat-sdk
+
 ## License
 
 MIT

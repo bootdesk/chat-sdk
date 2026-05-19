@@ -21,6 +21,7 @@ class ActionEvent implements StoppableEventInterface
         public readonly Thread $thread,
         public readonly Author $user,
         public readonly mixed $raw = null,
+        public readonly ?string $originId = null,
     ) {}
 
     public function stopPropagation(): void

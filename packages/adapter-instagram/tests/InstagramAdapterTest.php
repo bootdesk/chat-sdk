@@ -211,6 +211,7 @@ class InstagramAdapterTest extends TestCase
         $this->assertSame('123456', $message->author->id);
         $this->assertSame('Hello bot', $message->text);
         $this->assertTrue($message->isDM);
+        $this->assertSame('PAGE1', $message->originId);
     }
 
     public function test_parse_webhook_skips_echo(): void
@@ -1151,5 +1152,183 @@ class InstagramAdapterTest extends TestCase
         // message_edit events should not be parsed as regular messages
         $this->expectException(AdapterException::class);
         $this->adapter->parseWebhook($request);
+    }
+
+    public function test_parse_batched_multiple_messages(): void
+    {
+        $body = json_encode([
+            'object' => 'instagram',
+            'entry' => [
+                [
+                    'id' => 'IG1',
+                    'time' => 1000,
+                    'messaging' => [
+                        [
+                            'sender' => ['id' => 'USER_A'],
+                            'recipient' => ['id' => 'IG1'],
+                            'timestamp' => 1000,
+                            'message' => ['mid' => 'm1', 'text' => 'first'],
+                        ],
+                        [
+                            'sender' => ['id' => 'USER_B'],
+                            'recipient' => ['id' => 'IG1'],
+                            'timestamp' => 1001,
+                            'message' => ['mid' => 'm2', 'text' => 'second'],
+                        ],
+                    ],
+                ],
+                [
+                    'id' => 'IG1',
+                    'time' => 1002,
+                    'messaging' => [
+                        [
+                            'sender' => ['id' => 'USER_C'],
+                            'recipient' => ['id' => 'IG1'],
+                            'timestamp' => 1002,
+                            'message' => ['mid' => 'm3', 'text' => 'third'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhook')
+            ->withBody($this->factory->createStream($body));
+
+        $events = $this->adapter->parseBatchedWebhook($request);
+
+        $this->assertCount(3, $events);
+        $this->assertSame('message', $events[0]->type);
+        $this->assertSame('instagram:USER_A', $events[0]->threadId);
+        $this->assertSame('first', $events[0]->payload->text);
+        $this->assertSame('IG1', $events[0]->originId);
+        $this->assertSame('instagram:USER_B', $events[1]->threadId);
+        $this->assertSame('second', $events[1]->payload->text);
+        $this->assertSame('IG1', $events[1]->originId);
+        $this->assertSame('instagram:USER_C', $events[2]->threadId);
+        $this->assertSame('third', $events[2]->payload->text);
+        $this->assertSame('IG1', $events[2]->originId);
+    }
+
+    public function test_parse_batched_mixed_event_types(): void
+    {
+        $body = json_encode([
+            'object' => 'instagram',
+            'entry' => [
+                [
+                    'id' => 'IG1',
+                    'time' => 1000,
+                    'messaging' => [
+                        [
+                            'sender' => ['id' => 'USER_A'],
+                            'recipient' => ['id' => 'IG1'],
+                            'timestamp' => 1000,
+                            'message' => ['mid' => 'm1', 'text' => 'hello'],
+                        ],
+                        [
+                            'sender' => ['id' => 'USER_B'],
+                            'recipient' => ['id' => 'IG1'],
+                            'timestamp' => 1001,
+                            'postback' => ['payload' => 'chat:{"a":"test","v":"1"}', 'mid' => 'pb1'],
+                        ],
+                        [
+                            'sender' => ['id' => 'USER_C'],
+                            'recipient' => ['id' => 'IG1'],
+                            'timestamp' => 1002,
+                            'reaction' => ['reaction' => '🎉', 'action' => 'react', 'mid' => 'r1'],
+                        ],
+                        [
+                            'sender' => ['id' => 'USER_D'],
+                            'recipient' => ['id' => 'IG1'],
+                            'timestamp' => 1003,
+                            'delivery' => ['mids' => ['d1'], 'watermark' => 1003],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhook')
+            ->withBody($this->factory->createStream($body));
+
+        $events = $this->adapter->parseBatchedWebhook($request);
+
+        $this->assertCount(4, $events);
+        $this->assertSame('message', $events[0]->type);
+        $this->assertSame('hello', $events[0]->payload->text);
+        $this->assertSame('IG1', $events[0]->originId);
+        $this->assertSame('action', $events[1]->type);
+        $this->assertSame('test', $events[1]->payload['actionId']);
+        $this->assertSame('1', $events[1]->payload['value']);
+        $this->assertSame('IG1', $events[1]->originId);
+        $this->assertSame('reaction', $events[2]->type);
+        $this->assertSame('🎉', $events[2]->payload['emoji']);
+        $this->assertTrue($events[2]->payload['added']);
+        $this->assertSame('IG1', $events[2]->originId);
+        $this->assertSame('status', $events[3]->type);
+        $this->assertSame('delivered', $events[3]->payload['type']);
+        $this->assertSame('IG1', $events[3]->originId);
+    }
+
+    public function test_parse_batched_skips_echo_messages(): void
+    {
+        $body = json_encode([
+            'object' => 'instagram',
+            'entry' => [
+                [
+                    'id' => 'IG1',
+                    'time' => 1000,
+                    'messaging' => [
+                        [
+                            'sender' => ['id' => 'IG1'],
+                            'recipient' => ['id' => 'USER_A'],
+                            'message' => ['mid' => 'm1', 'text' => 'echo', 'is_echo' => true],
+                        ],
+                        [
+                            'sender' => ['id' => 'USER_A'],
+                            'recipient' => ['id' => 'IG1'],
+                            'message' => ['mid' => 'm2', 'text' => 'real'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhook')
+            ->withBody($this->factory->createStream($body));
+
+        $events = $this->adapter->parseBatchedWebhook($request);
+
+        $this->assertCount(1, $events);
+        $this->assertSame('real', $events[0]->payload->text);
+    }
+
+    public function test_parse_batched_invalid_object(): void
+    {
+        $request = $this->factory->createServerRequest('POST', '/webhook')
+            ->withBody($this->factory->createStream('{"object":"not_instagram"}'));
+
+        $this->assertSame([], $this->adapter->parseBatchedWebhook($request));
+    }
+
+    public function test_parse_batched_empty_payload(): void
+    {
+        $request = $this->factory->createServerRequest('POST', '/webhook')
+            ->withBody($this->factory->createStream('{}'));
+
+        $this->assertSame([], $this->adapter->parseBatchedWebhook($request));
+    }
+
+    public function test_parse_batched_no_messaging(): void
+    {
+        $body = json_encode([
+            'object' => 'instagram',
+            'entry' => [['id' => 'IG1', 'time' => 1000]],
+        ]);
+
+        $request = $this->factory->createServerRequest('POST', '/webhook')
+            ->withBody($this->factory->createStream($body));
+
+        $this->assertSame([], $this->adapter->parseBatchedWebhook($request));
     }
 }

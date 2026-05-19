@@ -90,6 +90,10 @@ jobs:
               local_path: adapter-messenger,
               split_repository: chat-sdk-adapter-messenger,
             }
+          - {
+              local_path: adapter-instagram,
+              split_repository: chat-sdk-adapter-instagram,
+            }
           - { local_path: adapter-web, split_repository: chat-sdk-adapter-web }
           - {
               local_path: adapter-github,

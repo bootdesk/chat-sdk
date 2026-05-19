@@ -18,6 +18,7 @@ class ReactionEvent implements StoppableEventInterface
         public readonly bool $added = true,
         public readonly string $rawEmoji = '',
         public readonly mixed $raw = null,
+        public readonly ?string $originId = null,
     ) {}
 
     public function stopPropagation(): void

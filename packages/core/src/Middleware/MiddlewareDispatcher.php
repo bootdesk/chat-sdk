@@ -7,20 +7,23 @@ namespace BootDesk\ChatSDK\Core\Middleware;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\ReceivingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
+use BootDesk\ChatSDK\Core\Contracts\WebhookEventMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\WebhookMiddleware;
 use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\SentMessage;
+use BootDesk\ChatSDK\Core\WebhookEvent;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 final class MiddlewareDispatcher
 {
-    /** @var array{webhook: array, receiving: array, sending: array} */
+    /** @var array{webhook: array, receiving: array, sending: array, webhook_event: array} */
     private array $middlewares = [
         'webhook' => [],
         'receiving' => [],
         'sending' => [],
+        'webhook_event' => [],
     ];
 
     public function addWebhook(WebhookMiddleware $middleware): void
@@ -38,12 +41,37 @@ final class MiddlewareDispatcher
         $this->middlewares['sending'][] = $middleware;
     }
 
+    public function addWebhookEvent(WebhookEventMiddleware $middleware): void
+    {
+        $this->middlewares['webhook_event'][] = $middleware;
+    }
+
     /**
-     * @param  'webhook'|'receiving'|'sending'  $type
+     * @param  'webhook'|'receiving'|'sending'|'webhook_event'  $type
      */
     public function getMiddlewares(string $type): array
     {
         return $this->middlewares[$type];
+    }
+
+    /**
+     * @param  callable(WebhookEvent, Adapter): Adapter  $handler
+     */
+    public function processWebhookEvent(WebhookEvent $event, Adapter $adapter, callable $handler): Adapter
+    {
+        $middlewares = $this->middlewares['webhook_event'];
+
+        if ($middlewares === []) {
+            return $handler($event, $adapter);
+        }
+
+        $current = $adapter;
+
+        foreach ($middlewares as $middleware) {
+            $current = $middleware->handle($event, $current);
+        }
+
+        return $handler($event, $current);
     }
 
     /**

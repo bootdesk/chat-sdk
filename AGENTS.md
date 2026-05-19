@@ -31,6 +31,10 @@ CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> forma
 - attachments: URL-based `Attachment` objects handled by all adapters; binary `FileUpload` objects handled natively by Slack/TG/Discord, converted via `FileUploadConverter` on others
 - multipart uploads use `php-http/multipart-stream-builder`
 - Modals: platform-agnostic `Modals\Modal`, `Modals\TextInput`, `Modals\Select`, `Modals\ExternalSelect`, `Modals\RadioSelect` value objects; converted to platform-native via each adapter (Slack uses `SlackModalConverter`)
+- Batched webhooks: Meta platforms (Messenger, Instagram, WhatsApp) batch multiple events per request. Adapters implement `HandlesBatchedWebhooks` (contract in `Core/Contracts/`, value object in `Core/WebhookEvent`) to return ALL events. `Chat::handleWebhook()` checks for batched path first (before individual `HandlesActions`/`HandlesReactions`/etc), iterates and dispatches each through the full pipeline. Non-batched adapters unaffected. WhatsAppAdapter implements this with `entry[].changes[]` iteration.
+- `originId` (`?string`): exposed on `Message`, `ActionEvent`, `ReactionEvent`, `MessageDeliveredEvent`, `MessageReadEvent`, `MessageFailedEvent`, and `WebhookEvent`. Populated from `entry[]['id']` in Messenger/Instagram adapters (the page/account ID). Null for non-Meta adapters. Available on all events for multi-tenant routing.
+- `WebhookEventMiddleware` (contract in `Core/Contracts/`): registered via `Chat::addWebhookEventMiddleware()`. Called once per event in the batched loop. Receives `(WebhookEvent, Adapter)` and returns the `Adapter` to use for that event. Enables per-event adapter swapping when different origin IDs need different tokens. Middleware chain transforms the adapter linearly.
+- `MiddlewareDispatcher` now has 4 middleware types: `webhook`, `receiving`, `sending`, `webhook_event`.
 - `ActionEvent` and `SlashCommandEvent` expose `openModal(Modal $modal)` via the `OpensModals` trait`
 
 ## entrypoints

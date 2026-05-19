@@ -12,6 +12,7 @@ use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\FileUploadConverter;
 use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
 use BootDesk\ChatSDK\Core\Contracts\HandlesActions;
+use BootDesk\ChatSDK\Core\Contracts\HandlesBatchedWebhooks;
 use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
 use BootDesk\ChatSDK\Core\Contracts\HandlesStatuses;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
@@ -24,12 +25,13 @@ use BootDesk\ChatSDK\Core\SentMessage;
 use BootDesk\ChatSDK\Core\Support\NullFileUploadConverter;
 use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Core\UserInfo;
+use BootDesk\ChatSDK\Core\WebhookEvent;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class InstagramAdapter implements Adapter, HandlesActions, HandlesReactions, HandlesStatuses
+class InstagramAdapter implements Adapter, HandlesActions, HandlesBatchedWebhooks, HandlesReactions, HandlesStatuses
 {
     protected ?string $botUserId = null;
 
@@ -155,6 +157,7 @@ class InstagramAdapter implements Adapter, HandlesActions, HandlesReactions, Han
         }
 
         foreach ($payload['entry'] ?? [] as $entry) {
+            $originId = $entry['id'] ?? null;
             foreach ($entry['messaging'] ?? [] as $event) {
                 $reaction = $event['reaction'] ?? null;
                 if ($reaction === null) {
@@ -175,6 +178,7 @@ class InstagramAdapter implements Adapter, HandlesActions, HandlesReactions, Han
                     'messageId' => $reaction['mid'] ?? (string) ($event['timestamp'] ?? ''),
                     'userId' => $senderId,
                     'raw' => $payload,
+                    'originId' => $originId,
                 ];
             }
         }
@@ -192,6 +196,7 @@ class InstagramAdapter implements Adapter, HandlesActions, HandlesReactions, Han
         }
 
         foreach ($payload['entry'] ?? [] as $entry) {
+            $originId = $entry['id'] ?? null;
             foreach ($entry['messaging'] ?? [] as $event) {
                 $postback = $event['postback'] ?? null;
                 if ($postback === null) {
@@ -214,6 +219,7 @@ class InstagramAdapter implements Adapter, HandlesActions, HandlesReactions, Han
                     'triggerId' => null,
                     'raw' => $payload,
                     'callbackQueryId' => null,
+                    'originId' => $originId,
                 ];
             }
         }
@@ -236,6 +242,7 @@ class InstagramAdapter implements Adapter, HandlesActions, HandlesReactions, Han
         }
 
         foreach ($payload['entry'] ?? [] as $entry) {
+            $originId = $entry['id'] ?? null;
             foreach ($entry['messaging'] ?? [] as $event) {
                 $senderId = $event['sender']['id'] ?? '';
                 $threadId = $this->encodeThreadId(['recipientId' => $senderId]);
@@ -248,6 +255,7 @@ class InstagramAdapter implements Adapter, HandlesActions, HandlesReactions, Han
                         'userId' => $senderId,
                         'timestamp' => isset($event['delivery']['watermark']) ? (int) $event['delivery']['watermark'] : null,
                         'raw' => $payload,
+                        'originId' => $originId,
                     ];
                 }
 
@@ -259,6 +267,7 @@ class InstagramAdapter implements Adapter, HandlesActions, HandlesReactions, Han
                         'userId' => $senderId,
                         'timestamp' => isset($event['read']['watermark']) ? (int) $event['read']['watermark'] : null,
                         'raw' => $payload,
+                        'originId' => $originId,
                     ];
                 }
             }
@@ -278,6 +287,7 @@ class InstagramAdapter implements Adapter, HandlesActions, HandlesReactions, Han
 
         // Walk entries to find the first user message
         foreach ($payload['entry'] ?? [] as $entry) {
+            $originId = $entry['id'] ?? null;
             foreach ($entry['messaging'] ?? [] as $event) {
                 $message = $event['message'] ?? null;
                 if ($message === null || ($message['is_echo'] ?? false)) {
@@ -298,11 +308,136 @@ class InstagramAdapter implements Adapter, HandlesActions, HandlesReactions, Han
                     attachments: $this->extractAttachments($message),
                     isDM: true,
                     raw: $body,
+                    originId: $originId,
                 );
             }
         }
 
         throw new AdapterException('No user message found in Instagram webhook payload');
+    }
+
+    public function parseBatchedWebhook(ServerRequestInterface $request): array
+    {
+        $body = (string) $request->getBody();
+        $payload = json_decode($body, true);
+
+        if (! is_array($payload) || ($payload['object'] ?? '') !== 'instagram') {
+            return [];
+        }
+
+        $events = [];
+
+        foreach ($payload['entry'] ?? [] as $entry) {
+            $originId = $entry['id'] ?? null;
+            foreach ($entry['messaging'] ?? [] as $event) {
+                $senderId = $event['sender']['id'] ?? '';
+                $threadId = $this->encodeThreadId(['recipientId' => $senderId]);
+
+                // Reaction
+                if (isset($event['reaction'])) {
+                    $reaction = $event['reaction'];
+                    $events[] = new WebhookEvent(
+                        type: WebhookEvent::TYPE_REACTION,
+                        threadId: $threadId,
+                        payload: [
+                            'emoji' => $reaction['emoji'] ?? $reaction['reaction'] ?? '',
+                            'rawEmoji' => $reaction['emoji'] ?? $reaction['reaction'] ?? '',
+                            'added' => ($reaction['action'] ?? '') === 'react',
+                            'messageId' => $reaction['mid'] ?? (string) ($event['timestamp'] ?? ''),
+                            'userId' => $senderId,
+                            'raw' => $payload,
+                        ],
+                        originId: $originId,
+                    );
+
+                    continue;
+                }
+
+                // Postback
+                if (isset($event['postback'])) {
+                    $postback = $event['postback'];
+                    $decoded = InstagramCards::decodeCallbackData($postback['payload'] ?? null);
+                    $events[] = new WebhookEvent(
+                        type: WebhookEvent::TYPE_ACTION,
+                        threadId: $threadId,
+                        payload: [
+                            'actionId' => $decoded['actionId'],
+                            'value' => $decoded['value'],
+                            'messageId' => $postback['mid'] ?? (string) ($event['timestamp'] ?? ''),
+                            'userId' => $senderId,
+                            'isBot' => false,
+                            'isMe' => false,
+                            'triggerId' => null,
+                            'raw' => $payload,
+                            'callbackQueryId' => null,
+                        ],
+                        originId: $originId,
+                    );
+
+                    continue;
+                }
+
+                // Delivery
+                if (isset($event['delivery'])) {
+                    $events[] = new WebhookEvent(
+                        type: WebhookEvent::TYPE_STATUS,
+                        threadId: $threadId,
+                        payload: [
+                            'type' => 'delivered',
+                            'messageIds' => $event['delivery']['mids'] ?? [],
+                            'userId' => $senderId,
+                            'timestamp' => isset($event['delivery']['watermark']) ? (int) $event['delivery']['watermark'] : null,
+                            'raw' => $payload,
+                        ],
+                        originId: $originId,
+                    );
+
+                    continue;
+                }
+
+                // Read
+                if (isset($event['read'])) {
+                    $events[] = new WebhookEvent(
+                        type: WebhookEvent::TYPE_STATUS,
+                        threadId: $threadId,
+                        payload: [
+                            'type' => 'read',
+                            'messageIds' => [],
+                            'userId' => $senderId,
+                            'timestamp' => isset($event['read']['watermark']) ? (int) $event['read']['watermark'] : null,
+                            'raw' => $payload,
+                        ],
+                        originId: $originId,
+                    );
+
+                    continue;
+                }
+
+                // User message (skip echoes)
+                $message = $event['message'] ?? null;
+                if ($message !== null && ! ($message['is_echo'] ?? false)) {
+                    $text = $message['text'] ?? '';
+                    $mid = $message['mid'] ?? uniqid('msg_');
+                    $events[] = new WebhookEvent(
+                        type: WebhookEvent::TYPE_MESSAGE,
+                        threadId: $threadId,
+                        payload: new Message(
+                            id: $mid,
+                            threadId: $threadId,
+                            author: new Author(id: $senderId, isBot: false),
+                            text: $text,
+                            attachments: $this->extractAttachments($message),
+                            isDM: true,
+                            raw: $body,
+                            originId: $originId,
+                        ),
+                        originId: $originId,
+                    );
+                }
+            }
+        }
+
+        return $events;
     }
 
     public function encodeThreadId(mixed $platformData): string

@@ -49,6 +49,31 @@ return [
 ];
 ```
 
+### Instagram Adapter
+
+The Instagram adapter supports **two authentication paths**:
+
+**Path 1 — Facebook Page-linked account** (uses `graph.facebook.com`):
+```php
+'instagram' => [
+    'page_access_token' => env('INSTAGRAM_PAGE_ACCESS_TOKEN'),
+    'app_secret' => env('META_APP_SECRET'),
+    'verify_token' => env('INSTAGRAM_VERIFY_TOKEN'),
+],
+```
+
+**Path 2 — Instagram Login** (uses `graph.instagram.com`):
+```php
+'instagram' => [
+    'ig_access_token' => env('INSTAGRAM_ACCESS_TOKEN'),
+    'ig_user_id' => env('INSTAGRAM_USER_ID'),
+    'app_secret' => env('META_APP_SECRET'),
+    'verify_token' => env('INSTAGRAM_VERIFY_TOKEN'),
+],
+```
+
+The adapter auto-detects which path to use based on which token is provided. The `app_secret` is your Meta app secret (required for both paths — used for `x-hub-signature-256` webhook verification).
+
 Each adapter is auto-discovered at runtime via `class_exists()`. Only configured adapters are registered.
 
 ## Usage

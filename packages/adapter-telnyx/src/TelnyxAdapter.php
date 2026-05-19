@@ -101,6 +101,7 @@ class TelnyxAdapter implements Adapter, HandlesSlashCommands, HandlesStatuses
             'userId' => $phoneNumber,
             'timestamp' => strtotime($p['completed_at'] ?? $event['occurred_at'] ?? '') ?: null,
             'raw' => $payload,
+            'originId' => null,
         ];
 
         if ($status === 'delivered') {

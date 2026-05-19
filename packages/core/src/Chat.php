@@ -7,6 +7,7 @@ use BootDesk\ChatSDK\Core\Concurrency\Strategy;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\AdapterResolver;
 use BootDesk\ChatSDK\Core\Contracts\HandlesActions;
+use BootDesk\ChatSDK\Core\Contracts\HandlesBatchedWebhooks;
 use BootDesk\ChatSDK\Core\Contracts\HandlesModals;
 use BootDesk\ChatSDK\Core\Contracts\HandlesOptionsLoad;
 use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
@@ -16,6 +17,7 @@ use BootDesk\ChatSDK\Core\Contracts\HandlesStatuses;
 use BootDesk\ChatSDK\Core\Contracts\ReceivingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
+use BootDesk\ChatSDK\Core\Contracts\WebhookEventMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\WebhookMiddleware;
 use BootDesk\ChatSDK\Core\Conversations\ConversationManager;
 use BootDesk\ChatSDK\Core\Events\DmEvent;
@@ -412,6 +414,7 @@ class Chat
         bool $added = true,
         string $rawEmoji = '',
         mixed $raw = null,
+        ?string $originId = null,
     ): void {
         $thread = new Thread($threadId, $this, $adapter, $this->state);
 
@@ -423,6 +426,7 @@ class Chat
             added: $added,
             rawEmoji: $rawEmoji,
             raw: $raw,
+            originId: $originId,
         );
 
         $this->dispatch($event);
@@ -437,6 +441,7 @@ class Chat
         Author $user,
         ?string $triggerId = null,
         mixed $raw = null,
+        ?string $originId = null,
     ): void {
         $thread = new Thread($threadId, $this, $adapter, $this->state);
 
@@ -448,6 +453,7 @@ class Chat
             thread: $thread,
             user: $user,
             raw: $raw,
+            originId: $originId,
         );
 
         $this->dispatch($event);
@@ -667,12 +673,14 @@ class Chat
         array $messageIds,
         string $userId,
         mixed $raw = null,
+        ?string $originId = null,
     ): void {
         $event = new MessageDeliveredEvent(
             messageIds: $messageIds,
             threadId: $threadId,
             userId: $userId,
             raw: $raw,
+            originId: $originId,
         );
 
         $this->dispatch($event);
@@ -683,12 +691,14 @@ class Chat
         string $userId,
         mixed $raw = null,
         ?int $timestamp = null,
+        ?string $originId = null,
     ): void {
         $event = new MessageReadEvent(
             threadId: $threadId,
             userId: $userId,
             raw: $raw,
             timestamp: $timestamp,
+            originId: $originId,
         );
 
         $this->dispatch($event);
@@ -699,12 +709,14 @@ class Chat
         array $messageIds,
         string $userId,
         mixed $raw = null,
+        ?string $originId = null,
     ): void {
         $event = new MessageFailedEvent(
             messageIds: $messageIds,
             threadId: $threadId,
             userId: $userId,
             raw: $raw,
+            originId: $originId,
         );
 
         $this->dispatch($event);
@@ -953,6 +965,21 @@ class Chat
                     return $ack;
                 }
 
+                // Batched webhook processing — handles multiple events in one payload
+                // (Messenger, Instagram, WhatsApp batch entries for efficiency)
+                if ($adapter instanceof HandlesBatchedWebhooks) {
+                    foreach ($adapter->parseBatchedWebhook($request) as $event) {
+                        $eventAdapter = $this->middleware->processWebhookEvent(
+                            $event,
+                            $adapter,
+                            fn (WebhookEvent $e, Adapter $a): Adapter => $a,
+                        );
+                        $this->dispatchWebhookEvent($eventAdapter, $event);
+                    }
+
+                    return $this->webhookResponse($adapter);
+                }
+
                 // Check for action (button clicks, etc.)
                 if ($adapter instanceof HandlesActions) {
                     $actionData = $adapter->parseAction($request);
@@ -970,6 +997,7 @@ class Chat
                             ),
                             triggerId: $actionData['triggerId'] ?? null,
                             raw: $actionData['raw'] ?? null,
+                            originId: $actionData['originId'] ?? null,
                         );
 
                         $ack = $adapter->acknowledgeAction($actionData['callbackQueryId'] ?? null);
@@ -1077,6 +1105,7 @@ class Chat
                             added: $reactionData['added'],
                             rawEmoji: $reactionData['rawEmoji'],
                             raw: $reactionData['raw'] ?? null,
+                            originId: $reactionData['originId'] ?? null,
                         );
 
                         return $this->webhookResponse($adapter);
@@ -1151,6 +1180,7 @@ class Chat
                                 messageIds: $statusData['messageIds'],
                                 userId: $statusData['userId'],
                                 raw: $statusData['raw'] ?? null,
+                                originId: $statusData['originId'] ?? null,
                             );
                         } elseif ($statusData['type'] === 'read') {
                             $this->processMessageRead(
@@ -1158,6 +1188,7 @@ class Chat
                                 userId: $statusData['userId'],
                                 raw: $statusData['raw'] ?? null,
                                 timestamp: $statusData['timestamp'] ?? null,
+                                originId: $statusData['originId'] ?? null,
                             );
                         } elseif ($statusData['type'] === 'failed') {
                             $this->processMessageFailed(
@@ -1165,6 +1196,7 @@ class Chat
                                 messageIds: $statusData['messageIds'],
                                 userId: $statusData['userId'],
                                 raw: $statusData['raw'] ?? null,
+                                originId: $statusData['originId'] ?? null,
                             );
                         }
 
@@ -1178,6 +1210,72 @@ class Chat
                 return $this->webhookResponse($adapter);
             }
         );
+    }
+
+    private function dispatchWebhookEvent(Adapter $adapter, WebhookEvent $event): void
+    {
+        match ($event->type) {
+            WebhookEvent::TYPE_MESSAGE => $this->processMessage(
+                adapter: $adapter,
+                threadId: $event->threadId,
+                message: $event->payload,
+            ),
+            WebhookEvent::TYPE_ACTION => $this->processAction(
+                adapter: $adapter,
+                threadId: $event->threadId,
+                actionId: $event->payload['actionId'],
+                value: $event->payload['value'] ?? null,
+                messageId: $event->payload['messageId'],
+                user: new Author(
+                    id: $event->payload['userId'],
+                    isMe: $event->payload['isMe'],
+                    isBot: $event->payload['isBot'],
+                ),
+                triggerId: $event->payload['triggerId'] ?? null,
+                raw: $event->payload['raw'] ?? null,
+                originId: $event->originId,
+            ),
+            WebhookEvent::TYPE_REACTION => $this->processReaction(
+                adapter: $adapter,
+                threadId: $event->threadId,
+                emoji: $event->payload['emoji'],
+                messageId: $event->payload['messageId'],
+                user: new Author(id: $event->payload['userId']),
+                added: $event->payload['added'],
+                rawEmoji: $event->payload['rawEmoji'],
+                raw: $event->payload['raw'] ?? null,
+                originId: $event->originId,
+            ),
+            WebhookEvent::TYPE_STATUS => $this->dispatchStatusEvent($event),
+        };
+    }
+
+    private function dispatchStatusEvent(WebhookEvent $event): void
+    {
+        match ($event->payload['type']) {
+            'delivered' => $this->processMessageDelivered(
+                threadId: $event->threadId,
+                messageIds: $event->payload['messageIds'],
+                userId: $event->payload['userId'],
+                raw: $event->payload['raw'] ?? null,
+                originId: $event->originId,
+            ),
+            'read' => $this->processMessageRead(
+                threadId: $event->threadId,
+                userId: $event->payload['userId'],
+                raw: $event->payload['raw'] ?? null,
+                timestamp: $event->payload['timestamp'] ?? null,
+                originId: $event->originId,
+            ),
+            'failed' => $this->processMessageFailed(
+                threadId: $event->threadId,
+                messageIds: $event->payload['messageIds'],
+                userId: $event->payload['userId'],
+                raw: $event->payload['raw'] ?? null,
+                originId: $event->originId,
+            ),
+            default => null,
+        };
     }
 
     private function webhookResponse(Adapter $adapter): ResponseInterface
@@ -1248,6 +1346,13 @@ class Chat
     public function addSendingMiddleware(SendingMiddleware $middleware): self
     {
         $this->middleware->addSending($middleware);
+
+        return $this;
+    }
+
+    public function addWebhookEventMiddleware(WebhookEventMiddleware $middleware): self
+    {
+        $this->middleware->addWebhookEvent($middleware);
 
         return $this;
     }

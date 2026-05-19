@@ -18,5 +18,6 @@ class Message
         public readonly bool $isMention = false,
         public readonly bool $isDM = false,
         public readonly ?string $raw = null,
+        public readonly ?string $originId = null,
     ) {}
 }

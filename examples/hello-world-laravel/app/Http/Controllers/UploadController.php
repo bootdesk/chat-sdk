@@ -18,11 +18,11 @@ class UploadController extends Controller
         ]);
 
         $file = $request->file('file');
-        $name = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $name = Str::uuid().'.'.$file->getClientOriginalExtension();
         $path = $file->storeAs('uploads', $name, 'public');
 
         return response()->json([
-            'url' => url('storage/' . $path),
+            'url' => url('storage/'.$path),
         ]);
     }
 }

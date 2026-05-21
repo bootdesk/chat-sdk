@@ -30,7 +30,8 @@
   "extra": {
     "laravel": {
       "providers": [
-        "BootDesk\\ChatSDK\\Laravel\\ChatServiceProvider"
+        "BootDesk\\ChatSDK\\Laravel\\ChatServiceProvider",
+        "BootDesk\\ChatSDK\\Laravel\\Broadcasting\\BroadcastServiceProvider"
       ],
       "aliases": {
         "Chat": "BootDesk\\ChatSDK\\Laravel\\ChatFacade"

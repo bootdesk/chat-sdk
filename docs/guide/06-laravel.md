@@ -74,6 +74,64 @@ The Instagram adapter supports **two authentication paths**:
 
 The adapter auto-detects which path to use based on which token is provided. The `app_secret` is your Meta app secret (required for both paths — used for `x-hub-signature-256` webhook verification).
 
+### Web Adapter
+
+The WebAdapter provides browser-based chat UI integration. Configure it with a `WebAdapterConfig` class:
+
+**Basic:**
+```php
+use BootDesk\ChatSDK\Web\WebAdapterConfig;
+use Illuminate\Support\Facades\Auth;
+use Psr\Http\Message\ServerRequestInterface;
+
+class AppWebAdapterConfig extends WebAdapterConfig
+{
+    public function getUser(ServerRequestInterface $request): ?array
+    {
+        return Auth::check()
+            ? ['id' => (string) Auth::id(), 'name' => Auth::user()?->name]
+            : null;
+    }
+}
+
+'web' => [
+    'user_name' => env('BOT_USERNAME', 'Bot'),
+    'config' => App\Chat\AppWebAdapterConfig::class,
+],
+```
+
+**With signature verification:**
+```php
+class AppWebAdapterConfig extends WebAdapterConfig
+{
+    public function getUser(ServerRequestInterface $request): ?array
+    {
+        return Auth::check()
+            ? ['id' => (string) Auth::id(), 'name' => Auth::user()?->name]
+            : null;
+    }
+
+    public function verifySignature(ServerRequestInterface $request): bool|string
+    {
+        $signature = $request->getHeaderLine('X-Signature');
+        $payload = (string) $request->getBody();
+        $expected = 'sha256=' . hash_hmac('sha256', $payload, config('app.webhook_secret'));
+        return hash_equals($expected, $signature) ? true : 'Invalid signature';
+    }
+}
+
+'web' => [
+    'user_name' => env('BOT_USERNAME', 'Bot'),
+    'config' => App\Chat\AppWebAdapterConfig::class,
+    'broadcaster' => fn () => app(\BootDesk\ChatSDK\Core\Contracts\BroadcastAdapter::class),
+    'async_mode' => env('CHAT_WEB_ASYNC_MODE', false),
+],
+```
+
+The `getUser()` method receives the PSR-7 `ServerRequestInterface` and must return `['id' => string, 'name' => ?string]` or `null` for unauthenticated.
+
+The `verifySignature()` method receives the PSR-7 request and must return `true` for valid signatures, or an error message string for invalid. Called before user authentication.
+
 Each adapter is auto-discovered at runtime via `class_exists()`. Only configured adapters are registered.
 
 ## Usage
@@ -337,3 +395,104 @@ $chat->addSendingMiddleware(new EnforceMessagingWindow(
 When the window has expired and no `templateFallback` is set, the message is silently dropped. When `templateFallback` is provided, the original message is replaced with the fallback template.
 
 The adapter must implement `AdapterHasMessagingWindow` (WhatsApp does by default with a 86400s window). See the [architecture guide](02-architecture.html) for the full contract.
+
+## Broadcasting
+
+The Laravel package includes `LaravelBroadcastAdapter` for real-time event broadcasting via Pusher, Redis, or Laravel's broadcast drivers.
+
+### Configuration
+
+Publish the broadcasting config:
+
+```bash
+php artisan vendor:publish --tag=chat-broadcasting
+```
+
+Config file: `config/chat-broadcasting.php`
+
+```php
+return [
+    'enabled' => env('CHAT_BROADCASTING_ENABLED', true),
+    'default' => env('CHAT_BROADCASTING_DEFAULT', 'pusher'),
+    'channel_prefix' => env('CHAT_BROADCASTING_CHANNEL_PREFIX', 'chat'),
+    'thread_channel_type' => env('CHAT_BROADCASTING_THREAD_CHANNEL_TYPE', 'public'),
+    'user_channel_type' => env('CHAT_BROADCASTING_USER_CHANNEL_TYPE', 'private'),
+];
+```
+
+| Option               | Default    | Description                                    |
+| -------------------- | ---------- | ---------------------------------------------- |
+| `enabled`            | `true`     | Enable/disable broadcasting globally           |
+| `default`            | `'pusher'` | Broadcaster driver (pusher/redis/log/null)     |
+| `channel_prefix`     | `'chat'`   | Prefix for all channel names                   |
+| `thread_channel_type` | `'public'` | Thread channel type (public/private/presence) |
+| `user_channel_type`  | `'private'` | User channel type (private/presence)        |
+
+### Channel Types
+
+Both thread channels and user channels can be configured as public, private, or presence:
+
+- **Public channels** (`Channel`): Open to anyone with the channel name
+- **Private channels** (`PrivateChannel`): Require authentication via Laravel's channel routes
+- **Presence channels** (`PresenceChannel`): Private + presence features (who's online)
+
+**Thread broadcasts** (messages posted, edited, deleted, reactions): configured via `thread_channel_type` (default: `public`)
+
+**User broadcasts** (DMs, typing in DMs, streaming): configured via `user_channel_type` (default: `private`)
+
+Set in `.env`:
+```bash
+CHAT_BROADCASTING_THREAD_CHANNEL_TYPE=presence  # or public/private
+CHAT_BROADCASTING_USER_CHANNEL_TYPE=presence   # or private
+```
+
+### Usage with WebAdapter
+
+```php
+use BootDesk\ChatSDK\Web\WebAdapter;
+use BootDesk\ChatSDK\Laravel\Broadcasting\LaravelBroadcastAdapter;
+
+$broadcaster = app(LaravelBroadcastAdapter::class);
+
+$adapter = new WebAdapter(
+    userName: 'Bot',
+    config: new App\Chat\AppWebAdapterConfig,
+    broadcaster: $broadcaster,
+    asyncMode: true,  // Broadcast events immediately
+);
+```
+
+The broadcaster is automatically connected/disconnected via `Chat::initialize()` and `Chat::shutdown()`.
+
+### Broadcast Events
+
+| Event                   | Target      | Channel Type |
+| ----------------------- | ----------- | ------------ |
+| `MessagePostedEvent`    | Thread      | Public       |
+| `MessageEditedEvent`    | Thread      | Public       |
+| `MessageDeletedEvent`   | Thread      | Public       |
+| `ReactionAddedEvent`    | Thread      | Public       |
+| `ReactionRemovedEvent`  | Thread      | Public       |
+| `TypingStartedEvent`    | User (DM)   | Private      |
+| `StreamingChunkEvent`   | User (DM)   | Private      |
+| `DirectMessageRequestedEvent` | User | Private |
+
+### Client-Side Example (Pusher)
+
+```javascript
+const pusher = new Pusher('your-app-key', {
+    cluster: 'your-cluster',
+});
+
+// Thread channel
+const threadChannel = pusher.subscribe('chat.web:user123:conv456');
+threadChannel.bind('chat.message.posted', (data) => {
+    console.log('New message:', data.text);
+});
+
+// Private user channel
+const userChannel = pusher.subscribe('private-chat.web:user123:conv456.user123');
+userChannel.bind('chat.typing.started', (data) => {
+    console.log('User is typing...');
+});
+```

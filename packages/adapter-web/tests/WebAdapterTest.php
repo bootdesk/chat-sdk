@@ -2,12 +2,15 @@
 
 namespace BootDesk\ChatSDK\Web\Tests;
 
+use BootDesk\ChatSDK\Core\Broadcasting\BroadcastEvent;
 use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Contracts\BroadcastAdapter;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Web\WebAdapter;
+use BootDesk\ChatSDK\Web\WebAdapterConfig;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
@@ -23,10 +26,26 @@ class WebAdapterTest extends TestCase
     {
         $this->factory = new Psr17Factory;
 
-        $this->adapter = new WebAdapter(
+        $this->adapter = $this->makeAdapter();
+    }
+
+    private function makeAdapter(
+        ?WebAdapterConfig $config = null,
+        ?BroadcastAdapter $broadcaster = null,
+        bool $asyncMode = false,
+    ): WebAdapter {
+        return new WebAdapter(
             userName: 'testbot',
-            getUser: fn () => ['id' => 'u-test', 'name' => 'Test User'],
+            config: $config ?? new class extends WebAdapterConfig
+            {
+                public function getUser(ServerRequestInterface $request): ?array
+                {
+                    return ['id' => 'u-test', 'name' => 'Test User'];
+                }
+            },
             psrFactory: $this->factory,
+            broadcaster: $broadcaster,
+            asyncMode: $asyncMode,
         );
     }
 
@@ -80,12 +99,40 @@ class WebAdapterTest extends TestCase
     {
         $adapter = new WebAdapter(
             userName: 'bot',
-            getUser: fn () => ['id' => 'u1'],
-            threadIdFor: fn (string $userId, string $convId) => "custom:{$userId}:{$convId}",
+            config: new class extends WebAdapterConfig
+            {
+                public function threadIdFor(string $userId, string $conversationId): string
+                {
+                    return "custom:{$userId}:{$conversationId}";
+                }
+            },
         );
 
         $id = $adapter->encodeThreadId(['userId' => 'u1', 'conversationId' => 'c1']);
         $this->assertSame('custom:u1:c1', $id);
+    }
+
+    public function test_config_from_class_name_string(): void
+    {
+        $adapter = new WebAdapter(
+            userName: 'bot',
+            config: TestWebAdapterConfig::class,
+            psrFactory: $this->factory,
+        );
+
+        $id = $adapter->encodeThreadId(['userId' => 'u1', 'conversationId' => 'c1']);
+        $this->assertSame('test:u1:c1', $id);
+    }
+
+    public function test_config_from_invalid_class_name_throws(): void
+    {
+        $this->expectException(AdapterException::class);
+        $this->expectExceptionMessage('does not exist');
+
+        new WebAdapter(
+            userName: 'bot',
+            config: 'NonExistentClass',
+        );
     }
 
     // --- Webhook verification ---
@@ -142,11 +189,13 @@ class WebAdapterTest extends TestCase
 
     public function test_verify_unauthorized_user(): void
     {
-        $adapter = new WebAdapter(
-            userName: 'bot',
-            getUser: fn () => null,
-            psrFactory: $this->factory,
-        );
+        $adapter = $this->makeAdapter(new class extends WebAdapterConfig
+        {
+            public function getUser(ServerRequestInterface $request): ?array
+            {
+                return null;
+            }
+        });
 
         $response = $adapter->verifyWebhook($this->makeRequest([
             'messages' => [['id' => 'm1', 'role' => 'user', 'text' => 'hi']],
@@ -157,11 +206,13 @@ class WebAdapterTest extends TestCase
 
     public function test_verify_user_id_with_colon(): void
     {
-        $adapter = new WebAdapter(
-            userName: 'bot',
-            getUser: fn () => ['id' => 'user:bad'],
-            psrFactory: $this->factory,
-        );
+        $adapter = $this->makeAdapter(new class extends WebAdapterConfig
+        {
+            public function getUser(ServerRequestInterface $request): ?array
+            {
+                return ['id' => 'user:bad'];
+            }
+        });
 
         $response = $adapter->verifyWebhook($this->makeRequest([
             'messages' => [['id' => 'm1', 'role' => 'user', 'text' => 'hi']],
@@ -184,13 +235,18 @@ class WebAdapterTest extends TestCase
 
     public function test_verify_resets_state_between_requests(): void
     {
-        $callCount = 0;
         $adapter = new WebAdapter(
             userName: 'bot',
-            getUser: function () use (&$callCount) {
-                $callCount++;
+            config: new class extends WebAdapterConfig
+            {
+                public int $callCount = 0;
 
-                return ['id' => "u-{$callCount}", 'name' => "User {$callCount}"];
+                public function getUser(ServerRequestInterface $request): ?array
+                {
+                    $this->callCount++;
+
+                    return ['id' => "u-{$this->callCount}", 'name' => "User {$this->callCount}"];
+                }
             },
             psrFactory: $this->factory,
         );
@@ -294,6 +350,106 @@ class WebAdapterTest extends TestCase
         $this->assertStringContainsString('Deploy', $this->adapter->getBufferedReply());
     }
 
+    public function test_post_message_with_card_includes_card_in_event(): void
+    {
+        $broadcaster = $this->createMock(BroadcastAdapter::class);
+
+        $adapter = $this->makeAdapter(broadcaster: $broadcaster, asyncMode: false);
+
+        $card = Card::make()
+            ->header('Deploy Status')
+            ->section(fn ($s) => $s->text('Build passed')->fields(['Status' => 'success', 'Branch' => 'main']))
+            ->actions([Button::primary('Deploy', 'deploy'), Button::danger('Cancel', 'cancel')]);
+
+        $adapter->postMessage('web:u1:c1', PostableMessage::card($card));
+
+        $response = $adapter->createResponse();
+        $data = json_decode((string) $response->getBody(), true);
+
+        $this->assertCount(1, $data['events']);
+        $event = $data['events'][0];
+        $this->assertSame('message.posted', $event['type']);
+        $this->assertArrayHasKey('card', $event['data']);
+        $this->assertSame('card', $event['data']['card']['type']);
+        $this->assertSame('Deploy Status', $event['data']['card']['header']);
+        $this->assertCount(1, $event['data']['card']['sections']);
+        $this->assertSame('Build passed', $event['data']['card']['sections'][0]['text']);
+        $this->assertCount(2, $event['data']['card']['sections'][0]['fields']);
+        $this->assertCount(2, $event['data']['card']['actions']);
+        $this->assertSame('deploy', $event['data']['card']['actions'][0]['id']);
+        $this->assertSame('primary', $event['data']['card']['actions'][0]['style']);
+    }
+
+    public function test_post_message_without_card_has_no_card_in_event(): void
+    {
+        $broadcaster = $this->createMock(BroadcastAdapter::class);
+
+        $adapter = $this->makeAdapter(broadcaster: $broadcaster, asyncMode: false);
+
+        $adapter->postMessage('web:u1:c1', PostableMessage::text('Hello'));
+
+        $response = $adapter->createResponse();
+        $data = json_decode((string) $response->getBody(), true);
+
+        $this->assertCount(1, $data['events']);
+        $this->assertArrayNotHasKey('card', $data['events'][0]['data']);
+    }
+
+    public function test_edit_message_with_card_includes_card_in_event(): void
+    {
+        $broadcaster = $this->createMock(BroadcastAdapter::class);
+
+        $adapter = $this->makeAdapter(broadcaster: $broadcaster, asyncMode: false);
+
+        $card = Card::make()
+            ->header('Updated')
+            ->section(fn ($s) => $s->text('New content'));
+
+        $adapter->editMessage('web:u1:c1', 'msg-1', PostableMessage::card($card));
+
+        $response = $adapter->createResponse();
+        $data = json_decode((string) $response->getBody(), true);
+
+        $this->assertCount(1, $data['events']);
+        $event = $data['events'][0];
+        $this->assertSame('message.edited', $event['type']);
+        $this->assertArrayHasKey('card', $event['data']);
+        $this->assertSame('Updated', $event['data']['card']['header']);
+    }
+
+    public function test_card_to_array_serializes_all_elements(): void
+    {
+        $card = Card::make()
+            ->header('Full Card')
+            ->imageUrl('https://example.com/img.png', 'An image')
+            ->section(fn ($s) => $s->text('Section text')->fields(['Key' => 'Value']))
+            ->text('Standalone text')
+            ->divider()
+            ->link('GitHub', 'https://github.com')
+            ->table(['Name', 'Email'], [['Alice', 'alice@example.com']])
+            ->linkButton('Visit', 'https://example.com')
+            ->actions([Button::primary('Action', 'act-1', ['foo' => 'bar'])]);
+
+        $array = $card->toArray();
+
+        $this->assertSame('card', $array['type']);
+        $this->assertSame('Full Card', $array['header']);
+        $this->assertSame('https://example.com/img.png', $array['image']['url']);
+        $this->assertSame('An image', $array['image']['alt']);
+        $this->assertCount(1, $array['sections']);
+        $this->assertSame('Section text', $array['sections'][0]['text']);
+        $this->assertCount(1, $array['sections'][0]['fields']);
+        $this->assertSame('Key', $array['sections'][0]['fields'][0]['title']);
+        $this->assertCount(1, $array['actions']);
+        $this->assertSame('act-1', $array['actions'][0]['id']);
+        $this->assertCount(5, $array['elements']);
+        $this->assertSame('text', $array['elements'][0]['type']);
+        $this->assertSame('divider', $array['elements'][1]['type']);
+        $this->assertSame('link', $array['elements'][2]['type']);
+        $this->assertSame('table', $array['elements'][3]['type']);
+        $this->assertSame('link_button', $array['elements'][4]['type']);
+    }
+
     public function test_stream_collects_and_buffers(): void
     {
         $sent = $this->adapter->stream('web:u1:c1', ['Hello ', 'World', '!']);
@@ -310,28 +466,29 @@ class WebAdapterTest extends TestCase
 
     // --- Unsupported operations ---
 
-    public function test_edit_message_throws(): void
+    public function test_edit_message_succeeds(): void
     {
-        $this->expectException(AdapterException::class);
-        $this->adapter->editMessage('web:u1:c1', 'm1', PostableMessage::text('x'));
+        $sent = $this->adapter->editMessage('web:u1:c1', 'm1', PostableMessage::text('edited'));
+        $this->assertSame('m1', $sent->id);
+        $this->assertSame('web:u1:c1', $sent->threadId);
     }
 
-    public function test_delete_message_throws(): void
+    public function test_delete_message_succeeds(): void
     {
-        $this->expectException(AdapterException::class);
         $this->adapter->deleteMessage('web:u1:c1', 'm1');
+        $this->assertTrue(true);
     }
 
-    public function test_add_reaction_throws(): void
+    public function test_add_reaction_succeeds(): void
     {
-        $this->expectException(AdapterException::class);
         $this->adapter->addReaction('web:u1:c1', 'm1', '👍');
+        $this->assertTrue(true);
     }
 
-    public function test_remove_reaction_throws(): void
+    public function test_remove_reaction_succeeds(): void
     {
-        $this->expectException(AdapterException::class);
         $this->adapter->removeReaction('web:u1:c1', 'm1', '👍');
+        $this->assertTrue(true);
     }
 
     // --- Supported no-ops ---
@@ -406,6 +563,207 @@ class WebAdapterTest extends TestCase
         $this->assertSame('conv-1', $data['id']);
         $this->assertSame('assistant', $data['role']);
         $this->assertSame('Hello!', $data['text']);
+        $this->assertArrayHasKey('events', $data);
+        $this->assertIsArray($data['events']);
+    }
+
+    // --- Broadcast mode: sync (accumulated events) ---
+
+    public function test_sync_mode_includes_events_in_response(): void
+    {
+        $broadcaster = $this->createMock(BroadcastAdapter::class);
+        $adapter = $this->makeAdapter(broadcaster: $broadcaster, asyncMode: false);
+
+        $adapter->postMessage('web:u1:c1', PostableMessage::text('Hello'));
+        $adapter->editMessage('web:u1:c1', 'm1', PostableMessage::text('Edited'));
+        $adapter->addReaction('web:u1:c1', 'm1', '👍');
+        $adapter->startTyping('web:u1:c1');
+
+        $response = $adapter->createResponse();
+        $data = json_decode((string) $response->getBody(), true);
+
+        $this->assertArrayHasKey('events', $data);
+        $this->assertCount(4, $data['events']);
+        $this->assertSame('message.posted', $data['events'][0]['type']);
+        $this->assertSame('message.edited', $data['events'][1]['type']);
+        $this->assertSame('reaction.added', $data['events'][2]['type']);
+        $this->assertSame('typing.started', $data['events'][3]['type']);
+    }
+
+    public function test_sync_mode_streaming_emits_chunk_events(): void
+    {
+        $broadcaster = $this->createMock(BroadcastAdapter::class);
+        $adapter = $this->makeAdapter(broadcaster: $broadcaster, asyncMode: false);
+
+        $stream = (function () {
+            yield 'Hello ';
+            yield 'World';
+        })();
+
+        $adapter->stream('web:u1:c1', $stream);
+
+        $events = $adapter->getAccumulatedEvents();
+        $this->assertCount(3, $events); // 2 chunks + 1 final
+        $this->assertSame('streaming.chunk', $events[0]['type']);
+        $this->assertSame('Hello ', $events[0]['data']['chunk']);
+        $this->assertFalse($events[0]['data']['isFinal']);
+        $this->assertSame('World', $events[1]['data']['chunk']);
+        $this->assertFalse($events[1]['data']['isFinal']);
+        $this->assertSame('', $events[2]['data']['chunk']);
+        $this->assertTrue($events[2]['data']['isFinal']);
+    }
+
+    public function test_sync_mode_without_broadcaster_accumulates_events(): void
+    {
+        $adapter = $this->makeAdapter(asyncMode: false);
+
+        $adapter->postMessage('web:u1:c1', PostableMessage::text('Hello'));
+
+        $response = $adapter->createResponse();
+        $data = json_decode((string) $response->getBody(), true);
+
+        $this->assertArrayHasKey('events', $data);
+        $this->assertIsArray($data['events']);
+        // With no broadcaster, no events are accumulated
+        $this->assertCount(0, $data['events']);
+    }
+
+    // --- Broadcast mode: async (real-time broadcasting) ---
+
+    public function test_async_mode_broadcasts_events(): void
+    {
+        $broadcastEvents = [];
+
+        $broadcaster = $this->createMock(BroadcastAdapter::class);
+        $broadcaster->method('isBroadcastingAvailable')->willReturn(true);
+        $broadcaster->method('broadcast')->willReturnCallback(
+            function ($threadId, BroadcastEvent $event) use (&$broadcastEvents) {
+                $broadcastEvents[] = $event;
+            }
+        );
+
+        $adapter = $this->makeAdapter(broadcaster: $broadcaster, asyncMode: true);
+
+        $adapter->postMessage('web:u1:c1', PostableMessage::text('Hello'));
+        $adapter->editMessage('web:u1:c1', 'm1', PostableMessage::text('Edited'));
+
+        $this->assertCount(2, $broadcastEvents);
+        $this->assertSame('message.posted', $broadcastEvents[0]->type);
+        $this->assertSame('message.edited', $broadcastEvents[1]->type);
+    }
+
+    public function test_async_mode_broadcasts_card_in_event(): void
+    {
+        $broadcastEvents = [];
+
+        $broadcaster = $this->createMock(BroadcastAdapter::class);
+        $broadcaster->method('broadcast')->willReturnCallback(
+            function ($threadId, BroadcastEvent $event) use (&$broadcastEvents) {
+                $broadcastEvents[] = $event;
+            }
+        );
+
+        $adapter = $this->makeAdapter(broadcaster: $broadcaster, asyncMode: true);
+
+        $card = Card::make()
+            ->header('Async Card')
+            ->section(fn ($s) => $s->text('Broadcast live'))
+            ->actions([Button::primary('Click', 'click')]);
+
+        $adapter->postMessage('web:u1:c1', PostableMessage::card($card));
+
+        $this->assertCount(1, $broadcastEvents);
+        $event = $broadcastEvents[0];
+        $this->assertSame('message.posted', $event->type);
+        $this->assertArrayHasKey('card', $event->data);
+        $this->assertSame('Async Card', $event->data['card']['header']);
+    }
+
+    public function test_async_mode_does_not_include_events_in_response(): void
+    {
+        $broadcaster = $this->createMock(BroadcastAdapter::class);
+        $adapter = $this->makeAdapter(broadcaster: $broadcaster, asyncMode: true);
+
+        $adapter->postMessage('web:u1:c1', PostableMessage::text('Hello'));
+
+        $response = $adapter->createResponse();
+        $data = json_decode((string) $response->getBody(), true);
+
+        $this->assertArrayHasKey('events', $data);
+        $this->assertCount(0, $data['events']); // Not accumulated in async mode
+    }
+
+    public function test_async_mode_streaming_broadcasts_chunks(): void
+    {
+        $broadcastEvents = [];
+
+        $broadcaster = $this->createMock(BroadcastAdapter::class);
+        $broadcaster->method('broadcast')->willReturnCallback(
+            function ($threadId, BroadcastEvent $event) use (&$broadcastEvents) {
+                $broadcastEvents[] = $event;
+            }
+        );
+        $broadcaster->method('broadcastToUser')->willReturnCallback(
+            function ($threadId, $userId, BroadcastEvent $event) use (&$broadcastEvents) {
+                $broadcastEvents[] = $event;
+            }
+        );
+
+        $adapter = $this->makeAdapter(broadcaster: $broadcaster, asyncMode: true);
+
+        $stream = (function () {
+            yield 'Hello ';
+            yield 'World';
+        })();
+
+        $adapter->stream('web:u1:c1', $stream);
+
+        $this->assertCount(3, $broadcastEvents);
+        $this->assertSame('streaming.chunk', $broadcastEvents[0]->type);
+        $this->assertSame('Hello ', $broadcastEvents[0]->data['chunk']);
+        $this->assertSame('World', $broadcastEvents[1]->data['chunk']);
+        $this->assertSame('', $broadcastEvents[2]->data['chunk']);
+        $this->assertTrue($broadcastEvents[2]->data['isFinal']);
+    }
+
+    public function test_open_dm_broadcasts_event_in_sync_mode(): void
+    {
+        $broadcaster = $this->createMock(BroadcastAdapter::class);
+        $adapter = $this->makeAdapter(broadcaster: $broadcaster, asyncMode: false);
+
+        $threadId = $adapter->openDM('user123');
+
+        $this->assertStringStartsWith('web:user123:', $threadId);
+        $events = $adapter->getAccumulatedEvents();
+        $this->assertCount(1, $events);
+        $this->assertSame('dm.requested', $events[0]['type']);
+        $this->assertSame('user123', $events[0]['data']['userId']);
+    }
+
+    public function test_open_dm_broadcasts_event_in_async_mode(): void
+    {
+        $broadcastEvents = [];
+
+        $broadcaster = $this->createMock(BroadcastAdapter::class);
+        $broadcaster->method('broadcast')->willReturnCallback(
+            function ($threadId, $event) use (&$broadcastEvents) {
+                $broadcastEvents[] = $event;
+            }
+        );
+        $broadcaster->method('broadcastToUser')->willReturnCallback(
+            function ($threadId, $userId, $event) use (&$broadcastEvents) {
+                $broadcastEvents[] = $event;
+            }
+        );
+
+        $adapter = $this->makeAdapter(broadcaster: $broadcaster, asyncMode: true);
+
+        $threadId = $adapter->openDM('user123');
+
+        $this->assertStringStartsWith('web:user123:', $threadId);
+        $this->assertCount(1, $broadcastEvents);
+        $this->assertSame('dm.requested', $broadcastEvents[0]->type);
+        $this->assertSame('user123', $broadcastEvents[0]->data['userId']);
     }
 
     // --- Helpers ---

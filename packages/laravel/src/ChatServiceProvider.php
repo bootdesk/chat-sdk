@@ -4,6 +4,7 @@ namespace BootDesk\ChatSDK\Laravel;
 
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\AdapterResolver;
+use BootDesk\ChatSDK\Core\Contracts\BroadcastAdapter;
 use BootDesk\ChatSDK\Core\Contracts\FileUploadConverter;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Core\Support\AdapterRegistry;
@@ -49,6 +50,11 @@ class ChatServiceProvider extends ServiceProvider
                 $identity = $app->make('chat.identity');
             }
 
+            $broadcaster = null;
+            if (config('chat-broadcasting.enabled', false) && $app->bound(BroadcastAdapter::class)) {
+                $broadcaster = $app->make(BroadcastAdapter::class);
+            }
+
             return new Chat(
                 state: $app->make(StateAdapter::class),
                 adapters: $this->resolveAdapters($app),
@@ -62,6 +68,7 @@ class ChatServiceProvider extends ServiceProvider
                 responseFactory: $app->make(ResponseFactoryInterface::class),
                 identity: $identity,
                 transcripts: config('chat.transcripts'),
+                broadcaster: $broadcaster,
             );
         });
 
@@ -74,6 +81,10 @@ class ChatServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../config/chat.php' => config_path('chat.php'),
             ], 'chat-config');
+
+            $this->publishes([
+                __DIR__.'/../config/chat-broadcasting.php' => config_path('chat-broadcasting.php'),
+            ], 'chat-broadcasting-config');
 
             $this->commands([
                 ChatListCommand::class,
@@ -88,6 +99,11 @@ class ChatServiceProvider extends ServiceProvider
         // Register notification channel
         $this->app->bind(ChatChannel::class, function (Application $app): ChatChannel {
             return new ChatChannel($app->make(Chat::class));
+        });
+
+        // Shutdown lifecycle: disconnect adapters, broadcaster, and state
+        $this->app->terminating(function (): void {
+            $this->app->make(Chat::class)->shutdown();
         });
     }
 

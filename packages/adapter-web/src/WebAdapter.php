@@ -2,10 +2,21 @@
 
 namespace BootDesk\ChatSDK\Web;
 
+use BootDesk\ChatSDK\Core\Attachment;
 use BootDesk\ChatSDK\Core\Author;
+use BootDesk\ChatSDK\Core\Broadcasting\BroadcastEvent;
+use BootDesk\ChatSDK\Core\Broadcasting\DirectMessageRequestedEvent;
+use BootDesk\ChatSDK\Core\Broadcasting\MessageDeletedEvent;
+use BootDesk\ChatSDK\Core\Broadcasting\MessageEditedEvent;
+use BootDesk\ChatSDK\Core\Broadcasting\MessagePostedEvent;
+use BootDesk\ChatSDK\Core\Broadcasting\ReactionAddedEvent;
+use BootDesk\ChatSDK\Core\Broadcasting\ReactionRemovedEvent;
+use BootDesk\ChatSDK\Core\Broadcasting\StreamingChunkEvent;
+use BootDesk\ChatSDK\Core\Broadcasting\TypingStartedEvent;
 use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Contracts\BroadcastAdapter;
 use BootDesk\ChatSDK\Core\Contracts\FileUploadConverter;
 use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
@@ -35,18 +46,40 @@ class WebAdapter implements Adapter
 
     protected string $bufferedReply = '';
 
+    protected array $bufferedAttachments = [];
+
     protected FileUploadConverter $fileUploadConverter;
+
+    protected ?BroadcastAdapter $broadcaster = null;
+
+    protected bool $asyncMode = false;
+
+    protected array $accumulatedEvents = [];
+
+    protected string $currentUserId = '';
 
     public function __construct(
         protected readonly string $userName,
-        protected readonly \Closure $getUser,
-        protected readonly ?\Closure $threadIdFor = null,
+        WebAdapterConfig|string $config = new WebAdapterConfig,
         protected readonly ?Psr17Factory $psrFactory = null,
         ?FileUploadConverter $fileUploadConverter = null,
+        ?BroadcastAdapter $broadcaster = null,
+        bool $asyncMode = false,
     ) {
+        if (is_string($config)) {
+            if (! class_exists($config)) {
+                throw new AdapterException("WebAdapter config class '{$config}' does not exist");
+            }
+            $config = new $config;
+        }
+        $this->config = $config;
         $this->formatConverter = new WebFormatConverter;
         $this->fileUploadConverter = $fileUploadConverter ?? new NullFileUploadConverter;
+        $this->broadcaster = $broadcaster;
+        $this->asyncMode = $asyncMode;
     }
+
+    protected readonly WebAdapterConfig $config;
 
     public function getName(): string
     {
@@ -62,6 +95,12 @@ class WebAdapter implements Adapter
     {
         $this->resetState();
 
+        // Verify signature
+        $signatureResult = $this->config->verifySignature($request);
+        if ($signatureResult !== true) {
+            return $this->jsonError(401, (string) $signatureResult);
+        }
+
         $body = (string) $request->getBody();
         $payload = json_decode($body, true);
 
@@ -73,12 +112,12 @@ class WebAdapter implements Adapter
             return $this->jsonError(400, 'Request body must include a messages array');
         }
 
-        $user = ($this->getUser)($request);
+        $user = $this->config->getUser($request);
         if ($user === null) {
             return $this->jsonError(401, 'Unauthorized');
         }
 
-        if (str_contains($user['id'] ?? '', ':')) {
+        if (str_contains($user['id'], ':')) {
             return $this->jsonError(400, 'Invalid user id');
         }
 
@@ -95,6 +134,7 @@ class WebAdapter implements Adapter
         $this->resolvedUserId = $user['id'];
         $this->resolvedUserName = $user['name'] ?? $user['id'];
         $this->conversationId = $conversationId;
+        $this->currentUserId = $user['id'];
 
         return null;
     }
@@ -115,6 +155,22 @@ class WebAdapter implements Adapter
             'conversationId' => $this->conversationId ?? $this->generateId(),
         ]);
 
+        // Parse attachments from payload
+        $attachments = [];
+        if (isset($lastUserMsg['attachments']) && is_array($lastUserMsg['attachments'])) {
+            foreach ($lastUserMsg['attachments'] as $att) {
+                if (is_array($att) && isset($att['url'])) {
+                    $attachments[] = new Attachment(
+                        type: $att['type'] ?? 'url',
+                        url: $att['url'],
+                        name: $att['name'] ?? null,
+                        mimeType: $att['mime_type'] ?? $att['mimeType'] ?? null,
+                        size: $att['size'] ?? null,
+                    );
+                }
+            }
+        }
+
         return new Message(
             id: $msgId,
             threadId: $threadId,
@@ -124,6 +180,7 @@ class WebAdapter implements Adapter
                 isBot: false,
             ),
             text: $text,
+            attachments: $attachments,
             isDM: true,
             raw: $body,
         );
@@ -134,11 +191,7 @@ class WebAdapter implements Adapter
         $userId = $platformData['userId'] ?? '';
         $conversationId = $platformData['conversationId'] ?? '';
 
-        if ($this->threadIdFor instanceof \Closure) {
-            return ($this->threadIdFor)($userId, $conversationId);
-        }
-
-        return "web:{$userId}:{$conversationId}";
+        return $this->config->threadIdFor($userId, $conversationId);
     }
 
     public function decodeThreadId(string $threadId): mixed
@@ -179,10 +232,8 @@ class WebAdapter implements Adapter
             ? $message->content->getFallbackText()
             : (string) $message->content;
 
-        foreach ($message->attachments as $att) {
-            $name = $att->name ?? 'Attachment';
-            $text .= "\n".($att->url !== null ? "{$name}: {$att->url}" : $name);
-        }
+        // Store attachments for JSON response
+        $this->bufferedAttachments = $message->attachments;
 
         if ($text !== '') {
             $this->bufferedReply .= $text;
@@ -190,35 +241,86 @@ class WebAdapter implements Adapter
 
         $id = $this->generateId();
 
-        return new SentMessage(
+        $sentMessage = new SentMessage(
             id: $id,
             threadId: $threadId,
         );
+
+        $card = $message->isCard() ? $message->content : null;
+
+        $this->broadcastEvent(new MessagePostedEvent(
+            threadId: $threadId,
+            messageId: $sentMessage->id,
+            text: $text,
+            author: [
+                'id' => $this->userName,
+                'name' => $this->userName,
+                'isBot' => true,
+            ],
+            card: $card,
+        ));
+
+        return $sentMessage;
     }
 
     public function editMessage(string $threadId, string $messageId, PostableMessage $message): SentMessage
     {
-        throw new AdapterException('WebAdapter.editMessage is not supported — every assistant turn is a fresh response.');
+        $text = $message->isCard()
+            ? $message->content->getFallbackText()
+            : (string) $message->content;
+
+        $card = $message->isCard() ? $message->content : null;
+
+        $this->broadcastEvent(new MessageEditedEvent(
+            threadId: $threadId,
+            messageId: $messageId,
+            newText: $text,
+            card: $card,
+        ));
+
+        return new SentMessage(
+            id: $messageId,
+            threadId: $threadId,
+        );
     }
 
     public function deleteMessage(string $threadId, string $messageId): void
     {
-        throw new AdapterException('WebAdapter.deleteMessage is not supported.');
+        $this->broadcastEvent(new MessageDeletedEvent(
+            threadId: $threadId,
+            messageId: $messageId,
+        ));
     }
 
     public function addReaction(string $threadId, string $messageId, string $emoji): void
     {
-        throw new AdapterException('WebAdapter.addReaction is not supported.');
+        $this->broadcastEvent(new ReactionAddedEvent(
+            threadId: $threadId,
+            messageId: $messageId,
+            emoji: $emoji,
+            user: ['id' => $this->userName],
+        ));
     }
 
     public function removeReaction(string $threadId, string $messageId, string $emoji): void
     {
-        throw new AdapterException('WebAdapter.removeReaction is not supported.');
+        $this->broadcastEvent(new ReactionRemovedEvent(
+            threadId: $threadId,
+            messageId: $messageId,
+            emoji: $emoji,
+            user: ['id' => $this->userName],
+        ));
     }
 
     public function startTyping(string $threadId): void
     {
-        // No-op: web clients derive streaming status from the response itself
+        $typerId = $this->currentUserId ?: $this->userName;
+        $targetUserId = ($typerId === $this->userName) ? $this->currentUserId : $this->userName;
+
+        $this->broadcastEvent(new TypingStartedEvent(
+            threadId: $threadId,
+            userId: $typerId,
+        ), $targetUserId);
     }
 
     public function fetchMessages(string $threadId, ?FetchOptions $options = null): FetchResult
@@ -247,10 +349,17 @@ class WebAdapter implements Adapter
 
     public function openDM(string $userId): ?string
     {
-        return $this->encodeThreadId([
+        $threadId = $this->encodeThreadId([
             'userId' => $userId,
             'conversationId' => $this->generateId(),
         ]);
+
+        $this->broadcastEvent(new DirectMessageRequestedEvent(
+            threadId: $threadId,
+            userId: $userId,
+        ), $userId);
+
+        return $threadId;
     }
 
     public function getFormatConverter(): ?FormatConverter
@@ -270,10 +379,25 @@ class WebAdapter implements Adapter
 
     public function stream(string $threadId, iterable $textStream, array $options = []): ?SentMessage
     {
+        $messageId = $this->generateId();
         $fullText = '';
         foreach ($textStream as $chunk) {
             $fullText .= $chunk;
+
+            $this->broadcastEvent(new StreamingChunkEvent(
+                threadId: $threadId,
+                messageId: $messageId,
+                chunk: $chunk,
+                isFinal: false,
+            ), $this->currentUserId);
         }
+
+        $this->broadcastEvent(new StreamingChunkEvent(
+            threadId: $threadId,
+            messageId: $messageId,
+            chunk: '',
+            isFinal: true,
+        ), $this->currentUserId);
 
         if ($fullText === '') {
             return null;
@@ -282,7 +406,7 @@ class WebAdapter implements Adapter
         $this->bufferedReply .= $fullText;
 
         return new SentMessage(
-            id: $this->generateId(),
+            id: $messageId,
             threadId: $threadId,
         );
     }
@@ -296,10 +420,21 @@ class WebAdapter implements Adapter
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
 
+        // Convert Attachment objects to arrays for JSON response
+        $attachments = array_map(fn ($att): array => [
+            'type' => $att->type,
+            'url' => $att->url,
+            'name' => $att->name,
+            'mime_type' => $att->mimeType,
+            'size' => $att->size,
+        ], $this->bufferedAttachments);
+
         $payload = [
             'id' => $this->conversationId ?? $this->generateId(),
             'role' => 'assistant',
             'text' => $this->bufferedReply,
+            'attachments' => $attachments,
+            'events' => $this->accumulatedEvents,
         ];
 
         return $factory->createResponse(200)
@@ -307,9 +442,31 @@ class WebAdapter implements Adapter
             ->withBody($factory->createStream(json_encode($payload)));
     }
 
+    public function getAccumulatedEvents(): array
+    {
+        return $this->accumulatedEvents;
+    }
+
     public function hasResolvedUser(): bool
     {
         return $this->resolvedUserId !== null;
+    }
+
+    protected function broadcastEvent(BroadcastEvent $event, ?string $targetUserId = null): void
+    {
+        if (! $this->broadcaster instanceof BroadcastAdapter) {
+            return;
+        }
+
+        if ($this->asyncMode) {
+            if ($targetUserId !== null) {
+                $this->broadcaster->broadcastToUser($event->threadId, $targetUserId, $event);
+            } else {
+                $this->broadcaster->broadcast($event->threadId, $event);
+            }
+        } else {
+            $this->accumulatedEvents[] = $event->toArray();
+        }
     }
 
     protected function resetState(): void
@@ -318,6 +475,9 @@ class WebAdapter implements Adapter
         $this->resolvedUserName = null;
         $this->conversationId = null;
         $this->bufferedReply = '';
+        $this->bufferedAttachments = [];
+        $this->accumulatedEvents = [];
+        $this->currentUserId = '';
     }
 
     protected function findLastUserMessage(array $messages): ?array

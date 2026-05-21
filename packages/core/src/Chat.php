@@ -6,6 +6,7 @@ use BootDesk\ChatSDK\Core\Concurrency\Handler;
 use BootDesk\ChatSDK\Core\Concurrency\Strategy;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\AdapterResolver;
+use BootDesk\ChatSDK\Core\Contracts\BroadcastAdapter;
 use BootDesk\ChatSDK\Core\Contracts\HandlesActions;
 use BootDesk\ChatSDK\Core\Contracts\HandlesBatchedWebhooks;
 use BootDesk\ChatSDK\Core\Contracts\HandlesModals;
@@ -40,6 +41,8 @@ class Chat
 
     private ?AdapterResolver $adapterResolver = null;
 
+    private ?BroadcastAdapter $broadcaster = null;
+
     private ?ResponseFactoryInterface $responseFactory = null;
 
     private bool $initialized = false;
@@ -70,10 +73,12 @@ class Chat
         ?ResponseFactoryInterface $responseFactory = null,
         ?callable $identity = null,
         ?array $transcripts = null,
+        ?BroadcastAdapter $broadcaster = null,
     ) {
         $this->adapters = $adapters;
         $this->adapterResolver = $adapterResolver;
         $this->responseFactory = $responseFactory;
+        $this->broadcaster = $broadcaster;
         $this->conversationManager = new ConversationManager(
             logger: $config['logger'] ?? null,
             factory: $config['conversation_factory'] ?? null,
@@ -97,6 +102,16 @@ class Chat
     public function getTranscripts(): ?TranscriptsApi
     {
         return $this->transcriptsApi;
+    }
+
+    public function getBroadcastAdapter(): ?BroadcastAdapter
+    {
+        return $this->broadcaster;
+    }
+
+    public function setBroadcastAdapter(BroadcastAdapter $broadcaster): void
+    {
+        $this->broadcaster = $broadcaster;
     }
 
     public function resolveIdentity(Author $author): ?string
@@ -1316,6 +1331,10 @@ class Chat
         $this->state->connect();
         $this->stateInitialized = true;
 
+        if ($this->broadcaster instanceof BroadcastAdapter) {
+            $this->broadcaster->connect();
+        }
+
         foreach ($this->adapters as $adapter) {
             $adapter->initialize($this);
         }
@@ -1330,16 +1349,31 @@ class Chat
             $this->stateInitialized = true;
         }
 
+        if ($this->broadcaster instanceof BroadcastAdapter && ! $this->initialized) {
+            $this->broadcaster->connect();
+        }
+
         $adapter->initialize($this);
     }
 
     public function shutdown(): void
     {
+        if (! $this->initialized && ! $this->stateInitialized) {
+            return;
+        }
+
         foreach ($this->adapters as $adapter) {
             $adapter->disconnect();
         }
 
+        if ($this->broadcaster instanceof BroadcastAdapter) {
+            $this->broadcaster->disconnect();
+        }
+
         $this->state->disconnect();
+
+        $this->initialized = false;
+        $this->stateInitialized = false;
     }
 
     public function addWebhookMiddleware(WebhookMiddleware $middleware): self

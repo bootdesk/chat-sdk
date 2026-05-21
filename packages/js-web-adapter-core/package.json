@@ -1,0 +1,52 @@
+{
+  "name": "@bootdesk/js-web-adapter-core",
+  "version": "0.1.0",
+  "description": "Core JavaScript SDK for BootDesk Chat SDK WebAdapter",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
+    "lint": "eslint src",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "laravel-echo": "^2.0.0",
+    "pusher-js": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "pusher-js": {
+      "optional": true
+    },
+    "laravel-echo": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "laravel-echo": "^2.3.4",
+    "prettier": "^3.8.3",
+    "pusher-js": "^8.5.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.59.4",
+    "vitest": "^1.0.0"
+  }
+}

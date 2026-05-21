@@ -7,4 +7,6 @@ parameters:
     excludePaths:
         - packages/*/tests/*
         - vendor
+        - packages/*/node_modules/*
+        - **/node_modules
     level: 5

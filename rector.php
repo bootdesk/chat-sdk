@@ -11,6 +11,7 @@ return RectorConfig::configure()
     ->withSkip([
         __DIR__.'/packages/*/tests/*',
         __DIR__.'/vendor',
+        __DIR__.'/packages/*/node_modules/*',
     ])
     ->withSets([
         SetList::PHP_82,

@@ -406,7 +406,7 @@ class WhatsAppAdapterTest extends TestCase
         $this->assertSame('whatsapp:100000000000001:15550002222', $message->threadId);
         $this->assertSame('15550002222', $message->author->id);
         $this->assertSame('Test User', $message->author->name);
-        $this->assertSame('What is Vercel?', $message->text);
+        $this->assertSame('What is BootDesk?', $message->text);
         $this->assertTrue($message->isDM);
         $this->assertSame('100000000000002', $message->originId);
     }

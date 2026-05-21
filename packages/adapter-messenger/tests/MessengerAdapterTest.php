@@ -999,7 +999,7 @@ class MessengerAdapterTest extends TestCase
 
         $this->assertSame('m_FAKE_MSG_ID_001', $message->id);
         $this->assertSame('messenger:200000000000001', $message->threadId);
-        $this->assertSame('What is Vercel?', $message->text);
+        $this->assertSame('What is BootDesk?', $message->text);
         $this->assertTrue($message->isDM);
     }
 

@@ -2,13 +2,19 @@
 
 namespace BootDesk\ChatSDK\Web\Tests;
 
+use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\Broadcasting\BroadcastEvent;
 use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
+use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\BroadcastAdapter;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
+use BootDesk\ChatSDK\Core\FetchOptions;
+use BootDesk\ChatSDK\Core\FetchResult;
+use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\PostableMessage;
+use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Web\WebAdapter;
 use BootDesk\ChatSDK\Web\WebAdapterConfig;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -264,6 +270,157 @@ class WebAdapterTest extends TestCase
             'id' => 'conv-2',
             'messages' => [['id' => 'm2', 'role' => 'user', 'text' => 'second']],
         ]));
+    }
+
+    public function test_verify_action_payload_skips_messages_validation(): void
+    {
+        $request = $this->makeRequest([
+            'id' => 'conv-1',
+            'action' => [
+                'actionId' => 'confirm',
+                'value' => 'yes',
+                'messageId' => 'msg-1',
+            ],
+        ]);
+
+        $response = $this->adapter->verifyWebhook($request);
+        $this->assertNull($response);
+        $this->assertTrue($this->adapter->hasResolvedUser());
+    }
+
+    public function test_verify_action_payload_without_conversation_id(): void
+    {
+        $request = $this->makeRequest([
+            'action' => [
+                'actionId' => 'cancel',
+                'value' => null,
+                'messageId' => 'msg-2',
+            ],
+        ]);
+
+        $response = $this->adapter->verifyWebhook($request);
+        $this->assertNull($response);
+    }
+
+    // --- Action handling ---
+
+    public function test_parse_action_returns_correct_data(): void
+    {
+        $request = $this->makeRequest([
+            'id' => 'conv-1',
+            'action' => [
+                'actionId' => 'deploy',
+                'value' => 'production',
+                'messageId' => 'msg-123',
+            ],
+        ]);
+
+        $this->adapter->verifyWebhook($request);
+        $actionData = $this->adapter->parseAction($request);
+
+        $this->assertNotNull($actionData);
+        $this->assertSame('deploy', $actionData['actionId']);
+        $this->assertSame('production', $actionData['value']);
+        $this->assertSame('msg-123', $actionData['messageId']);
+        $this->assertSame('u-test', $actionData['userId']);
+        $this->assertSame('web:u-test:conv-1', $actionData['threadId']);
+        $this->assertFalse($actionData['isBot']);
+        $this->assertFalse($actionData['isMe']);
+    }
+
+    public function test_parse_action_returns_null_without_action_key(): void
+    {
+        $request = $this->makeRequest([
+            'messages' => [['id' => 'm1', 'role' => 'user', 'text' => 'hi']],
+        ]);
+
+        $this->adapter->verifyWebhook($request);
+        $actionData = $this->adapter->parseAction($request);
+
+        $this->assertNull($actionData);
+    }
+
+    public function test_parse_action_returns_null_without_action_id(): void
+    {
+        $request = $this->makeRequest([
+            'action' => ['value' => 'yes', 'messageId' => 'msg-1'],
+        ]);
+
+        $this->adapter->verifyWebhook($request);
+        $actionData = $this->adapter->parseAction($request);
+
+        $this->assertNull($actionData);
+    }
+
+    public function test_acknowledge_action_returns_null(): void
+    {
+        $this->assertNull($this->adapter->acknowledgeAction('some-id'));
+        $this->assertNull($this->adapter->acknowledgeAction(null));
+    }
+
+    // --- Slash commands ---
+
+    public function test_parse_slash_command_detects_slash(): void
+    {
+        $request = $this->makeRequest([
+            'id' => 'conv-1',
+            'messages' => [
+                ['id' => 'm1', 'role' => 'user', 'text' => '/help'],
+            ],
+        ]);
+
+        $this->adapter->verifyWebhook($request);
+        $data = $this->adapter->parseSlashCommand($request);
+
+        $this->assertNotNull($data);
+        $this->assertSame('/help', $data['command']);
+        $this->assertSame('', $data['text']);
+        $this->assertSame('u-test', $data['userId']);
+    }
+
+    public function test_parse_slash_command_with_args(): void
+    {
+        $request = $this->makeRequest([
+            'id' => 'conv-1',
+            'messages' => [
+                ['id' => 'm1', 'role' => 'user', 'text' => '/deploy production --force'],
+            ],
+        ]);
+
+        $this->adapter->verifyWebhook($request);
+        $data = $this->adapter->parseSlashCommand($request);
+
+        $this->assertNotNull($data);
+        $this->assertSame('/deploy', $data['command']);
+        $this->assertSame('production --force', $data['text']);
+    }
+
+    public function test_parse_slash_command_returns_null_for_normal_text(): void
+    {
+        $request = $this->makeRequest([
+            'id' => 'conv-1',
+            'messages' => [
+                ['id' => 'm1', 'role' => 'user', 'text' => 'hello world'],
+            ],
+        ]);
+
+        $this->adapter->verifyWebhook($request);
+        $data = $this->adapter->parseSlashCommand($request);
+
+        $this->assertNull($data);
+    }
+
+    public function test_parse_slash_command_returns_null_for_action_payload(): void
+    {
+        $request = $this->makeRequest([
+            'id' => 'conv-1',
+            'action' => ['actionId' => 'click', 'value' => 'yes', 'messageId' => 'm1'],
+        ]);
+
+        $this->adapter->verifyWebhook($request);
+        $data = $this->adapter->parseSlashCommand($request);
+
+        $this->assertNull($data);
     }
 
     // --- Parse webhook ---
@@ -527,6 +684,69 @@ class WebAdapterTest extends TestCase
         $this->assertNull($this->adapter->fetchChannelInfo('web:u1:c1'));
     }
 
+    // --- Config delegation ---
+
+    public function test_fetch_messages_delegates_to_config(): void
+    {
+        $config = new class extends WebAdapterConfig
+        {
+            public function fetchMessages(string $threadId, ?FetchOptions $options = null): FetchResult
+            {
+                return new FetchResult(messages: [
+                    new Message(
+                        id: 'm1',
+                        threadId: $threadId,
+                        author: new Author(id: 'u1'),
+                        text: 'from config',
+                    ),
+                ]);
+            }
+        };
+
+        $adapter = $this->makeAdapter(config: $config);
+        $result = $adapter->fetchMessages('web:u1:c1');
+        $this->assertCount(1, $result->messages);
+        $this->assertSame('from config', $result->messages[0]->text);
+    }
+
+    public function test_fetch_thread_delegates_to_config(): void
+    {
+        $config = new class extends WebAdapterConfig
+        {
+            public function fetchThread(string $threadId): ThreadInfo
+            {
+                return new ThreadInfo(
+                    id: 'web:u1:custom-id',
+                    channelId: 'web:u1:custom-channel',
+                    messageCount: 42,
+                );
+            }
+        };
+
+        $adapter = $this->makeAdapter(config: $config);
+        $info = $adapter->fetchThread('web:u1:c1');
+        $this->assertSame('web:u1:custom-id', $info->id);
+        $this->assertSame('web:u1:custom-channel', $info->channelId);
+        $this->assertSame(42, $info->messageCount);
+    }
+
+    public function test_fetch_channel_info_delegates_to_config(): void
+    {
+        $config = new class extends WebAdapterConfig
+        {
+            public function fetchChannelInfo(string $channelId): ?ChannelInfo
+            {
+                return new ChannelInfo(id: 'web:u1:custom-channel', name: 'Custom Channel');
+            }
+        };
+
+        $adapter = $this->makeAdapter(config: $config);
+        $info = $adapter->fetchChannelInfo('web:ch:1');
+        $this->assertNotNull($info);
+        $this->assertSame('web:u1:custom-channel', $info->id);
+        $this->assertSame('Custom Channel', $info->name);
+    }
+
     public function test_get_user_returns_null(): void
     {
         $this->assertNull($this->adapter->getUser('u1'));
@@ -541,6 +761,57 @@ class WebAdapterTest extends TestCase
     public function test_get_format_converter(): void
     {
         $this->assertNotNull($this->adapter->getFormatConverter());
+    }
+
+    public function test_fetch_thread_validates_id_format(): void
+    {
+        $config = new class extends WebAdapterConfig
+        {
+            public function fetchThread(string $threadId): ThreadInfo
+            {
+                return new ThreadInfo(id: 'invalid', channelId: 'web:u1:c1', messageCount: 0);
+            }
+        };
+
+        $adapter = $this->makeAdapter(config: $config);
+
+        $this->expectException(AdapterException::class);
+        $this->expectExceptionMessage('ThreadInfo::id');
+        $adapter->fetchThread('web:u1:c1');
+    }
+
+    public function test_fetch_thread_validates_channel_id_format(): void
+    {
+        $config = new class extends WebAdapterConfig
+        {
+            public function fetchThread(string $threadId): ThreadInfo
+            {
+                return new ThreadInfo(id: 'web:u1:c1', channelId: 'bad', messageCount: 0);
+            }
+        };
+
+        $adapter = $this->makeAdapter(config: $config);
+
+        $this->expectException(AdapterException::class);
+        $this->expectExceptionMessage('ThreadInfo::channelId');
+        $adapter->fetchThread('web:u1:c1');
+    }
+
+    public function test_fetch_channel_info_validates_id_format(): void
+    {
+        $config = new class extends WebAdapterConfig
+        {
+            public function fetchChannelInfo(string $channelId): ?ChannelInfo
+            {
+                return new ChannelInfo(id: 'no-prefix');
+            }
+        };
+
+        $adapter = $this->makeAdapter(config: $config);
+
+        $this->expectException(AdapterException::class);
+        $this->expectExceptionMessage('ChannelInfo::id');
+        $adapter->fetchChannelInfo('web:u1:c1');
     }
 
     // --- Response building ---

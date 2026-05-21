@@ -6,6 +6,13 @@ export class MessagePostedEvent extends ChatEvent {
   readonly text: string;
   readonly author: User;
   readonly card?: Card;
+  readonly attachments?: Array<{
+    type: string;
+    url?: string;
+    name?: string;
+    mimeType?: string;
+    size?: number | null;
+  }>;
 
   constructor(
     threadId: string,
@@ -13,6 +20,13 @@ export class MessagePostedEvent extends ChatEvent {
     text: string,
     author: User,
     card?: Card,
+    attachments?: Array<{
+      type: string;
+      url?: string;
+      name?: string;
+      mimeType?: string;
+      size?: number | null;
+    }>,
     timestamp?: number,
   ) {
     super("message.posted", threadId, timestamp ?? Date.now());
@@ -20,5 +34,6 @@ export class MessagePostedEvent extends ChatEvent {
     this.text = text;
     this.author = author;
     this.card = card;
+    this.attachments = attachments;
   }
 }

@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --chat-primary: #6366f1;
+    --chat-primary-hover: #4f46e5;
+    --chat-secondary: #8b5cf6;
+    --chat-background: #ffffff;
+    --chat-surface: #f9fafb;
+    --chat-text: #111827;
+    --chat-text-secondary: #6b7280;
+    --chat-border: #e5e7eb;
+    --chat-own-message: #6366f1;
+    --chat-own-message-text: #ffffff;
+    --chat-other-message: #f3f4f6;
+    --chat-other-message-text: #111827;
+    --chat-error: #ef4444;
+    --chat-success: #10b981;
+    --chat-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  [data-chat-theme="dark"] {
+    --chat-primary: #818cf8;
+    --chat-primary-hover: #6366f1;
+    --chat-secondary: #a78bfa;
+    --chat-background: #1e1e2e;
+    --chat-surface: #2a2a3c;
+    --chat-text: #e2e8f0;
+    --chat-text-secondary: #94a3b8;
+    --chat-border: #3e3e5c;
+    --chat-own-message: #818cf8;
+    --chat-own-message-text: #ffffff;
+    --chat-other-message: #2a2a3c;
+    --chat-other-message-text: #e2e8f0;
+    --chat-error: #f87171;
+    --chat-success: #4ade80;
+  }
+}
+
+@layer components {
+  .chat-container {
+    @apply flex flex-col overflow-hidden rounded-2xl border border-[var(--chat-border)] bg-[var(--chat-background)] shadow-xl;
+    font-family: var(--chat-font-family);
+  }
+
+  .chat-header {
+    @apply flex items-center justify-between border-b border-[var(--chat-border)] bg-[var(--chat-surface)] px-4 py-3;
+  }
+
+  .chat-message-list {
+    @apply flex flex-1 flex-col gap-2 overflow-auto bg-[var(--chat-background)] p-4;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--chat-text-secondary) transparent;
+  }
+
+  .chat-message-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .chat-message-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .chat-message-list::-webkit-scrollbar-thumb {
+    background-color: var(--chat-text-secondary);
+    border-radius: 3px;
+  }
+
+  .chat-message-list::-webkit-scrollbar-thumb:hover {
+    background-color: var(--chat-text);
+  }
+
+  .chat-message-bubble-own {
+    @apply rounded-2xl rounded-br-sm bg-[var(--chat-own-message)] px-3 py-2 text-[var(--chat-own-message-text)];
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .chat-message-bubble-other {
+    @apply rounded-2xl rounded-bl-sm bg-[var(--chat-other-message)] px-3 py-2 text-[var(--chat-other-message-text)];
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .chat-input-area {
+    @apply flex flex-col gap-2 border-t border-[var(--chat-border)] bg-[var(--chat-surface)] p-4;
+  }
+
+  .chat-input {
+    @apply flex-1 resize-none rounded-lg border border-[var(--chat-border)] bg-[var(--chat-background)] px-3 py-2 text-base text-[var(--chat-text)] placeholder-[var(--chat-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--chat-primary)];
+    font-family: var(--chat-font-family);
+    scrollbar-width: thin;
+    scrollbar-color: var(--chat-text-secondary) transparent;
+  }
+
+  .chat-input::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .chat-input::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .chat-input::-webkit-scrollbar-thumb {
+    background-color: var(--chat-text-secondary);
+    border-radius: 3px;
+  }
+
+  .chat-input::-webkit-scrollbar-thumb:hover {
+    background-color: var(--chat-text);
+  }
+
+  .chat-send-button {
+    @apply rounded-lg bg-[var(--chat-primary)] px-4 py-2 font-medium text-white transition hover:bg-[var(--chat-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .chat-floating-button {
+    @apply flex items-center justify-center rounded-full bg-[var(--chat-primary)] shadow-lg transition hover:scale-105;
+  }
+
+  .chat-typing-indicator {
+    @apply px-4 pl-6 text-sm italic text-[var(--chat-text-secondary)];
+  }
+}

@@ -105,9 +105,16 @@ export class LaravelEchoBroadcastClient implements BroadcastClient {
   }
 
   isConnected(): boolean {
-    return (
-      (this.echo.connector as any)?.pusher?.connection?.state === "connected" ||
-      (this.echo as any)?.connector?.options?.broadcaster === "pusher"
-    );
+    try {
+      const connector = (this.echo as any).connector;
+      if (!connector) return false;
+
+      if (connector.pusher?.connection?.state === "connected") return true;
+      if (connector.socket?.connected) return true;
+
+      return false;
+    } catch {
+      return false;
+    }
   }
 }

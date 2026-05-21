@@ -12,7 +12,7 @@ class BroadcastServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../../../config/chat-broadcasting.php', 'chat-broadcasting');
+        $this->mergeConfigFrom(__DIR__.'/../../config/chat-broadcasting.php', 'chat-broadcasting');
 
         $this->app->bind(BroadcastAdapter::class, function ($app): LaravelBroadcastAdapter {
             return new LaravelBroadcastAdapter(
@@ -27,8 +27,10 @@ class BroadcastServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->publishes([
-            __DIR__.'/../../../config/chat-broadcasting.php' => config_path('chat-broadcasting.php'),
-        ], 'chat-broadcasting');
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../../config/chat-broadcasting.php' => config_path('chat-broadcasting.php'),
+            ], 'chat-config');
+        }
     }
 }

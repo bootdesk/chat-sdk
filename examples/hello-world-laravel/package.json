@@ -6,8 +6,23 @@
         "build": "vite build",
         "dev": "vite"
     },
+    "dependencies": {
+        "@bootdesk/chat-widget-bridge": "../../packages/chat-widget-bridge",
+        "@bootdesk/js-web-adapter-core": "../../packages/js-web-adapter-core",
+        "@bootdesk/js-web-adapter-react": "../../packages/js-web-adapter-react",
+        "dompurify": "^3.4.5",
+        "laravel-echo": "^2.3.4",
+        "marked": "^18.0.0",
+        "pusher-js": "^8.5.0",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0"
+    },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
+        "@types/dompurify": "^3.0.0",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "@vitejs/plugin-react": "^6.0.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^3.1",
         "tailwindcss": "^4.0.0",

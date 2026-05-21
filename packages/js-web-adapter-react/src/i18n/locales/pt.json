@@ -1,0 +1,47 @@
+{
+  "chatWidget": {
+    "title": "Chat",
+    "placeholder": "Digite uma mensagem...",
+    "openChat": "Abrir chat",
+    "closeChat": "Fechar chat",
+    "connectionStatus": {
+      "connected": "Conectado",
+      "disconnected": "Desconectado"
+    }
+  },
+  "inputArea": {
+    "send": "Enviar",
+    "uploading": "Enviando...",
+    "dropzone": {
+      "dropFiles": "Solte arquivos aqui",
+      "dropOrClick": "Solte ou clique para anexar"
+    }
+  },
+  "typingIndicator": {
+    "typing": "digitando",
+    "isTyping": "está digitando..."
+  },
+  "messageList": {
+    "emptyState": "Nenhuma mensagem ainda. Inicie a conversa!"
+  },
+  "attachmentList": {
+    "remove": "Remover",
+    "uploadFailed": "Falha no envio"
+  },
+  "header": {
+    "enterFullscreen": "Tela cheia",
+    "exitFullscreen": "Sair da tela cheia",
+    "closeChat": "Fechar chat"
+  },
+  "floatingButton": {
+    "openChat": "Abrir chat",
+    "closeChat": "Fechar chat"
+  },
+  "common": {
+    "loading": "Carregando...",
+    "error": "Erro",
+    "retry": "Tentar novamente",
+    "cancel": "Cancelar",
+    "download": "Baixar"
+  }
+}

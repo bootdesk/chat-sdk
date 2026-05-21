@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace BootDesk\ChatSDK\Web;
 
+use BootDesk\ChatSDK\Core\ChannelInfo;
+use BootDesk\ChatSDK\Core\FetchOptions;
+use BootDesk\ChatSDK\Core\FetchResult;
+use BootDesk\ChatSDK\Core\ThreadInfo;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -61,5 +65,49 @@ class WebAdapterConfig
     public function verifySignature(ServerRequestInterface $request): bool|string
     {
         return true;
+    }
+
+    /**
+     * Fetch messages for a conversation.
+     *
+     * Override to provide custom message history.
+     *
+     * @param  string  $threadId  Canonical thread ID (format: "web:{userId}:{conversationId}").
+     * @param  FetchOptions|null  $options  Fetch options for pagination.
+     */
+    public function fetchMessages(string $threadId, ?FetchOptions $options = null): FetchResult
+    {
+        return new FetchResult(messages: []);
+    }
+
+    /**
+     * Fetch thread info for a conversation.
+     *
+     * Override to provide custom thread details. Both the id and channelId
+     * in the returned ThreadInfo should use the canonical format
+     * "web:{userId}:{conversationId}".
+     *
+     * @param  string  $threadId  Canonical thread ID (format: "web:{userId}:{conversationId}").
+     */
+    public function fetchThread(string $threadId): ThreadInfo
+    {
+        return new ThreadInfo(
+            id: $threadId,
+            channelId: $threadId,
+            messageCount: 0,
+        );
+    }
+
+    /**
+     * Fetch channel info.
+     *
+     * Override to provide custom channel details. The channel ID should
+     * use the canonical format "web:{userId}:{conversationId}".
+     *
+     * @param  string  $channelId  Channel ID (format: "web:{userId}:{conversationId}").
+     */
+    public function fetchChannelInfo(string $channelId): ?ChannelInfo
+    {
+        return null;
     }
 }

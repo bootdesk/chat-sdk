@@ -1,0 +1,10 @@
+{
+  "name": "bootdesk-chat-sdk-js",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/js-web-adapter-core",
+    "packages/js-web-adapter-react",
+    "packages/chat-widget-bridge"
+  ]
+}

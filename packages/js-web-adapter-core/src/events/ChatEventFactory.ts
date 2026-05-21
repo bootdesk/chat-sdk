@@ -30,6 +30,13 @@ export function parseChatEvent(json: Record<string, unknown>): ChatEvent {
         data.text as string,
         data.author as User,
         parseCard(data.card),
+        data.attachments as Array<{
+          type: string;
+          url?: string;
+          name?: string;
+          mimeType?: string;
+          size?: number | null;
+        }>,
         timestamp,
       );
     case "message.edited":

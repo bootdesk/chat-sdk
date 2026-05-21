@@ -1,0 +1,23 @@
+{
+  "chatWidget": {
+    "placeholder": "Escreva uma mensagem..."
+  },
+  "inputArea": {
+    "send": "Enviar",
+    "uploading": "A enviar...",
+    "dropzone": {
+      "dropFiles": "Largue ficheiros aqui",
+      "dropOrClick": "Largue ou clique para anexar"
+    }
+  },
+  "typingIndicator": {
+    "isTyping": "está a escrever..."
+  },
+  "attachmentList": {
+    "uploadFailed": "Falha no envio"
+  },
+  "common": {
+    "loading": "A carregar...",
+    "retry": "Tentar novamente"
+  }
+}

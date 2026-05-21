@@ -82,10 +82,6 @@ class ChatServiceProvider extends ServiceProvider
                 __DIR__.'/../config/chat.php' => config_path('chat.php'),
             ], 'chat-config');
 
-            $this->publishes([
-                __DIR__.'/../config/chat-broadcasting.php' => config_path('chat-broadcasting.php'),
-            ], 'chat-broadcasting-config');
-
             $this->commands([
                 ChatListCommand::class,
                 ChatInstallCommand::class,

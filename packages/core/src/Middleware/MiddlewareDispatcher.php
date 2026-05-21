@@ -11,7 +11,6 @@ use BootDesk\ChatSDK\Core\Contracts\WebhookEventMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\WebhookMiddleware;
 use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\PostableMessage;
-use BootDesk\ChatSDK\Core\SentMessage;
 use BootDesk\ChatSDK\Core\WebhookEvent;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -93,13 +92,11 @@ final class MiddlewareDispatcher
     }
 
     /**
-     * @param  callable(string, PostableMessage, Adapter, string): PostableMessage  $handler
+     * @param  callable(string, PostableMessage, Adapter, string): ?PostableMessage  $handler
      */
-    public function processSending(string $threadId, PostableMessage $message, Adapter $adapter, string $operation, callable $handler): PostableMessage
+    public function processSending(string $threadId, PostableMessage $message, Adapter $adapter, string $operation, callable $handler): ?PostableMessage
     {
-        $result = $this->process('sending', [$threadId, $message, $adapter, $operation], $handler);
-
-        return $result instanceof PostableMessage ? $result : $message;
+        return $this->process('sending', [$threadId, $message, $adapter, $operation], $handler);
     }
 
     /**
@@ -113,72 +110,26 @@ final class MiddlewareDispatcher
             return $type === 'webhook' ? $handler($context) : $handler(...$context);
         }
 
-        $first = $middlewares[0] ?? throw new \InvalidArgumentException("No middleware found for type: {$type}");
-
-        return $first instanceof OnionDirection
-            ? $this->processOnion($middlewares, $context, $handler)
-            : $this->processForward($middlewares, $context);
+        return $this->buildPipeline($middlewares, $context, $handler);
     }
 
-    /**
-     * @param  array<mixed>  $middlewares
-     */
-    private function processOnion(array $middlewares, mixed $context, callable $handler): mixed
+    private function buildPipeline(array $middlewares, mixed $context, callable $handler): mixed
     {
         $pipeline = $handler;
 
         foreach (array_reverse($middlewares) as $middleware) {
             $prev = $pipeline;
-            $pipeline = fn ($ctx): mixed => $middleware->handle($ctx, $prev);
+            $pipeline = fn (...$args): mixed => $this->callMiddleware($middleware, $args, $prev);
         }
 
-        return $pipeline($context);
+        return is_array($context) ? $pipeline(...$context) : $pipeline($context);
     }
 
-    /**
-     * @param  array<mixed>  $middlewares
-     */
-    private function processForward(array $middlewares, mixed $context): mixed
+    private function callMiddleware(object $m, array $args, callable $next): mixed
     {
-        $current = $context;
-
-        foreach ($middlewares as $m) {
-            $next = function (...$args) use (&$current, $m): mixed {
-                $current = $args;
-
-                return $m instanceof SendingMiddleware ? null : $args[0];
-            };
-
-            $result = $this->callMiddleware($m, $current, $next);
-
-            if ($result === null || $result instanceof SentMessage) {
-                return $result;
-            }
-
-            $current = $this->updateContext($m, $current, $result);
-        }
-
-        return $this->extractResult($current);
-    }
-
-    private function callMiddleware(object $m, mixed $context, callable $next): mixed
-    {
-        return $m instanceof WebhookMiddleware
-            ? $m->handle($context, $next)
-            : ($m instanceof ReceivingMiddleware
-                ? $m->handle($context[0], $context[1], $next)
-                : $m->handle($context[0], $context[1], $context[2], $context[3], $next));
-    }
-
-    private function extractResult(mixed $context): mixed
-    {
-        return is_array($context) ? $context[0] ?? $context[1] : $context;
-    }
-
-    private function updateContext(object $m, mixed $context, mixed $result): mixed
-    {
-        return $m instanceof ReceivingMiddleware
-            ? [$result, $context[1]]
-            : [$context[0], $result ?? $context[1], $context[2], $context[3]];
+        return call_user_func_array(
+            callback: [$m, 'handle'],
+            args: [...$args, $next]
+        );
     }
 }

@@ -24,6 +24,6 @@ class LogReceivedMessage implements ReceivingMiddleware
             'attachment_count' => count($message->attachments),
         ]);
 
-        return $next($message);
+        return $next($message, $adapter);
     }
 }

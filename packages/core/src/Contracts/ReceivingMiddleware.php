@@ -10,7 +10,7 @@ use BootDesk\ChatSDK\Core\Middleware\ForwardDirection;
 interface ReceivingMiddleware extends ForwardDirection
 {
     /**
-     * @param  callable(Message): Message  $next
+     * @param  callable(Message, Adapter): ?Message  $next
      */
     public function handle(Message $message, Adapter $adapter, callable $next): ?Message;
 }

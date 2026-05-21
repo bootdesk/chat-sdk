@@ -126,4 +126,83 @@ describe("HttpClient", () => {
       }),
     );
   });
+
+  it("sends action via sendAction", async () => {
+    const fn = mockFetch({ events: [] });
+    const result = await client.sendAction("deploy", "production", "msg-1", "conv-1");
+
+    expect(fn).toHaveBeenCalledWith(
+      "https://api.example.com/api/webhooks/web",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          id: "conv-1",
+          action: { actionId: "deploy", value: "production", messageId: "msg-1" },
+        }),
+      }),
+    );
+    expect(result).toEqual({ events: [] });
+  });
+
+  it("sends action to custom endpoint", async () => {
+    const fn = mockFetch({});
+    await client.sendAction("cancel", "", "msg-2", "conv-2", "/api/custom/action");
+
+    expect(fn).toHaveBeenCalledWith(
+      "https://api.example.com/api/custom/action",
+      expect.objectContaining({
+        body: expect.stringContaining('"action"'),
+      }),
+    );
+  });
+
+  it("editMessage sends POST with new text", async () => {
+    const fn = mockFetch(null);
+    await client.editMessage("msg-42", "updated text");
+
+    expect(fn).toHaveBeenCalledWith(
+      "https://api.example.com/api/chat/messages/msg-42/edit",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ text: "updated text" }),
+      }),
+    );
+  });
+
+  it("deleteMessage sends DELETE request", async () => {
+    const fn = mockFetch(null);
+    await client.deleteMessage("msg-99");
+
+    expect(fn).toHaveBeenCalledWith(
+      "https://api.example.com/api/chat/messages/msg-99",
+      expect.objectContaining({ method: "DELETE" }),
+    );
+  });
+
+  it("addReaction sends POST with emoji", async () => {
+    const fn = mockFetch(null);
+    await client.addReaction("msg-1", "👍");
+
+    expect(fn).toHaveBeenCalledWith(
+      "https://api.example.com/api/chat/messages/msg-1/reactions",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ emoji: "👍" }),
+      }),
+    );
+  });
+
+  it("removeReaction sends DELETE request", async () => {
+    const fn = mockFetch(null);
+    await client.removeReaction("msg-1", "👍");
+
+    const calledUrl = fn.mock.calls[0][0] as string;
+    expect(calledUrl).toContain("msg-1");
+    expect(calledUrl).toContain(encodeURIComponent("👍"));
+    expect(fn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ method: "DELETE" }),
+    );
+  });
 });

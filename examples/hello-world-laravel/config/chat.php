@@ -3,6 +3,7 @@
 declare(strict_types=1);
 use App\Chat\ChatHandlers;
 use App\Chat\ChatMiddlewareHandler;
+use App\Chat\WebAdapterConfig;
 
 return [
 
@@ -42,9 +43,10 @@ return [
         //     'app_secret' => env('MESSENGER_APP_SECRET'),
         //     'verify_token' => env('MESSENGER_VERIFY_TOKEN'),
         // ],
-        // 'web' => [
-        //     'user_name' => env('BOT_USERNAME', 'Bot'),
-        // ],
+        'web' => [
+            'user_name' => env('BOT_USERNAME', 'Bot'),
+            'config' => WebAdapterConfig::class,
+        ],
         'github' => [
             'app_id' => env('GITHUB_APP_ID'),
             'private_key' => env('GITHUB_PRIVATE_KEY'),

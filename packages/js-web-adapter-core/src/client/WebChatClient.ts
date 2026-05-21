@@ -12,6 +12,7 @@ export interface WebChatClientConfig {
   broadcastClient?: BroadcastClient;
   headers?: Record<string, string>;
   verifyToken?: string;
+  conversationId?: string;
   endpoints?: {
     sendMessage?: string;
     loadMessages?: string;
@@ -64,11 +65,15 @@ export class WebChatClient {
     this.config = config;
     this.httpClient = new HttpClient({
       apiUrl: config.apiUrl,
-      headers: config.headers,
+      headers: {
+        "X-User-Id": config.userId,
+        "X-User-Name": config.userName,
+        ...(config.headers ?? {}),
+      },
       verifyToken: config.verifyToken,
     });
     this.broadcastClient = config.broadcastClient;
-    this.conversationId = generateConversationId();
+    this.conversationId = config.conversationId ?? generateConversationId();
     this.currentUserId = config.userId;
   }
 
@@ -142,6 +147,7 @@ export class WebChatClient {
         id: `att-${msg.id}-${a.url}`,
         url: a.url,
         name: a.name,
+        type: a.type,
         mimeType: a.mime_type,
         size: a.size,
       })),
@@ -177,7 +183,7 @@ export class WebChatClient {
               name: a.name || "",
               url: a.url,
               size: a.size,
-              mimeType: a.mime_type,
+              mimeType: a.mimeType,
             }))
           : undefined,
     };
@@ -187,18 +193,21 @@ export class WebChatClient {
 
     const endpoint = this.config.endpoints?.sendMessage ?? "/api/webhooks/web";
     const response = await this.httpClient.sendMessage(
-      this.messages.map((m) => ({
-        id: m.id,
-        role: m.author.isMe ? "user" : "assistant",
-        text: m.content.text || "",
-        attachments: m.attachments?.map((a) => ({
-          url: a.url,
-          name: a.name,
-          mime_type: a.mimeType,
-          size: a.size,
-        })),
-      })),
+      [
+        {
+          id: messageId,
+          role: "user",
+          text,
+          attachments: attachments?.map((a: any) => ({
+            url: a.url,
+            name: a.name,
+            mime_type: a.mimeType,
+            size: a.size,
+          })),
+        },
+      ],
       endpoint,
+      this.conversationId,
     );
 
     if (response.events) {
@@ -208,17 +217,59 @@ export class WebChatClient {
       });
     }
 
-    if (response.text) {
+    if (response.text && !response.events?.some((e: any) => e.type === "message.posted")) {
       const assistantMessage: Message = {
         id: response.id || generateId(),
         threadId: this.getThreadId(),
         content: { text: response.text },
         author: { id: "assistant", name: "Assistant", isBot: true },
         timestamp: Date.now(),
+        attachments: (response.attachments as any[])?.map((a, i) => ({
+          id: `att-${response.id || "msg"}-${i}`,
+          name: a.name || "",
+          url: a.url || "",
+          type: a.type,
+          mimeType: a.mime_type,
+          size: a.size,
+        })),
       };
       this.messages.push(assistantMessage);
       this.notifySubscribers("message:added", assistantMessage);
     }
+  }
+
+  async sendAction(messageId: string, actionId: string, value: string): Promise<void> {
+    const endpoint = this.config.endpoints?.sendMessage ?? "/api/webhooks/web";
+    const response = await this.httpClient.sendAction(
+      actionId,
+      value,
+      messageId,
+      this.conversationId,
+      endpoint,
+    );
+
+    if (response.events) {
+      (response.events as any[]).forEach((eventData) => {
+        const event = parseChatEvent(eventData);
+        this.dispatchEvent(event);
+      });
+    }
+  }
+
+  async editMessage(messageId: string, newText: string): Promise<void> {
+    if (!this.config.features?.editMessages) {
+      throw new Error("Edit messages not enabled. Set features.editMessages = true in config.");
+    }
+    const endpoint = this.config.endpoints?.editMessage ?? "/api/chat/messages/{id}/edit";
+    await this.httpClient.editMessage(messageId, newText, endpoint);
+  }
+
+  async deleteMessage(messageId: string): Promise<void> {
+    if (!this.config.features?.deleteMessages) {
+      throw new Error("Delete messages not enabled. Set features.deleteMessages = true in config.");
+    }
+    const endpoint = this.config.endpoints?.deleteMessage ?? "/api/chat/messages/{id}";
+    await this.httpClient.deleteMessage(messageId, endpoint);
   }
 
   async addReaction(messageId: string, emoji: string): Promise<void> {
@@ -300,6 +351,14 @@ export class WebChatClient {
       content: { text: event.text, cards: event.card ? [event.card] : undefined },
       author: event.author,
       timestamp: event.timestamp,
+      attachments: event.attachments?.map((a: any) => ({
+        id: `att-${event.messageId}-${Math.random().toString(36).slice(2, 8)}`,
+        name: a.name || "",
+        url: a.url || "",
+        type: a.type,
+        mimeType: a.mimeType,
+        size: a.size,
+      })),
     };
     this.messages.push(message);
     this.notifySubscribers("message:added", message);

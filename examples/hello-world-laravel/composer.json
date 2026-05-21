@@ -10,16 +10,18 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
-        "laravel/framework": "^13.8",
-        "laravel/tinker": "^3.0",
-        "bootdesk/chat-sdk-laravel": "*",
+        "bootdesk/chat-sdk-adapter-discord": "*",
+        "bootdesk/chat-sdk-adapter-github": "*",
         "bootdesk/chat-sdk-adapter-slack": "*",
         "bootdesk/chat-sdk-adapter-telegram": "*",
-        "bootdesk/chat-sdk-adapter-discord": "*",
+        "bootdesk/chat-sdk-adapter-telnyx": "*",
+        "bootdesk/chat-sdk-adapter-web": "*",
         "bootdesk/chat-sdk-adapter-whatsapp": "*",
-        "bootdesk/chat-sdk-adapter-github": "*",
         "bootdesk/chat-sdk-botman-compat": "*",
-        "bootdesk/chat-sdk-adapter-telnyx": "*"
+        "bootdesk/chat-sdk-laravel": "*",
+        "laravel/framework": "^13.8",
+        "laravel/reverb": "^1.0",
+        "laravel/tinker": "^3.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

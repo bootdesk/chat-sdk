@@ -11,15 +11,20 @@ use BootDesk\ChatSDK\Core\Channel;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Concurrency\Handler;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Contracts\ReceivingMiddleware;
+use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\WebhookEventMiddleware;
+use BootDesk\ChatSDK\Core\Contracts\WebhookMiddleware;
 use BootDesk\ChatSDK\Core\Exceptions\ResourceNotFoundException;
 use BootDesk\ChatSDK\Core\MemberJoinedChannelEvent;
+use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\MessageContext;
 use BootDesk\ChatSDK\Core\MessageDeliveredEvent;
 use BootDesk\ChatSDK\Core\MessageReadEvent;
 use BootDesk\ChatSDK\Core\ModalCloseEvent;
 use BootDesk\ChatSDK\Core\ModalSubmitEvent;
 use BootDesk\ChatSDK\Core\OptionsLoadEvent;
+use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\QueueEntry;
 use BootDesk\ChatSDK\Core\ReactionEvent;
 use BootDesk\ChatSDK\Core\SlashCommandEvent;
@@ -34,6 +39,8 @@ use BootDesk\ChatSDK\Core\Thread;
 use BootDesk\ChatSDK\Core\WebhookEvent;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 class ChatTest extends TestCase
 {
@@ -870,6 +877,159 @@ class ChatTest extends TestCase
         $thread->post('Hello');
 
         $this->assertTrue($middleware->called);
+    }
+
+    public function test_multiple_sending_middlewares_execute_in_order(): void
+    {
+        $order = [];
+
+        $first = new class implements SendingMiddleware
+        {
+            public array $order;
+
+            public function setOrder(array &$order): void
+            {
+                $this->order = &$order;
+            }
+
+            public function handle(string $threadId, PostableMessage $message, Adapter $adapter, string $operation, callable $next): ?PostableMessage
+            {
+                $this->order[] = 'first';
+
+                return $next($threadId, $message, $adapter, $operation);
+            }
+        };
+        $first->setOrder($order);
+
+        $second = new class implements SendingMiddleware
+        {
+            public array $order;
+
+            public function setOrder(array &$order): void
+            {
+                $this->order = &$order;
+            }
+
+            public function handle(string $threadId, PostableMessage $message, Adapter $adapter, string $operation, callable $next): ?PostableMessage
+            {
+                $this->order[] = 'second';
+
+                return $next($threadId, $message, $adapter, $operation);
+            }
+        };
+        $second->setOrder($order);
+
+        $this->chat->addSendingMiddleware($first);
+        $this->chat->addSendingMiddleware($second);
+
+        $thread = $this->chat->thread('mock:C123:456');
+        $thread->post('Hello');
+
+        $this->assertSame(['first', 'second'], $order);
+    }
+
+    public function test_multiple_webhook_middlewares_execute_in_order(): void
+    {
+        $order = [];
+        $factory = new Psr17Factory;
+
+        $first = new class implements WebhookMiddleware
+        {
+            public array $order;
+
+            public function setOrder(array &$order): void
+            {
+                $this->order = &$order;
+            }
+
+            public function handle(ServerRequestInterface $request, callable $next): ResponseInterface
+            {
+                $this->order[] = 'first';
+
+                return $next($request);
+            }
+        };
+        $first->setOrder($order);
+
+        $second = new class implements WebhookMiddleware
+        {
+            public array $order;
+
+            public function setOrder(array &$order): void
+            {
+                $this->order = &$order;
+            }
+
+            public function handle(ServerRequestInterface $request, callable $next): ResponseInterface
+            {
+                $this->order[] = 'second';
+
+                return $next($request);
+            }
+        };
+        $second->setOrder($order);
+
+        $chat = new Chat(
+            state: new MemoryStateAdapter,
+            adapters: ['mock' => new MockAdapter],
+            responseFactory: $factory,
+        );
+        $chat->addWebhookMiddleware($first);
+        $chat->addWebhookMiddleware($second);
+
+        $request = $factory->createServerRequest('POST', '/webhook');
+        $chat->handleWebhook('mock', $request);
+
+        $this->assertSame(['first', 'second'], $order);
+    }
+
+    public function test_multiple_receiving_middlewares_execute_in_order(): void
+    {
+        $order = [];
+
+        $first = new class implements ReceivingMiddleware
+        {
+            public array $order;
+
+            public function setOrder(array &$order): void
+            {
+                $this->order = &$order;
+            }
+
+            public function handle(Message $message, Adapter $adapter, callable $next): ?Message
+            {
+                $this->order[] = 'first';
+
+                return $next($message, $adapter);
+            }
+        };
+        $first->setOrder($order);
+
+        $second = new class implements ReceivingMiddleware
+        {
+            public array $order;
+
+            public function setOrder(array &$order): void
+            {
+                $this->order = &$order;
+            }
+
+            public function handle(Message $message, Adapter $adapter, callable $next): ?Message
+            {
+                $this->order[] = 'second';
+
+                return $next($message, $adapter);
+            }
+        };
+        $second->setOrder($order);
+
+        $this->chat->addReceivingMiddleware($first);
+        $this->chat->addReceivingMiddleware($second);
+
+        $message = \BootDesk\ChatSDK\Core\Tests\Helpers\createTestMessage();
+        $this->chat->processMessage($this->adapter, $message->threadId, $message);
+
+        $this->assertSame(['first', 'second'], $order);
     }
 
     public function test_process_message_with_transcripts(): void

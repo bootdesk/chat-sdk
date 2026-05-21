@@ -96,8 +96,22 @@ export class HttpClient {
       attachments?: Array<{ url: string; name?: string; mime_type?: string; size?: number }>;
     }>,
     endpoint: string = "/api/webhooks/web",
+    conversationId?: string,
   ): Promise<ChatResponse> {
-    return this.post(endpoint, { messages }) as Promise<ChatResponse>;
+    return this.post(endpoint, { id: conversationId, messages }) as Promise<ChatResponse>;
+  }
+
+  async sendAction(
+    actionId: string,
+    value: string,
+    messageId: string,
+    conversationId: string,
+    endpoint: string = "/api/webhooks/web",
+  ): Promise<Record<string, unknown>> {
+    return this.post(endpoint, {
+      id: conversationId,
+      action: { actionId, value, messageId },
+    }) as Promise<Record<string, unknown>>;
   }
 
   async editMessage(

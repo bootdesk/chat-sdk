@@ -7,3 +7,10 @@ composer.lock
 .claude/*local.json
 docs/_build
 .phpdoc
+
+# npm workspace
+node_modules/
+
+# JS package build output
+packages/js-web-adapter-core/dist/
+packages/js-web-adapter-react/dist/

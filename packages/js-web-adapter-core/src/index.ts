@@ -22,7 +22,6 @@ export * from "./types";
 
 export { ChatEvent, UnknownEvent } from "./events/base/ChatEvent";
 export { parseChatEvent } from "./events/ChatEventFactory";
-import "./events/ChatEventFactory";
 export { MessagePostedEvent } from "./events/MessagePostedEvent";
 export { MessageEditedEvent } from "./events/MessageEditedEvent";
 export { MessageDeletedEvent } from "./events/MessageDeletedEvent";

@@ -1,5 +1,16 @@
 @import 'tailwindcss';
 
+/*
+ * Chat widget styles are imported in resources/js/app.jsx via JS import.
+ * Vite's JS resolver handles the monorepo path correctly with the resolve alias.
+ *
+ * When consuming from npm, replace the JS import with:
+ *   import '@bootdesk/js-web-adapter-react/dist/styles.css';
+ *
+ * Or use a CSS import (works when the package is in node_modules):
+ *   @import '@bootdesk/js-web-adapter-react/dist/styles.css';
+ */
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';

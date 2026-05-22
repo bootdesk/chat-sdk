@@ -79,6 +79,9 @@ jobs:
       - name: Lint
         run: npm run lint -w packages/js-web-adapter-core -w packages/js-web-adapter-react -w packages/chat-widget-bridge
 
+      - name: Build packages
+        run: npm run build -w packages/js-web-adapter-core -w packages/js-web-adapter-react -w packages/chat-widget-bridge
+
       - name: Test core
         run: npm test -w packages/js-web-adapter-core
 

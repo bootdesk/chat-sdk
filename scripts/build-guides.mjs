@@ -53,10 +53,17 @@ function addAnchorLinks(bodyHtml) {
   );
 }
 
+function postProcess(bodyHtml) {
+  return bodyHtml
+    .replace(/href="([^"]+)\.md"/g, 'href="$1.html"')
+    .replace(/<table/g, '<div class="table-wrapper"><table')
+    .replace(/<\/table>/g, '</table></div>');
+}
+
 for (const file of files) {
   const md = readFileSync(join(SRC, file), "utf-8");
   const rawHtml = marked(md);
-  const body = addAnchorLinks(rawHtml);
+  const body = postProcess(addAnchorLinks(rawHtml));
   const toc = extractToc(rawHtml).filter((h) => h.level <= 3);
   const currentLabel = labelOf(file);
 
@@ -95,7 +102,7 @@ for (const file of files) {
 // index guide
 const indexMd = readFileSync(join(SRC, "index.md"), "utf-8");
 const indexRawHtml = marked(indexMd);
-const indexBody = addAnchorLinks(indexRawHtml);
+const indexBody = postProcess(addAnchorLinks(indexRawHtml));
 const indexToc = extractToc(indexRawHtml).filter((h) => h.level <= 3);
 
 const indexTocHtml = indexToc.length > 1

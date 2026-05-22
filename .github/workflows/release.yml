@@ -4,14 +4,24 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to release (e.g., 0.2.0)"
+        description: "Version (e.g., 0.2.0)"
         required: true
+      action:
+        description: "Action"
+        required: true
+        default: release
+        type: choice
+        options:
+          - release
+          - remove
+
+permissions:
+  contents: write
+  id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - uses: actions/checkout@v5
@@ -25,7 +35,14 @@ jobs:
             exit 1
           fi
 
+      - name: Delete tag and release
+        if: inputs.action == 'remove'
+        run: |
+          gh release delete "v${{ inputs.version }}" --yes 2>/dev/null || echo "No release found"
+          git push origin --delete "v${{ inputs.version }}" 2>/dev/null || echo "No tag found"
+
       - name: Update PHP package versions
+        if: inputs.action == 'release'
         run: |
           VERSION="${{ inputs.version }}"
           CARET="^$VERSION"
@@ -41,6 +58,7 @@ jobs:
           done
 
       - name: Update NPM package versions
+        if: inputs.action == 'release'
         run: |
           VERSION="${{ inputs.version }}"
           for file in packages/js-web-adapter-*/package.json packages/chat-widget-*/package.json; do
@@ -55,6 +73,7 @@ jobs:
           done
 
       - name: Commit version bump
+        if: inputs.action == 'release'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
@@ -63,11 +82,13 @@ jobs:
           git push origin main
 
       - name: Create tag
+        if: inputs.action == 'release'
         run: |
           git tag -a "v${{ inputs.version }}" -m "Release v${{ inputs.version }}"
           git push origin --force "v${{ inputs.version }}"
 
       - name: Create GitHub release
+        if: inputs.action == 'release'
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ inputs.version }}
@@ -75,6 +96,7 @@ jobs:
           generate_release_notes: true
 
   split:
+    if: inputs.action == 'release'
     needs: release
     runs-on: ubuntu-latest
 
@@ -144,12 +166,44 @@ jobs:
           user_name: github-actions
           user_email: github-actions@github.com
 
+  remove-split:
+    if: inputs.action == 'remove'
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - { local_path: core, split_repository: chat-sdk-core }
+          - { local_path: laravel, split_repository: chat-sdk-laravel }
+          - { local_path: adapter-slack, split_repository: chat-sdk-adapter-slack }
+          - { local_path: adapter-telegram, split_repository: chat-sdk-adapter-telegram }
+          - { local_path: adapter-whatsapp, split_repository: chat-sdk-adapter-whatsapp }
+          - { local_path: adapter-discord, split_repository: chat-sdk-adapter-discord }
+          - { local_path: adapter-messenger, split_repository: chat-sdk-adapter-messenger }
+          - { local_path: adapter-instagram, split_repository: chat-sdk-adapter-instagram }
+          - { local_path: adapter-web, split_repository: chat-sdk-adapter-web }
+          - { local_path: adapter-github, split_repository: chat-sdk-adapter-github }
+          - { local_path: adapter-linear, split_repository: chat-sdk-adapter-linear }
+          - { local_path: adapter-telnyx, split_repository: chat-sdk-adapter-telnyx }
+          - { local_path: botman-compat, split_repository: chat-sdk-botman-compat }
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          repository: bootdesk/${{ matrix.package.split_repository }}
+          token: ${{ secrets.PAT }}
+
+      - name: Delete tag and release from split repo
+        run: |
+          gh release delete "v${{ inputs.version }}" --yes 2>/dev/null || echo "No release in ${{ matrix.package.split_repository }}"
+          git push origin --delete "v${{ inputs.version }}" 2>/dev/null || echo "No tag in ${{ matrix.package.split_repository }}"
+
   npm-publish:
+    if: inputs.action == 'release'
     needs: release
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
 
     steps:
       - uses: actions/checkout@v5

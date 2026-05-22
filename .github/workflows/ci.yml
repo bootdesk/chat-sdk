@@ -9,6 +9,9 @@ on:
 env:
   MIN_COVERAGE: 75
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest

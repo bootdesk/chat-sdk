@@ -144,14 +144,6 @@ jobs:
       contents: read
       id-token: write
 
-    strategy:
-      fail-fast: false
-      matrix:
-        package:
-          - { path: js-web-adapter-core }
-          - { path: js-web-adapter-react }
-          - { path: chat-widget-bridge }
-
     steps:
       - uses: actions/checkout@v5
         with:
@@ -160,18 +152,23 @@ jobs:
 
       - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 #v6.2.0
         with:
-          node-version: 20
+          node-version: 22
           registry-url: https://registry.npmjs.org
           scope: "@bootdesk"
 
-      - name: Install dependencies
-        run: npm ci
-        working-directory: packages/${{ matrix.package.path }}
+      - name: Install & build all
+        run: |
+          npm ci
+          npm run build -w packages/js-web-adapter-core -w packages/js-web-adapter-react -w packages/chat-widget-bridge
 
-      - name: Build package
-        run: npm run build
-        working-directory: packages/${{ matrix.package.path }}
-
-      - name: Publish to npm
+      - name: Publish core
         run: npm publish --access public --provenance
-        working-directory: packages/${{ matrix.package.path }}
+        working-directory: packages/js-web-adapter-core
+
+      - name: Publish react
+        run: npm publish --access public --provenance
+        working-directory: packages/js-web-adapter-react
+
+      - name: Publish bridge
+        run: npm publish --access public --provenance
+        working-directory: packages/chat-widget-bridge

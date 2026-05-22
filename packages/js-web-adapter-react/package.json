@@ -1,6 +1,6 @@
 {
   "name": "@bootdesk/js-web-adapter-react",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "React components for BootDesk Chat SDK WebAdapter",
   "type": "module",
   "types": "./dist/index.d.ts",

@@ -1,5 +1,5 @@
 export { ChatWidget } from "./components/ChatWidget";
-export type { ChatWidgetProps } from "./components/ChatWidget";
+export type { ChatWidgetProps, PreEntryConfig, PreEntryHelpers } from "./components/ChatWidget";
 
 export { Header } from "./components/Header";
 export { MessageList } from "./components/MessageList";

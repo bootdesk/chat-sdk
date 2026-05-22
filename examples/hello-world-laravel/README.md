@@ -155,6 +155,25 @@ Bot: Thanks for your feedback!
 
 Enable more adapters by uncommenting in `config/chat.php` and adding `.env` credentials.
 
+## Pre-Entry Verification Flow
+
+The welcome page (`/`) uses a pre-entry screen (via `resources/js/components/ChatApp.jsx`) to verify users via email before they can chat:
+
+1. User enters email → `POST /api/chat/pre-entry/request-code` generates a random 6-digit code, caches it (10 min), and logs it (`Log::debug`)
+2. User enters the code → `POST /api/chat/pre-entry/verify-code` checks cache, returns an encrypted `verifyToken` + a fresh UUID `userId`
+3. Frontend calls `start({ userId, userName, verifyToken })` which reconfigures the `WebChatClient` and begins the conversation
+
+The server-side `WebAdapterConfig` accepts both the legacy `dev-token` and the crypt-encrypted pre-entry token.
+
+### Pre-Entry API
+
+| Endpoint | Body | Response |
+|---|---|---|
+| `POST /api/chat/pre-entry/request-code` | `{ email }` | `{ id }` |
+| `POST /api/chat/pre-entry/verify-code` | `{ id, code }` | `{ verifyToken, userId }` |
+
+The code is logged via `Log::debug` — check `storage/logs/laravel.log`.
+
 ## Learning Path
 
 1. Start with `ChatHandlers.php` to understand event flow
@@ -162,6 +181,7 @@ Enable more adapters by uncommenting in `config/chat.php` and adding `.env` cred
 3. See `AppServiceProvider.php` for contract bindings
 4. Review `OrderConversation.php` for multi-turn conversation pattern
 5. Explore `ChatMiddlewareHandler.php` for request/response interception
+6. Check `ChatApp.jsx` for pre-entry flow example
 
 ## Documentation
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Chat;
 
 use BootDesk\ChatSDK\Web\WebAdapterConfig as BaseConfig;
+use Illuminate\Support\Facades\Crypt;
 use Psr\Http\Message\ServerRequestInterface;
 
 class WebAdapterConfig extends BaseConfig
@@ -28,11 +29,15 @@ class WebAdapterConfig extends BaseConfig
     {
         $token = $request->getHeaderLine('X-Verify-Token');
 
-        if ($token !== 'dev-token') {
-            return 'Invalid verify token';
+        if ($token === 'dev-token') {
+            return true;
         }
 
-        return true;
+        try {
+            return Crypt::decryptString($token) === 'verified' ? true : 'Invalid verify token';
+        } catch (\Throwable) {
+            return 'Invalid verify token';
+        }
     }
 
     public function threadIdFor(string $userId, string $conversationId): string

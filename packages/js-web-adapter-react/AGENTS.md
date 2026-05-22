@@ -22,7 +22,7 @@ npm run typecheck       # tsc --noEmit
 - `src/styles/` — `tailwind.css` (Tailwind component classes; safe-area & mobile styles injected at runtime)
 
 ## entrypoints
-- `ChatWidget` — main component (floating/fullscreen/embedded modes)
+- `ChatWidget` — main component (floating/fullscreen/embedded modes); supports `preEntry` prop for custom pre-chat forms
 - `ChatProvider` — wraps CardProvider + ChatContext
 - `Header`, `MessageList`, `InputArea`, `TypingIndicator`, `FloatingButton`
 - `CardRenderer`, `CardProvider`, `DefaultCard`
@@ -48,3 +48,4 @@ npm run typecheck       # tsc --noEmit
 - Card context uses `CardProvider` with registry pattern for custom renderers
 - Locale override chain: en → en-X → runtime overrides via `mergeLocale`
 - Build: tsup for JS, tailwindcss for CSS, both outputs in `dist/`
+- Pre-entry: `preEntry.render({ start })` receives a `start(config?)` callback; calling it calls `client.reconfigure(config)` and transitions to normal chat

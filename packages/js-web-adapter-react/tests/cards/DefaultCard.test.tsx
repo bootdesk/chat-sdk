@@ -139,7 +139,9 @@ describe("DefaultCard", () => {
           header: "",
           sections: [],
           actions: [],
-          elements: [{ type: "link_button", url: "https://example.com", label: "Go", style: "primary" }],
+          elements: [
+            { type: "link_button", url: "https://example.com", label: "Go", style: "primary" },
+          ],
         }}
       />,
     );
@@ -212,9 +214,7 @@ describe("DefaultCard", () => {
 
   it("returns null for non-card type", () => {
     const { container } = render(
-      <DefaultCard
-        card={{ type: "image" as any, url: "https://example.com/img.png" }}
-      />,
+      <DefaultCard card={{ type: "image" as any, url: "https://example.com/img.png" }} />,
     );
 
     expect(container.innerHTML).toBe("");

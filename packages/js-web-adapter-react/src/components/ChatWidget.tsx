@@ -14,6 +14,15 @@ import type { PushConfig } from "@bootdesk/js-web-adapter-core";
 type DisplayMode = "floating" | "fullscreen" | "embedded";
 export type ThemeMode = "light" | "dark" | "auto";
 
+import type { ReconfigureConfig } from "@bootdesk/js-web-adapter-core";
+
+export interface PreEntryHelpers {
+  start: (config?: ReconfigureConfig) => void;
+}
+export interface PreEntryConfig {
+  render: (helpers: PreEntryHelpers) => React.ReactNode;
+}
+
 export interface ChatWidgetProps {
   client: WebChatClient;
   locale?: string;
@@ -57,6 +66,8 @@ export interface ChatWidgetProps {
     serviceWorkerType?: "classic" | "module";
     notificationOptions?: PushConfig["notificationOptions"];
   };
+  preEntry?: PreEntryConfig;
+  onChatStart?: (config?: ReconfigureConfig) => void;
 }
 
 export function ChatWidget({
@@ -80,6 +91,8 @@ export function ChatWidget({
   accept,
   maxFileSize,
   renderPushPrompt,
+  preEntry,
+  onChatStart,
   pushConfig,
 }: ChatWidgetProps): React.JSX.Element {
   const {
@@ -146,6 +159,16 @@ export function ChatWidget({
   const [isOpen, setIsOpen] = useState(effectiveMode === "fullscreen");
   const [displayMode, setDisplayMode] = useState<DisplayMode>(effectiveMode);
   const [isConnected] = useState(true);
+  const [isPreEntry, setIsPreEntry] = useState(Boolean(preEntry));
+
+  const handleStart = useCallback(
+    (config?: ReconfigureConfig) => {
+      if (config) client.reconfigure(config);
+      onChatStart?.(config);
+      setIsPreEntry(false);
+    },
+    [client, onChatStart],
+  );
 
   const [isSmallScreen, setIsSmallScreen] = useState(
     () => typeof window !== "undefined" && window.innerWidth < 800,
@@ -193,7 +216,7 @@ export function ChatWidget({
 
   const { messages, sendMessage, loading, isLoadingHistory, reloadMessages } = useMessages(
     client,
-    isOpen || effectiveEmbedded,
+    (isOpen || effectiveEmbedded) && !isPreEntry,
   );
   const { isSomeoneTyping } = useTyping(client);
 
@@ -320,37 +343,43 @@ export function ChatWidget({
         onPushToggle={pushConfig ? handlePushToggle : undefined}
       />
 
-      <MessageList
-        messages={messages}
-        currentUserId={currentUserId}
-        isLoading={isLoadingHistory || loading}
-        onActionClick={handleActionClick}
-        onReactionClick={handleReactionClick}
-        className={className?.messageList}
-      />
-
-      {isSomeoneTyping && <TypingIndicator />}
-
-      {pushConfig ? (
-        <PushPermissionPrompt
-          getVapidPublicKey={pushConfig.getVapidPublicKey}
-          onSubscribe={pushConfig.onSubscribe}
-          onUnsubscribe={pushConfig.onUnsubscribe}
-        />
+      {isPreEntry && preEntry ? (
+        <div className="flex-1 overflow-y-auto p-4">{preEntry.render({ start: handleStart })}</div>
       ) : (
-        renderPushPrompt?.()
-      )}
+        <>
+          <MessageList
+            messages={messages}
+            currentUserId={currentUserId}
+            isLoading={isLoadingHistory || loading}
+            onActionClick={handleActionClick}
+            onReactionClick={handleReactionClick}
+            className={className?.messageList}
+          />
 
-      <InputArea
-        onSend={handleSend}
-        placeholder={effectivePlaceholder}
-        disabled={!effectiveEmbedded && loading}
-        className={className?.inputArea}
-        enableAttachments={enableAttachments}
-        uploadConfig={uploadConfig}
-        accept={accept}
-        maxFileSize={maxFileSize}
-      />
+          {isSomeoneTyping && <TypingIndicator />}
+
+          {pushConfig ? (
+            <PushPermissionPrompt
+              getVapidPublicKey={pushConfig.getVapidPublicKey}
+              onSubscribe={pushConfig.onSubscribe}
+              onUnsubscribe={pushConfig.onUnsubscribe}
+            />
+          ) : (
+            renderPushPrompt?.()
+          )}
+
+          <InputArea
+            onSend={handleSend}
+            placeholder={effectivePlaceholder}
+            disabled={!effectiveEmbedded && loading}
+            className={className?.inputArea}
+            enableAttachments={enableAttachments}
+            uploadConfig={uploadConfig}
+            accept={accept}
+            maxFileSize={maxFileSize}
+          />
+        </>
+      )}
     </>
   );
 

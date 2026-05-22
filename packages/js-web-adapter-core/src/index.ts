@@ -1,6 +1,7 @@
 export { WebChatClient } from "./client/WebChatClient";
 export type {
   WebChatClientConfig,
+  ReconfigureConfig,
   LoadMessagesOptions,
   LoadMessagesResult,
 } from "./client/WebChatClient";

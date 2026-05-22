@@ -35,6 +35,14 @@ CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> forma
 - `BootDesk\ChatSDK\Core\Chat` -- orchestrator (handleWebhook, processMessage, onNewMessage, etc.)
 - `BootDesk\ChatSDK\Core\Thread` -- primary send/receive interface
 - `BootDesk\ChatSDK\Laravel\ChatServiceProvider` -- registers Chat singleton, `Chat::class` alias, `chat` alias
+- `@bootdesk/js-web-adapter-core` -- `WebChatClient` (connect, send, listen, `reconfigure()`)
+- `@bootdesk/js-web-adapter-react` -- `ChatWidget` (floating/fullscreen/embedded), `ChatProvider`, pre-entry via `preEntry` prop
+- `@bootdesk/chat-widget-bridge` -- iframe embedding bridge
+
+## JS packages
+- `WebChatClient.reconfigure(config)` updates userId/userName/verifyToken after construction — used with pre-entry flows
+- `ChatWidget` supports `preEntry` prop: renders a custom form before messages load; `start(config)` reconfigures the client and transitions to chat
+- Pre-entry example in `examples/hello-world-laravel/`: email verification flow with 6-digit code, `Log::debug`, encrypted verifyToken
 
 ## testing
 - PHPUnit with TestCase; 12 named suites (one per package), bootstrapped via `vendor/autoload.php`

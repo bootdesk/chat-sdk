@@ -59,7 +59,11 @@ describe("Header", () => {
     let called = false;
     render(
       <LocaleProvider locale="en">
-        <Header onClose={() => { called = true; }} />
+        <Header
+          onClose={() => {
+            called = true;
+          }}
+        />
       </LocaleProvider>,
     );
 

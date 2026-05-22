@@ -6,8 +6,8 @@ import { LocaleProvider } from "../../src/i18n/LocaleProvider";
 function createMessage(overrides: Record<string, unknown> = {}) {
   return {
     id: "msg-1",
-    content: { text: "Hello", cards: [], ...(overrides.content as object || {}) },
-    author: { id: "user-1", name: "Alice", ...(overrides.author as object || {}) },
+    content: { text: "Hello", cards: [], ...((overrides.content as object) || {}) },
+    author: { id: "user-1", name: "Alice", ...((overrides.author as object) || {}) },
     timestamp: Date.now(),
     reactions: [],
     attachments: [],

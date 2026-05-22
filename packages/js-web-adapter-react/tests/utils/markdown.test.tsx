@@ -19,9 +19,9 @@ describe("renderMarkdown", () => {
 
   it("converts links", () => {
     const result = renderMarkdown("[click](https://example.com)");
-    expect(result).toContain("href=\"https://example.com\"");
-    expect(result).toContain("target=\"_blank\"");
-    expect(result).toContain("rel=\"noopener noreferrer\"");
+    expect(result).toContain('href="https://example.com"');
+    expect(result).toContain('target="_blank"');
+    expect(result).toContain('rel="noopener noreferrer"');
   });
 
   it("converts code blocks", () => {

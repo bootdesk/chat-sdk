@@ -30,9 +30,7 @@ describe("AttachmentList", () => {
   it("renders uploading state with progress", () => {
     render(
       <LocaleProvider locale="en">
-        <AttachmentList
-          attachments={[createAttachment({ status: "uploading", progress: 45 })]}
-        />
+        <AttachmentList attachments={[createAttachment({ status: "uploading", progress: 45 })]} />
       </LocaleProvider>,
     );
 
@@ -54,9 +52,7 @@ describe("AttachmentList", () => {
   it("renders fallback error text when no error message", () => {
     render(
       <LocaleProvider locale="en">
-        <AttachmentList
-          attachments={[createAttachment({ status: "error", error: undefined })]}
-        />
+        <AttachmentList attachments={[createAttachment({ status: "error", error: undefined })]} />
       </LocaleProvider>,
     );
 

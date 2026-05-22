@@ -13,7 +13,7 @@ npm run typecheck       # tsc --noEmit
 ```
 
 ## files
-- `src/client/WebChatClient.ts` — main chat client (HTTP + event system)
+- `src/client/WebChatClient.ts` — main chat client (HTTP + event system); `reconfigure()` updates userId/userName/verifyToken after construction
 - `src/client/BroadcastClient.ts` — broadcast interface
 - `src/client/PusherBroadcastClient.ts` — Pusher implementation
 - `src/client/LaravelEchoBroadcastClient.ts` — Laravel Echo implementation
@@ -24,7 +24,7 @@ npm run typecheck       # tsc --noEmit
 - `src/utils/eventIdGenerator.ts` — unique ID generation
 
 ## entrypoints
-- `WebChatClient` — primary client (connect, send, listen)
+- `WebChatClient` — primary client (connect, send, listen); `reconfigure()` for post-construction identity updates
 - `PusherBroadcastClient` / `LaravelEchoBroadcastClient` — real-time backends
 - `PushManager` — web push subscriptions
 

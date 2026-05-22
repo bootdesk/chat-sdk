@@ -70,6 +70,23 @@ The card system renders platform-agnostic `PHPCard` objects (sections, fields, a
 </CardProvider>
 ```
 
+## Pre-Entry Screen
+
+Show a custom form (name, email, verification code, etc.) before the conversation starts. The developer controls all logic — validation, API calls, waiting for user confirmation. Call `start(config?)` when ready, and the widget reconfigures the client and transitions to normal chat.
+
+```tsx
+<ChatWidget
+  client={client}
+  preEntry={({ start }) => (
+    <PreEntryForm onReady={(data) => {
+      start({ userId: data.id, userName: data.name, verifyToken: data.token });
+    }} />
+  )}
+/>
+```
+
+The `config` passed to `start()` is forwarded to `client.reconfigure()`, which updates `userId`, `userName`, `verifyToken`, `conversationId`, and custom `headers`. Messages only begin loading after `start()` is called.
+
 ## Theming
 
 Set CSS variables on your root element:

@@ -13,6 +13,14 @@ import type { StreamingChunkEvent } from "../events/StreamingChunkEvent";
 import type { DMRequestedEvent } from "../events/DMRequestedEvent";
 import { generateId, generateConversationId } from "../utils/eventIdGenerator";
 
+export interface ReconfigureConfig {
+  userId?: string;
+  userName?: string;
+  verifyToken?: string;
+  conversationId?: string;
+  headers?: Record<string, string>;
+}
+
 export interface WebChatClientConfig {
   apiUrl: string;
   userId: string;
@@ -90,6 +98,29 @@ export class WebChatClient {
     this.broadcastClient = config.broadcastClient;
     this.conversationId = config.conversationId ?? generateConversationId();
     this.currentUserId = config.userId;
+  }
+
+  reconfigure(config: ReconfigureConfig): void {
+    if (config.userId) {
+      this.currentUserId = config.userId;
+      this.httpClient.setHeader("X-User-Id", config.userId);
+    }
+    if (config.userName) {
+      this.config = { ...this.config, userName: config.userName };
+      this.httpClient.setHeader("X-User-Name", config.userName);
+    }
+    if (config.verifyToken) {
+      this.config = { ...this.config, verifyToken: config.verifyToken };
+      this.httpClient.setHeader("X-Verify-Token", config.verifyToken);
+    }
+    if (config.conversationId) {
+      this.conversationId = config.conversationId;
+    }
+    if (config.headers) {
+      Object.entries(config.headers).forEach(([key, value]) => {
+        this.httpClient.setHeader(key, value);
+      });
+    }
   }
 
   setLocaleHeader(locale: string): void {

@@ -40,7 +40,11 @@ describe("InputArea", () => {
   it("shows attachment toggle when enableAttachments is true", () => {
     render(
       <LocaleProvider locale="en">
-        <InputArea onSend={vi.fn()} enableAttachments uploadConfig={{ endpoint: "/upload" } as any} />
+        <InputArea
+          onSend={vi.fn()}
+          enableAttachments
+          uploadConfig={{ endpoint: "/upload" } as any}
+        />
       </LocaleProvider>,
     );
 

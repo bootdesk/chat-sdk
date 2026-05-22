@@ -22,6 +22,7 @@ function createMockClient(overrides: Record<string, unknown> = {}) {
       editMessage: vi.fn(),
       deleteMessage: vi.fn(),
     }),
+    reconfigure: vi.fn(),
     addEventListener: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
       if (!listeners.has(event)) listeners.set(event, new Set());
       listeners.get(event)!.add(handler);
@@ -91,16 +92,12 @@ describe("ChatWidget", () => {
     const client = createMockClient();
     render(<ChatWidget client={client} embedded />);
 
-    expect(
-      await screen.findByText("No messages yet. Start the conversation!"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("No messages yet. Start the conversation!")).toBeInTheDocument();
   });
 
   it("uses custom placeholder text", async () => {
     const client = createMockClient();
-    render(
-      <ChatWidget client={client} embedded placeholder="Ask me anything..." />,
-    );
+    render(<ChatWidget client={client} embedded placeholder="Ask me anything..." />);
 
     expect(await screen.findByPlaceholderText("Ask me anything...")).toBeInTheDocument();
   });
@@ -152,5 +149,109 @@ describe("ChatWidget", () => {
     render(<ChatWidget client={client} embedded />);
 
     expect(await screen.findByText("Hello world")).toBeInTheDocument();
+  });
+
+  describe("preEntry", () => {
+    it("renders pre-entry form when preEntry is configured", async () => {
+      const client = createMockClient();
+      render(
+        <ChatWidget
+          client={client}
+          embedded
+          preEntry={{
+            render: ({ start }) => (
+              <div>
+                <input data-testid="name-input" placeholder="Name" />
+                <button onClick={() => start()}>Start Chat</button>
+              </div>
+            ),
+          }}
+        />,
+      );
+
+      expect(await screen.findByTestId("name-input")).toBeInTheDocument();
+      expect(screen.queryByTestId("chat-input-area")).not.toBeInTheDocument();
+    });
+
+    it("does not load messages during pre-entry", async () => {
+      const client = createMockClient();
+      render(
+        <ChatWidget
+          client={client}
+          embedded
+          preEntry={{
+            render: ({ start }) => <button onClick={() => start()}>Start Chat</button>,
+          }}
+        />,
+      );
+
+      await vi.waitFor(() => {
+        expect(client.loadMessages).not.toHaveBeenCalled();
+      });
+    });
+
+    it("transitions to chat mode when start() is called", async () => {
+      const client = createMockClient();
+      render(
+        <ChatWidget
+          client={client}
+          embedded
+          preEntry={{
+            render: ({ start }) => <button onClick={() => start()}>Start Chat</button>,
+          }}
+        />,
+      );
+
+      const btn = await screen.findByText("Start Chat");
+      btn.click();
+
+      expect(await screen.findByTestId("chat-input-area")).toBeInTheDocument();
+    });
+
+    it("calls reconfigure with config when start(config) is called", async () => {
+      const client = createMockClient();
+      render(
+        <ChatWidget
+          client={client}
+          embedded
+          preEntry={{
+            render: ({ start }) => (
+              <button onClick={() => start({ userId: "u2", userName: "Jane", verifyToken: "tok" })}>
+                Start
+              </button>
+            ),
+          }}
+        />,
+      );
+
+      const btn = await screen.findByText("Start");
+      btn.click();
+
+      expect(client.reconfigure).toHaveBeenCalledWith({
+        userId: "u2",
+        userName: "Jane",
+        verifyToken: "tok",
+      });
+    });
+
+    it("fires onChatStart callback with config", async () => {
+      const client = createMockClient();
+      const onChatStart = vi.fn();
+      render(
+        <ChatWidget
+          client={client}
+          embedded
+          preEntry={{
+            render: ({ start }) => <button onClick={() => start({ userId: "u2" })}>Start</button>,
+          }}
+          onChatStart={onChatStart}
+        />,
+      );
+
+      const btn = await screen.findByText("Start");
+      btn.click();
+
+      expect(onChatStart).toHaveBeenCalledWith({ userId: "u2" });
+    });
   });
 });

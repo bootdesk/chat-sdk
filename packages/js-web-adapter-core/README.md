@@ -48,6 +48,22 @@ await client.connect();
 | `onReactionRemoved(cb)` | Subscribe to reaction removes |
 | `onTypingStarted(cb)` | Subscribe to typing events |
 | `onStreamingChunk(cb)` | Subscribe to streaming chunks |
+| `reconfigure(config)` | Update identity (userId, userName, verifyToken, conversationId, headers) after construction |
+
+### Reconfiguration
+
+Use `reconfigure()` to update the client's identity after construction — useful for pre-entry flows where the user's info is collected first:
+
+```typescript
+client.reconfigure({
+  userId: "user-abc",
+  userName: "Alice",
+  verifyToken: "encrypted-token",
+  conversationId: "conv-xyz",
+});
+```
+
+Updates HTTP headers (`X-User-Id`, `X-User-Name`, `X-Verify-Token`) and internal state.
 
 ### Broadcasting
 

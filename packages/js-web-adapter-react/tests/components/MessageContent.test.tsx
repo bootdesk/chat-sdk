@@ -6,7 +6,7 @@ import { CardProvider } from "../../src/cards/CardContext";
 function createMessage(overrides: Record<string, unknown> = {}) {
   return {
     id: "msg-1",
-    content: { text: "", cards: [], ...(overrides.content as object || {}) },
+    content: { text: "", cards: [], ...((overrides.content as object) || {}) },
     author: { id: "user-1", name: "Alice" },
     timestamp: Date.now(),
     // reactions and attachments are in content in the actual Message type
@@ -96,9 +96,7 @@ describe("MessageContent", () => {
   it("renders attachment links", () => {
     const msg = createMessage({
       content: { text: "", cards: [] },
-      attachments: [
-        { id: "att-1", url: "https://example.com/file.pdf", name: "document.pdf" },
-      ],
+      attachments: [{ id: "att-1", url: "https://example.com/file.pdf", name: "document.pdf" }],
     });
     const { container } = render(
       <CardProvider>

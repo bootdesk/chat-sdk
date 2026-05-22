@@ -44,7 +44,14 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           for file in packages/js-web-adapter-*/package.json packages/chat-widget-*/package.json; do
-            jq --arg ver "$VERSION" '.version = $ver' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
+            jq --arg ver "$VERSION" --arg req "^$VERSION" '
+              .version = $ver |
+              .peerDependencies |= with_entries(
+                if .key | startswith("@bootdesk/") then
+                  .value = $req
+                else . end
+              )
+            ' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
           done
 
       - name: Commit version bump

@@ -20,10 +20,10 @@ class LaravelBroadcastAdapter implements BroadcastAdapter
 
     public function __construct(
         protected readonly BroadcastManager $broadcastManager,
-        protected readonly string $broadcasterType = 'pusher',
-        protected readonly string $channelPrefix = 'chat',
-        protected readonly string $threadChannelType = 'public',
-        protected readonly string $userChannelType = 'private',
+        protected string $broadcasterType = 'pusher',
+        protected string $channelPrefix = 'chat',
+        protected string $threadChannelType = 'public',
+        protected string $userChannelType = 'private',
     ) {}
 
     public function connect(): void

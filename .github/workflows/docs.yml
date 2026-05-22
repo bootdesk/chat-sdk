@@ -23,13 +23,15 @@ jobs:
           php-version: 8.4
       - name: Install PHP dependencies
         run: composer install --no-interaction
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 #v6.2.0
         with:
           node-version: 22
       - name: Install JS dependencies
         run: npm ci
       - name: Generate PHP API docs
         run: composer docs
+      - name: Build JS packages
+        run: npm run build -w packages/js-web-adapter-core -w packages/js-web-adapter-react -w packages/chat-widget-bridge
       - name: Generate JS API docs
         run: npm run docs:js
       - name: Generate HTML guides

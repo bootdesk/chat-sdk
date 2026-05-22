@@ -6,6 +6,7 @@ namespace BootDesk\ChatSDK\Laravel\Tests\Broadcasting;
 
 use BootDesk\ChatSDK\Core\Broadcasting\MessagePostedEvent;
 use BootDesk\ChatSDK\Core\Broadcasting\TypingStartedEvent;
+use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -16,11 +17,15 @@ class LaravelBroadcastAdapterTest extends TestCase
 {
     private Broadcaster $mockBroadcaster;
 
+    private BroadcastManager $broadcastManager;
+
     private TestableBroadcastAdapter $adapter;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->broadcastManager = $this->app->make(BroadcastManager::class);
 
         $this->mockBroadcaster = new class implements Broadcaster
         {
@@ -46,6 +51,7 @@ class LaravelBroadcastAdapterTest extends TestCase
 
         $this->adapter = new TestableBroadcastAdapter(
             mockBroadcaster: $this->mockBroadcaster,
+            broadcastManager: $this->broadcastManager,
             channelPrefix: 'chat',
         );
     }
@@ -139,6 +145,7 @@ class LaravelBroadcastAdapterTest extends TestCase
     {
         $adapter = new TestableBroadcastAdapter(
             mockBroadcaster: $this->mockBroadcaster,
+            broadcastManager: $this->broadcastManager,
             channelPrefix: 'myapp',
         );
 
@@ -170,6 +177,7 @@ class LaravelBroadcastAdapterTest extends TestCase
     {
         $adapter = new TestableBroadcastAdapter(
             mockBroadcaster: $this->mockBroadcaster,
+            broadcastManager: $this->broadcastManager,
             channelPrefix: 'chat',
             userChannelType: 'presence',
         );
@@ -192,6 +200,7 @@ class LaravelBroadcastAdapterTest extends TestCase
     {
         $adapter = new TestableBroadcastAdapter(
             mockBroadcaster: $this->mockBroadcaster,
+            broadcastManager: $this->broadcastManager,
             channelPrefix: 'chat',
             userChannelType: 'presence',
         );
@@ -212,6 +221,7 @@ class LaravelBroadcastAdapterTest extends TestCase
     {
         $adapter = new TestableBroadcastAdapter(
             mockBroadcaster: $this->mockBroadcaster,
+            broadcastManager: $this->broadcastManager,
             channelPrefix: 'chat',
             threadChannelType: 'private',
         );
@@ -236,6 +246,7 @@ class LaravelBroadcastAdapterTest extends TestCase
     {
         $adapter = new TestableBroadcastAdapter(
             mockBroadcaster: $this->mockBroadcaster,
+            broadcastManager: $this->broadcastManager,
             channelPrefix: 'chat',
             threadChannelType: 'presence',
         );

@@ -46,10 +46,15 @@ export function PushPermissionPrompt({
   };
 
   return (
-    <div className="p-3 bg-chat-surface rounded-lg flex items-start gap-3" data-chat-push-prompt="true">
+    <div
+      className="p-3 bg-chat-surface rounded-lg flex items-start gap-3"
+      data-chat-push-prompt="true"
+    >
       <div className="flex-1">
         <div className="font-semibold mb-1 text-chat-text">{title || t("push.title")}</div>
-        <div className="text-sm text-chat-text-secondary">{description || t("push.description")}</div>
+        <div className="text-sm text-chat-text-secondary">
+          {description || t("push.description")}
+        </div>
       </div>
       <div className="flex gap-2">
         {!isSubscribed && status !== "denied" && (

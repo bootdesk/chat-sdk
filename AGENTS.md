@@ -6,19 +6,13 @@ Monorepo (`packages/`): core, laravel, adapter-{slack,telegram,whatsapp,discord,
 
 ## key commands
 ```
-composer test                    # phpunit
-composer test:coverage           # phpunit w/ pcov (coverage/clover.xml output)
-composer analyse                 # phpstan --level=5 (src only, no tests)
-composer lint                    # pint --test (Laravel preset)
-composer lint:fix                # pint (auto-fix)
-composer format                  # rector process
-composer format:check            # rector --dry-run
-composer docs                     # phpDocumentor (generates docs/_build/)
-composer all                      # lint -> analyse -> test
-composer check                   # lint -> analyse -> test:coverage
+composer docs                     # phpDocumentor (generates docs/_build/php/)
+npm run docs:js                   # TypeDoc for all JS packages (docs/_build/js/{core,react,bridge})
+npm run docs:guides               # Markdown→HTML guide conversion (docs/_build/guides/)
+npm run docs                      # runs all three (composer docs + docs:js + docs:guides)
 ```
 
-CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> format:check, min coverage 80%, PHP 8.2/8.3/8.4.
+CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> format:check (PHP), then js job: format:check -> lint -> test (core/bridge/react). Min coverage 75%, PHP 8.2/8.3/8.4/8.5, Node 22.
 
 ## architecture
 - `core` is framework-agnostic, never depends on adapters

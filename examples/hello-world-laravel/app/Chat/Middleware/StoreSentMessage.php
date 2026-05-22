@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Chat\Middleware;
 
+use BootDesk\ChatSDK\Core\Attachment;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
 use BootDesk\ChatSDK\Core\PostableMessage;
@@ -28,9 +29,10 @@ class StoreSentMessage implements SendingMiddleware
                 ],
                 'timestamp' => (int) (microtime(true) * 1000),
                 'reactions' => [],
-                'attachments' => array_map(fn ($a) => [
+                'attachments' => array_map(fn (Attachment $a): array => [
                     'url' => $a->url ?? '',
                     'name' => $a->name ?? '',
+                    'mime_type' => $a->mimeType ?? '',
                 ], $result->attachments),
             ];
 

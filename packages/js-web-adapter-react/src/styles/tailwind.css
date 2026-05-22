@@ -125,4 +125,43 @@
   .chat-typing-indicator {
     @apply px-4 pl-6 text-sm italic text-[var(--chat-text-secondary)];
   }
+
+  [data-chat-widget="fullscreen"] {
+    height: 100dvh;
+  }
+
+  [data-chat-widget="floating"] {
+    max-height: min(600px, 80dvh);
+  }
+
+  @supports (padding: max(0px)) {
+    [data-chat-widget="fullscreen"] {
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    [data-chat-widget="floating"] {
+      margin-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    [data-chat-input] {
+      font-size: 16px !important;
+    }
+  }
+
+  @media screen and (max-width: 799px) {
+    [data-chat-widget="floating"] {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100% !important;
+      max-width: none !important;
+      max-height: none !important;
+      border-radius: 0 !important;
+      z-index: 50 !important;
+      padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    }
+  }
 }

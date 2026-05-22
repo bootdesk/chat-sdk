@@ -14,6 +14,12 @@ Multi-platform chat bot SDK for PHP. Build once, deploy everywhere.
 - [Markdown](08-markdown.md) — CommonMark pipeline and platform formatting
 - [Quirks & Gotchas](09-quirks-gotchas.md) — Platform limitations, common pitfalls, important behaviors
 
+## JavaScript Packages
+
+- [JS Core SDK](10-js-core.md) — WebChatClient, HTTP transport, broadcasting, typed events, push notifications
+- [React Widget](11-js-react.md) — ChatWidget, hooks, cards, i18n, theming
+- [Iframe Bridge](12-js-bridge.md) — Cross-frame communication, embed script, viewport protocol
+
 ## Packages
 
 See the [API documentation](https://github.com/bootdesk/chat-sdk) for full package reference.

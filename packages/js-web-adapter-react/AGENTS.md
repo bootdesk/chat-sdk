@@ -34,7 +34,7 @@ npm run typecheck       # tsc --noEmit
 - `@bootdesk/js-web-adapter-core` ^0.1.0
 - `marked` ^18.0.0
 - `dompurify` ^3.4.5
-- `@bootdesk/chat-widget-bridge` (optional — iframe embedding)
+- `@bootdesk/chat-widget-bridge` (optional — iframe embedding, viewport config for Android keyboard via `interactive-widget=resizes-content`)
 
 ## testing
 - Vitest, jsdom env, `@testing-library/react` + `@testing-library/jest-dom`

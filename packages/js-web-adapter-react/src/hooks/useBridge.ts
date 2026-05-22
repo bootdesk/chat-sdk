@@ -4,6 +4,7 @@ interface BridgeResult {
   config: any;
   isInIframe: boolean;
   notifyMessage: (text: string) => void;
+  notifyViewportConfig: (viewportContent: string) => void;
   onNotificationClicked: (cb: () => void) => void;
 }
 
@@ -17,6 +18,14 @@ export function useBridge(): BridgeResult {
     (text: string) => {
       if (!isInIframe) return;
       window.parent.postMessage({ type: "chat-message", text }, "*");
+    },
+    [isInIframe],
+  );
+
+  const notifyViewportConfig = useCallback(
+    (viewportContent: string) => {
+      if (!isInIframe) return;
+      window.parent.postMessage({ type: "chat-viewport-config", content: viewportContent }, "*");
     },
     [isInIframe],
   );
@@ -47,5 +56,5 @@ export function useBridge(): BridgeResult {
     return () => window.removeEventListener("message", handleMessage);
   }, [isInIframe]);
 
-  return { config, isInIframe, notifyMessage, onNotificationClicked };
+  return { config, isInIframe, notifyMessage, notifyViewportConfig, onNotificationClicked };
 }

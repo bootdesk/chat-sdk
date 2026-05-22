@@ -7,7 +7,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.jsx', 'resources/js/chat-iframe.jsx', 'resources/js/chat-iframe-floating.jsx', 'resources/js/embed-chat.js'],
+            input: ['resources/css/app.css', 'resources/js/app.jsx', 'resources/js/chat-iframe.jsx', 'resources/js/chat-iframe-floating.jsx', 'resources/js/chat-signed-upload.jsx', 'resources/js/embed-chat.js'],
             refresh: true,
             fonts: [
                 bunny('Instrument Sans', {

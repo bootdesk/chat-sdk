@@ -420,10 +420,11 @@ class TelnyxAdapter implements Adapter, HandlesSlashCommands, HandlesStatuses
         foreach ($media as $m) {
             $url = is_array($m) ? ($m['url'] ?? '') : $m;
             if ($url !== '') {
-                $attachments[] = [
-                    'url' => $url,
-                    'type' => is_array($m) ? ($m['content_type'] ?? 'media') : 'media',
-                ];
+                $attachments[] = new Attachment(
+                    type: is_array($m) ? ($m['content_type'] ?? 'media') : 'media',
+                    url: $url,
+                    mimeType: $m['content_type']
+                );
             }
         }
 

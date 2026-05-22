@@ -43,7 +43,7 @@ jobs:
       - name: Update NPM package versions
         run: |
           VERSION="${{ inputs.version }}"
-          for file in packages/js-web-adapter-*/package.json; do
+          for file in packages/js-web-adapter-*/package.json packages/chat-widget-*/package.json; do
             jq --arg ver "$VERSION" '.version = $ver' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
           done
 
@@ -51,7 +51,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add packages/*/composer.json packages/js-web-adapter-*/package.json
+          git add packages/*/composer.json packages/js-web-adapter-*/package.json packages/chat-widget-*/package.json
           git commit -m "chore: bump package versions to v${{ inputs.version }}"
           git push origin main
 
@@ -149,7 +149,8 @@ jobs:
       matrix:
         package:
           - { path: js-web-adapter-core }
-          # - { path: js-web-adapter-react }
+          - { path: js-web-adapter-react }
+          - { path: chat-widget-bridge }
 
     steps:
       - uses: actions/checkout@v5

@@ -31,6 +31,7 @@ export function InputArea({
   const [text, setText] = useState("");
   const [showDropzone, setShowDropzone] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const sendingRef = useRef(false);
 
   const { attachments, addFiles, removeAttachment, clearAttachments, isUploading } =
     useAttachmentUpload(uploadConfig!);
@@ -46,8 +47,10 @@ export function InputArea({
 
   const handleSubmit = async () => {
     const trimmed = text.trim();
-    if ((!trimmed && attachments.length === 0) || disabled) return;
+    if ((!trimmed && attachments.length === 0) || disabled || sendingRef.current) return;
     if (isUploading) return;
+
+    sendingRef.current = true;
 
     const uploadedAttachments = attachments
       .filter((a) => a.status === "uploaded" && a.url)
@@ -59,8 +62,13 @@ export function InputArea({
       }));
 
     setText("");
+    setShowDropzone(false);
     clearAttachments();
-    await onSend(trimmed, uploadedAttachments);
+    try {
+      await onSend(trimmed, uploadedAttachments);
+    } finally {
+      sendingRef.current = false;
+    }
     setTimeout(() => textareaRef.current?.focus(), 0);
   };
 
@@ -127,7 +135,6 @@ export function InputArea({
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          disabled={disabled}
           className="chat-input"
           data-chat-input="true"
           rows={1}

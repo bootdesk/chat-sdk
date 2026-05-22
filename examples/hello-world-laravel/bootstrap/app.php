@@ -40,4 +40,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return response()->json(['error' => 'Adapter failed'], 500);
         });
+
+        $exceptions->render(function (Throwable $e, Request $request) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'error' => $e->getMessage(),
+                ], status: 500);
+            }
+        });
     })->create();

@@ -32,16 +32,17 @@ export class HttpClient {
     this.config = { apiUrl: config.apiUrl, timeout: config.timeout ?? 30000, headers };
   }
 
-  async get(url: string): Promise<unknown> {
+  async get(url: string, signal?: AbortSignal): Promise<unknown> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
     try {
       const fullUrl = this.resolve(url);
+      const combined = signal ? AbortSignal.any([controller.signal, signal]) : controller.signal;
       const response = await fetch(fullUrl, {
         method: "GET",
         headers: this.config.headers,
-        signal: controller.signal,
+        signal: combined,
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       return response.json();
@@ -50,16 +51,17 @@ export class HttpClient {
     }
   }
 
-  async post(url: string, body: unknown): Promise<unknown> {
+  async post(url: string, body: unknown, signal?: AbortSignal): Promise<unknown> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
     try {
       const fullUrl = this.resolve(url);
+      const combined = signal ? AbortSignal.any([controller.signal, signal]) : controller.signal;
       const response = await fetch(fullUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...this.config.headers },
-        signal: controller.signal,
+        signal: combined,
         body: JSON.stringify(body),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -69,16 +71,17 @@ export class HttpClient {
     }
   }
 
-  async delete(url: string): Promise<unknown> {
+  async delete(url: string, signal?: AbortSignal): Promise<unknown> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
     try {
       const fullUrl = this.resolve(url);
+      const combined = signal ? AbortSignal.any([controller.signal, signal]) : controller.signal;
       const response = await fetch(fullUrl, {
         method: "DELETE",
         headers: this.config.headers,
-        signal: controller.signal,
+        signal: combined,
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       const text = await response.text();

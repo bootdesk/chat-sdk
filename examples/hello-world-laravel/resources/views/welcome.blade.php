@@ -118,6 +118,10 @@
                 Embed Script Test
                 <span>Third-party embed script — dynamic button + iframe creation</span>
             </a>
+            <a href="/chat-signed-upload">
+                Signed Upload Demo
+                <span>Multi-step signed URL attachment upload (AttachmentUploadConfig)</span>
+            </a>
         </div>
     </div>
 

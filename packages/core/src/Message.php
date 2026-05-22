@@ -8,6 +8,9 @@ use League\CommonMark\Node\Block\Document;
 
 class Message
 {
+    /**
+     * @param  Attachment[]  $attachments
+     */
     public function __construct(
         public readonly string $id,
         public readonly string $threadId,

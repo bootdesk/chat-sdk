@@ -49,14 +49,7 @@ export interface LocaleStrings {
   };
 }
 
-export type SupportedLocale =
-  | "en"
-  | "en-US"
-  | "en-GB"
-  | "pt"
-  | "pt-BR"
-  | "pt-PT"
-  | "es";
+export type SupportedLocale = "en" | "en-US" | "en-GB" | "pt" | "pt-BR" | "pt-PT" | "es";
 
 export function getBaseLocale(locale: string): string {
   return locale.split("-")[0] || locale;

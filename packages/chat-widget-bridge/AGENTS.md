@@ -13,7 +13,7 @@ npm run typecheck       # tsc --noEmit
 ```
 
 ## files
-- `src/useIframeBridge.ts` — React hook: detects iframe, listens for config, sends messages
+- `src/useIframeBridge.ts` — React hook: detects iframe, listens for config, sends messages, viewport config
 - `src/types.ts` — `BridgeConfig`, `BridgeMessage`, `IframeBridgeHook` interfaces
 - `src/embed-chat.js` — Standalone embed script (IIFE): creates floating button + iframe dynamically
 
@@ -37,6 +37,7 @@ npm run typecheck       # tsc --noEmit
 | `chat-notification-clicked` | parent → child | Triggers notification callback in widget |
 | `chat-message` | child → parent | Forwards user message text to parent page |
 | `chat-close` | child → parent | Requests parent to close/hide the iframe |
+| `chat-viewport-config` | child → parent | Asks parent to add/remove `interactive-widget=resizes-content` on viewport meta for Android keyboard handling (iOS uses `dvh` units) |
 
 ## embed-chat usage
 
@@ -53,7 +54,7 @@ window.__CHAT_EMBED_CONFIG = { iframeSrc: "/my-chat-page" };
 <script src="https://cdn.example.com/embed-chat.js"></script>
 ```
 
-The script creates a floating chat button (fixed bottom-right), an overlay, and an iframe. On small screens (<800px) the iframe goes fullscreen and the overlay is hidden. The iframe's close button (from ChatWidget header) sends `chat-close` via postMessage to close the panel.
+The script exposes `window.ChatSDK` with an `initialize({ iframeSrc, title, placeholder, buttonInnerHtml, buttonStyle, overlayStyle })` method. It creates a floating chat button (fixed bottom-right), an overlay, and an iframe. On small screens (<800px) the iframe goes fullscreen and the overlay is hidden. The iframe's close button sends `chat-close` via postMessage to close the panel. Handles `chat-viewport-config` to update the parent page's viewport meta tag for Android keyboard (`interactive-widget=resizes-content`; iOS uses `dvh` units).
 
 ## conventions
 - Single React hook, no DOM dependencies beyond postMessage

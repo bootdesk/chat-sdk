@@ -6,5 +6,17 @@
     "packages/js-web-adapter-core",
     "packages/js-web-adapter-react",
     "packages/chat-widget-bridge"
-  ]
+  ],
+  "scripts": {
+    "docs:guides": "node scripts/build-guides.mjs",
+    "docs:js": "npm run docs -ws --if-present",
+    "docs": "composer docs && npm run docs:js && npm run docs:guides && cp docs/index.html docs/_build/index.html"
+  },
+  "devDependencies": {
+    "marked": "^15.0.0",
+    "typedoc": "^0.28.0"
+  },
+  "dependencies": {
+    "marked-gfm-heading-id": "^4.1.4"
+  }
 }

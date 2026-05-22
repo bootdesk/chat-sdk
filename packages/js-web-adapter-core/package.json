@@ -23,7 +23,8 @@
     "lint": "eslint src",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "docs": "typedoc --out ../../docs/_build/js/core src"
   },
   "peerDependencies": {
     "laravel-echo": "^2.0.0",

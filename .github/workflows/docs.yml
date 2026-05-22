@@ -21,10 +21,19 @@ jobs:
       - uses: tryvin/setup-php@f89a301251ea3f109745bab3a62be58575f216bf #v2.36.0-main
         with:
           php-version: 8.4
-      - name: Install dependencies
+      - name: Install PHP dependencies
         run: composer install --no-interaction
-      - name: Generate API docs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install JS dependencies
+        run: npm ci
+      - name: Generate PHP API docs
         run: composer docs
+      - name: Generate JS API docs
+        run: npm run docs:js
+      - name: Generate HTML guides
+        run: npm run docs:guides
       - uses: actions/upload-pages-artifact@v5
         with:
           path: docs/_build

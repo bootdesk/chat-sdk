@@ -22,11 +22,14 @@ Peer dependency: `react` (only needed for `useIframeBridge`).
 import { useIframeBridge } from "@bootdesk/chat-widget-bridge";
 
 function Chat() {
-  const { config, isInIframe, notifyMessage, onNotificationClicked } =
+  const { config, isInIframe, notifyMessage, notifyViewportConfig, onNotificationClicked } =
     useIframeBridge();
 
   // config.title, config.locale, config.placeholder, config.theme.mode
   // are set by the parent page via postMessage.
+  // notifyViewportConfig tells the parent to add/remove
+  // interactive-widget=resizes-content on the viewport meta (Android only).
+  // iOS doesn't support this — it uses dvh units instead.
 }
 ```
 
@@ -51,6 +54,21 @@ window.addEventListener("message", (event) => {
   if (event.data?.type === "chat-message") {
     console.log("User sent:", event.data.text);
   }
+  if (event.data?.type === "chat-viewport-config") {
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) return;
+    const current = meta.getAttribute("content") || "";
+    if (event.data.content) {
+      if (!current.includes(event.data.content)) {
+        meta.setAttribute("content", current + (current ? ", " : "") + event.data.content);
+      }
+    } else {
+      meta.setAttribute(
+        "content",
+        current.replace(/,?\s*interactive-widget=[^,]*/g, "").replace(/^,\s*/, ""),
+      );
+    }
+  }
 });
 
 // Trigger notification click in iframe
@@ -67,6 +85,7 @@ iframe.contentWindow.postMessage(
 | `config` | `BridgeConfig \| null` — config from parent (title, locale, placeholder, theme) |
 | `isInIframe` | `boolean` — `true` when window !== window.parent |
 | `notifyMessage(text)` | Sends `{ type: "chat-message", text }` to parent |
+| `notifyViewportConfig(content)` | Sends `{ type: "chat-viewport-config", content }` to parent (Android keyboard support via `interactive-widget=resizes-content`; iOS handles this via `dvh` units) |
 | `onNotificationClicked(cb)` | Registers callback for `chat-notification-clicked` from parent |
 
 ## Message Protocol
@@ -77,6 +96,7 @@ iframe.contentWindow.postMessage(
 | Parent → Child | `chat-notification-clicked` | `{}` |
 | Child → Parent | `chat-message` | `{ text: string }` |
 | Child → Parent | `chat-close` | `{}` — requests parent to close/hide the iframe |
+| Child → Parent | `chat-viewport-config` | `{ content: string }` — asks parent to add `interactive-widget=resizes-content` on viewport meta (Android only; iOS uses `dvh` units) |
 
 ## Embed Script (`embed-chat`)
 
@@ -87,30 +107,45 @@ Self-contained vanilla JS script that creates a floating chat button, overlay, a
 As a module import (Vite/webpack):
 ```js
 import "@bootdesk/chat-widget-bridge/embed-chat";
+
+ChatSDK.initialize();
 ```
 
 Via a `<script>` tag:
 ```html
-<script>
-window.__CHAT_EMBED_CONFIG = { iframeSrc: "/chat-iframe" };
-</script>
 <script src="https://cdn.example.com/embed-chat.js"></script>
+<script>
+  ChatSDK.initialize({
+    iframeSrc: "/my-chat-page",
+    title: "Support Chat",
+    placeholder: "How can we help?",
+    buttonInnerHtml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+    buttonStyle: { background: "#ff4433" },
+    overlayStyle: { background: "rgba(0,0,0,0.5)" },
+  });
+</script>
 ```
 
 ### Behavior
 
-- Creates a fixed floating chat button (bottom-right)
+- Exposes `window.ChatSDK.initialize()` to create a floating chat button, overlay, and iframe
 - On click, opens a panel with the iframe (slide + fade animation)
 - On small screens (<800px) the iframe goes fullscreen and the overlay is hidden
 - Reads `localStorage` key `chat-theme` and passes it to the iframe via `chat-config`
 - Listens for `chat-close` message from the iframe and closes the panel
 - Logs `chat-message` events from the iframe to the console
+- Handles `chat-viewport-config` to update the parent page's viewport meta for Android keyboard (`interactive-widget=resizes-content`; iOS uses `dvh` units)
 
-### Configuration via `window.__CHAT_EMBED_CONFIG`
+### Configuration
 
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `iframeSrc` | `string` | `"/chat-iframe"` | URL for the iframe src |
+| `title` | `string` | `"Chat"` | Title sent to the iframe via `chat-config` |
+| `placeholder` | `string` | `"Type a message..."` | Placeholder sent to the iframe via `chat-config` |
+| `buttonInnerHtml` | `string` | Chat bubble SVG | Inner HTML of the floating button |
+| `buttonStyle` | `object` | Default button styles | CSS overrides for the button |
+| `overlayStyle` | `object` | Default overlay styles | CSS overrides for the overlay |
 
 ## License
 

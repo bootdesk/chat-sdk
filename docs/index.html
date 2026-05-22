@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BootDesk Chat SDK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-family:"Inter",system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+    body{background:#f8fafc;color:#0f172a;min-height:100vh;display:flex;flex-direction:column}
+    .dark body{background:#020617;color:#e2e8f0}
+    a{color:inherit;text-decoration:none}
+    .hdr{background:#fff;border-bottom:1px solid #e2e8f0}
+    .dark .hdr{background:#0f172a;border-color:#1e293b}
+    .hdr-top{display:flex;align-items:center;justify-content:space-between}
+    .hdr-inner{max-width:56rem;margin:0 auto;padding:2rem 1.5rem}
+    .hdr h1{font-size:1.875rem;font-weight:700;letter-spacing:-.025em;color:#0f172a}
+    .dark .hdr h1{color:#f1f5f9}
+    .hdr p{color:#64748b;margin-top:.25rem}
+    .dark .hdr p{color:#94a3b8}
+    .icon-btn{width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;border-radius:.5rem;border:none;background:0 0;color:#94a3b8;cursor:pointer;transition:all .15s}
+    .icon-btn:hover{color:#475569;background:#f1f5f9}
+    .dark .icon-btn:hover{color:#cbd5e1;background:#1e293b}
+    .icon-btn svg{width:1rem;height:1rem}
+    .dark-hide{display:block}.dark .dark-hide{display:none}
+    .dark-show{display:none}.dark .dark-show{display:block}
+    .main{max-width:56rem;margin:0 auto;padding:3rem 1.5rem;flex:1;width:100%}
+    section{margin-bottom:3rem}
+    .sec-title{font-size:.875rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem}
+    .dark .sec-title{color:#94a3b8}
+    .grid{display:grid;gap:1rem}
+    @media(min-width:640px){.grid-2{grid-template-columns:repeat(2,1fr)}}
+    @media(min-width:640px){.grid-3{grid-template-columns:repeat(3,1fr)}}
+    @media(min-width:1024px){.grid-3-lg{grid-template-columns:repeat(3,1fr)}}
+    .card{display:block;padding:1.25rem;background:#fff;border-radius:.75rem;border:1px solid #e2e8f0;transition:border-color .15s,box-shadow .15s}
+    .dark .card{background:#0f172a;border-color:#1e293b}
+    .card:hover{border-color:#cbd5e1;box-shadow:0 4px 6px -1px rgba(0,0,0,.08)}
+    .dark .card:hover{border-color:#334155}
+    .card h3{font-weight:500;color:#0f172a}
+    .dark .card h3{color:#f1f5f9}
+    .card p{font-size:.875rem;color:#64748b;margin-top:.25rem}
+    .dark .card p{color:#94a3b8}
+    .ftr{border-top:1px solid #e2e8f0;padding:1.5rem;text-align:center;font-size:.875rem;color:#94a3b8}
+    .dark .ftr{border-color:#1e293b;color:#64748b}
+  </style>
+</head>
+<body>
+  <header class="hdr">
+    <div class="hdr-inner">
+      <div class="hdr-top">
+        <div>
+          <h1>BootDesk Chat SDK</h1>
+          <p>API documentation &amp; guides for the multi-platform chat bot SDK</p>
+        </div>
+        <button id="theme-toggle" class="icon-btn" aria-label="Toggle theme">
+          <svg class="dark-hide" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+          <svg class="dark-show" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section>
+      <h2 class="sec-title">PHP</h2>
+      <div class="grid grid-2">
+        <a href="php/" class="card">
+          <h3>PHP API Docs</h3>
+          <p>Core, Laravel, and all adapters</p>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="sec-title">JavaScript</h2>
+      <div class="grid grid-3">
+        <a href="js/core/" class="card">
+          <h3>Core</h3>
+          <p>WebChatClient, HttpClient, broadcast clients</p>
+        </a>
+        <a href="js/react/" class="card">
+          <h3>React</h3>
+          <p>ChatWidget, hooks, i18n, cards</p>
+        </a>
+        <a href="js/bridge/" class="card">
+          <h3>Iframe Bridge</h3>
+          <p>Embed script &amp; cross-frame communication</p>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="sec-title">Guides</h2>
+      <div class="grid grid-2 grid-3-lg">
+        <a href="guides/" class="card">
+          <h3>PHP Guides</h3>
+          <p>Getting started, architecture, adapters, middleware, and more</p>
+        </a>
+        <a href="guides/10-js-core.html" class="card">
+          <h3>JS Core SDK</h3>
+          <p>WebChatClient, broadcasting, typed events, push</p>
+        </a>
+        <a href="guides/11-js-react.html" class="card">
+          <h3>React Widget</h3>
+          <p>ChatWidget, hooks, cards, i18n, theming</p>
+        </a>
+        <a href="guides/12-js-bridge.html" class="card">
+          <h3>Iframe Bridge</h3>
+          <p>Embed script, cross-frame protocol, iOS keyboard</p>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="ftr">
+    BootDesk Chat SDK &mdash; Open source
+  </footer>
+
+  <script>
+    (function() {
+      var prefersDark = matchMedia("(prefers-color-scheme:dark)").matches;
+      var stored = localStorage.getItem("theme");
+      if (stored === "dark" || (!stored && prefersDark)) {
+        document.documentElement.classList.add("dark");
+      }
+    })();
+
+    document.getElementById("theme-toggle").addEventListener("click", function() {
+      var html = document.documentElement;
+      html.classList.toggle("dark");
+      localStorage.setItem("theme", html.classList.contains("dark") ? "dark" : "light");
+    });
+  </script>
+</body>
+</html>

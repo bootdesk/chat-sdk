@@ -11,3 +11,6 @@ Route::prefix('chat')->group(function () {
     Route::get('/messages', [ChatApiController::class, 'messages']);
     Route::post('/upload', [UploadController::class, 'upload']);
 });
+
+Route::post('/signed-url-request', [UploadController::class, 'signedUrlRequest']);
+Route::post('/signed-url-confirm', [UploadController::class, 'signedUrlConfirm'])->name('signed-url.confirm');

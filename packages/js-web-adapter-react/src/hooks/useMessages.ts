@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { WebChatClient } from "@bootdesk/js-web-adapter-core";
 import { Message } from "@bootdesk/js-web-adapter-core";
 
@@ -29,7 +29,7 @@ interface UseMessagesResult {
   removeReaction: (id: string, emoji: string) => Promise<void>;
 }
 
-export function useMessages(client: WebChatClient): UseMessagesResult {
+export function useMessages(client: WebChatClient, enabled = true): UseMessagesResult {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -37,25 +37,34 @@ export function useMessages(client: WebChatClient): UseMessagesResult {
   const [nextCursor, setNextCursor] = useState<number | undefined>(undefined);
   const [loadError, setLoadError] = useState<Error | null>(null);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
-    let mounted = true;
+    if (!enabled) return;
+
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const { signal } = controller;
+
+    setIsLoadingHistory(true);
+    setLoadError(null);
 
     const loadInitial = async () => {
-      setIsLoadingHistory(true);
-      setLoadError(null);
       try {
-        const result = await client.loadMessages({ limit: 50, skipStateSeed: true });
-        if (mounted) {
-          setMessages(result.messages);
-          setHasMore(result.hasMore);
-          setNextCursor(result.nextCursor);
-        }
+        const result = await client.loadMessages({ limit: 50, skipStateSeed: true }, signal);
+        if (signal.aborted) return;
+        setMessages(result.messages);
+        setHasMore(result.hasMore);
+        setNextCursor(result.nextCursor);
       } catch (error) {
-        if (mounted) {
-          setLoadError(error instanceof Error ? error : new Error("Failed to load messages"));
-        }
+        if (signal.aborted) return;
+        setLoadError(error instanceof Error ? error : new Error("Failed to load messages"));
       } finally {
-        if (mounted) {
+        if (!signal.aborted) {
           setIsLoadingHistory(false);
         }
       }
@@ -64,9 +73,12 @@ export function useMessages(client: WebChatClient): UseMessagesResult {
     loadInitial();
 
     return () => {
-      mounted = false;
+      controller.abort();
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
     };
-  }, [client]);
+  }, [client, enabled]);
 
   const reloadMessages = useCallback(async () => {
     setIsLoadingHistory(true);

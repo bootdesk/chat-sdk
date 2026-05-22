@@ -118,7 +118,10 @@ export class WebChatClient {
     this.streamingMessages.clear();
   }
 
-  async loadMessages(options?: LoadMessagesOptions): Promise<LoadMessagesResult> {
+  async loadMessages(
+    options?: LoadMessagesOptions,
+    signal?: AbortSignal,
+  ): Promise<LoadMessagesResult> {
     const endpoint = this.config.endpoints?.loadMessages ?? "/api/chat/messages";
     const threadId = this.getThreadId();
     const params = new URLSearchParams({
@@ -128,10 +131,10 @@ export class WebChatClient {
     if (options?.before) params.set("before", String(options.before));
     if (options?.after) params.set("after", String(options.after));
 
-    const response = (await this.httpClient.get(`${endpoint}?${params.toString()}`)) as Record<
-      string,
-      unknown
-    >;
+    const response = (await this.httpClient.get(
+      `${endpoint}?${params.toString()}`,
+      signal,
+    )) as Record<string, unknown>;
     const messages: Message[] = ((response.messages as any[]) || []).map((msg) => ({
       id: msg.id,
       threadId,

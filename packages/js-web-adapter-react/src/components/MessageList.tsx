@@ -22,8 +22,10 @@ export function MessageList({
   className,
 }: MessageListProps): React.JSX.Element {
   const { t } = useLocale();
+  const containerRef = useRef<HTMLDivElement>(null);
   const listEndRef = useRef<HTMLDivElement>(null);
   const hasInitiallyScrolled = useRef(false);
+  const isNearBottom = useRef(true);
 
   useEffect(() => {
     if (!hasInitiallyScrolled.current && messages.length > 0) {
@@ -40,6 +42,31 @@ export function MessageList({
     }
     prevMessagesLength.current = messages.length;
   }, [messages.length]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      const threshold = 100;
+      isNearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+    };
+
+    el.addEventListener("scroll", handleScroll, { passive: true });
+
+    const observer = new ResizeObserver(() => {
+      if (isNearBottom.current) {
+        listEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
+      }
+    });
+
+    observer.observe(el);
+
+    return () => {
+      el.removeEventListener("scroll", handleScroll);
+      observer.disconnect();
+    };
+  }, []);
 
   const groupedMessages = useMemo(() => {
     const groups: Array<{ user: string; messages: Message[] }> = [];
@@ -67,7 +94,8 @@ export function MessageList({
 
   return (
     <div
-      className={`chat-message-list ${className || ""}`}
+      ref={containerRef}
+      className={`chat-message-list flex-1 min-h-0 overflow-y-auto ${className || ""}`}
       data-chat-message-list="true"
       data-testid="chat-message-list"
     >

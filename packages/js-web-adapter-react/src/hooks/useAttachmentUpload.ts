@@ -65,7 +65,7 @@ export function useAttachmentUpload(uploadConfig: UploadConfig) {
             throw new Error("Upload to signed URL failed");
           }
 
-          const finalUrl = await uploadConfig.confirmUpload(signedUrl.finalUrl, {
+          const finalUrl = await uploadConfig.confirmUpload(signedUrl, {
             name: attachment.name,
             mimeType: attachment.mimeType,
             size: attachment.size,

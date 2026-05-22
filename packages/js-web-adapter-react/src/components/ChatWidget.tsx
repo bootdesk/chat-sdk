@@ -67,7 +67,13 @@ export function ChatWidget({
   maxFileSize,
   renderPushPrompt,
 }: ChatWidgetProps): React.JSX.Element {
-  const { config: iframeConfig, isInIframe, notifyMessage, onNotificationClicked } = useBridge();
+  const {
+    config: iframeConfig,
+    isInIframe,
+    notifyMessage,
+    notifyViewportConfig,
+    onNotificationClicked,
+  } = useBridge();
 
   const autoEmbedded = isInIframe && embedded !== false;
   const effectiveEmbedded = embedded === true || autoEmbedded;
@@ -82,17 +88,18 @@ export function ChatWidget({
     return "auto";
   });
   const [systemDark, setSystemDark] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches,
+    () =>
+      typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
 
-  const effectiveTheme: ThemeMode = theme === "auto"
-    ? (systemDark ? "dark" : "light")
-    : theme;
+  const effectiveTheme: ThemeMode = theme === "auto" ? (systemDark ? "dark" : "light") : theme;
 
   useEffect(() => {
     if (themeProp && themeProp !== theme) {
       setTheme(themeProp);
-      try { localStorage.setItem("chat-theme", themeProp); } catch {}
+      try {
+        localStorage.setItem("chat-theme", themeProp);
+      } catch {}
     }
   }, [themeProp]);
 
@@ -106,10 +113,11 @@ export function ChatWidget({
 
   const handleThemeChange = (newTheme: ThemeMode): void => {
     setTheme(newTheme);
-    try { localStorage.setItem("chat-theme", newTheme); } catch {}
+    try {
+      localStorage.setItem("chat-theme", newTheme);
+    } catch {}
     onThemeChange?.(newTheme);
   };
-
 
   const [isOpen, setIsOpen] = useState(effectiveMode === "fullscreen");
   const [displayMode, setDisplayMode] = useState<DisplayMode>(effectiveMode);
@@ -136,7 +144,33 @@ export function ChatWidget({
     if (!isSmallScreen) setIsOpen(true);
   }, [initialMode, isSmallScreen]);
 
-  const { messages, sendMessage, loading, isLoadingHistory, reloadMessages } = useMessages(client);
+  useEffect(() => {
+    if (isInIframe) {
+      notifyViewportConfig("interactive-widget=resizes-content");
+      return () => notifyViewportConfig("");
+    }
+
+    const isFullscreen = displayMode === "fullscreen" || isSmallScreen;
+    const active = isOpen && isFullscreen;
+
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) return;
+
+    if (active) {
+      const original = meta.getAttribute("content") ?? "";
+      if (!original.includes("interactive-widget=")) {
+        meta.setAttribute("content", `${original}, interactive-widget=resizes-content`);
+      }
+      return () => {
+        meta.setAttribute("content", original);
+      };
+    }
+  }, [isOpen, displayMode, isSmallScreen, isInIframe, notifyViewportConfig]);
+
+  const { messages, sendMessage, loading, isLoadingHistory, reloadMessages } = useMessages(
+    client,
+    isOpen || effectiveEmbedded,
+  );
   const { isSomeoneTyping } = useTyping(client);
 
   useEffect(() => {
@@ -187,9 +221,7 @@ export function ChatWidget({
     [client],
   );
 
-  const handleReactionClick = useCallback((messageId: string, emoji: string) => {
-    console.log("Reaction:", messageId, emoji);
-  }, []);
+  const handleReactionClick = useCallback((_messageId: string, _emoji: string) => {}, []);
 
   const toggleOpen = useCallback(() => {
     setIsOpen((prev) => {
@@ -214,34 +246,6 @@ export function ChatWidget({
       window.parent.postMessage({ type: "chat-close" }, "*");
     }
   }, [isInIframe]);
-
-  useEffect(() => {
-    const style = document.createElement("style");
-    style.setAttribute("data-chat-mobile", "true");
-    style.textContent = `
-[data-chat-widget="fullscreen"] { height: 100dvh; height: 100vh; }
-[data-chat-widget="floating"] { max-height: min(600px, 80dvh); max-height: min(600px, 80vh); }
-@supports (padding: max(0px)) {
-  [data-chat-widget="fullscreen"] { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
-  [data-chat-widget="floating"] { margin-bottom: env(safe-area-inset-bottom, 0px); }
-}
-@media screen and (max-width: 768px) {
-  [data-chat-input] { font-size: 16px !important; }
-}
-@media screen and (max-width: 799px) {
-  [data-chat-widget="floating"] {
-    position: fixed !important; inset: 0 !important;
-    width: 100% !important; max-width: none !important;
-    max-height: none !important; border-radius: 0 !important;
-    z-index: 50 !important;
-  }
-}
-`;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
 
   if (effectiveEmbedded) {
     return (
@@ -309,7 +313,7 @@ export function ChatWidget({
           className={`flex flex-col overflow-hidden ${
             displayMode === "fullscreen"
               ? "fixed inset-0 z-50"
-              : `absolute ${position === "bottom-right" ? "bottom-20 right-5" : position === "bottom-left" ? "bottom-20 left-5" : ""} w-[480px] max-w-[min(800px,calc(100dvw-40px))] max-h-[min(600px,80dvh)] z-10 shadow-xl border border-chat-border rounded-2xl`
+              : `absolute ${position === "bottom-right" ? "bottom-20 right-5" : position === "bottom-left" ? "bottom-20 left-5" : ""} w-[480px] max-w-[min(800px,calc(100dvw-40px))] h-dvh max-h-[min(600px,80dvh)] z-10 shadow-xl border border-chat-border rounded-2xl`
           } bg-chat-background`}
           data-chat-widget={displayMode}
           data-chat-position={position}
@@ -318,7 +322,9 @@ export function ChatWidget({
           <Header
             title={effectiveTitle}
             onClose={displayMode === "floating" ? close : showClose ? close : undefined}
-            onToggleFullscreen={showFullscreenToggle && !isSmallScreen ? toggleFullscreen : undefined}
+            onToggleFullscreen={
+              showFullscreenToggle && !isSmallScreen ? toggleFullscreen : undefined
+            }
             isFullscreen={displayMode === "fullscreen"}
             showConnectionStatus
             isConnected={isConnected}

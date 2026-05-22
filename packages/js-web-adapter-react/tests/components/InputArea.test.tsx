@@ -33,7 +33,8 @@ describe("InputArea", () => {
     );
 
     const textarea = screen.getByPlaceholderText("Type a message...");
-    expect(textarea).toBeDisabled();
+    expect(textarea).not.toBeDisabled();
+    expect(screen.getByLabelText("Send")).toBeDisabled();
   });
 
   it("shows attachment toggle when enableAttachments is true", () => {

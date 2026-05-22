@@ -14,6 +14,7 @@ export interface SignedUploadUrl {
   uploadUrl: string;
   finalUrl: string;
   headers?: Record<string, string>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AttachmentUploadConfig {
@@ -28,7 +29,7 @@ export interface AttachmentUploadConfig {
     onProgress?: (pct: number) => void,
   ) => Promise<boolean>;
   confirmUpload: (
-    finalUrl: string,
+    signedUrl: SignedUploadUrl,
     fileMeta: { name: string; mimeType: string; size: number },
   ) => Promise<string>;
 }

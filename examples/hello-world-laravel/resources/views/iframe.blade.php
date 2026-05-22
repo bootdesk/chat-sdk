@@ -348,6 +348,7 @@
             const messageLog = document.getElementById('messageLog');
 
             let isOpen = false;
+            let originalViewport;
 
             function sendConfig() {
                 if (!isOpen) return;
@@ -404,6 +405,20 @@
                 const data = event.data || {};
                 if (data.type === 'chat-message') {
                     logMessage(data.text || '(no text)');
+                }
+                if (data.type === 'chat-viewport-config') {
+                    const meta = document.querySelector('meta[name="viewport"]');
+                    if (!meta) return;
+                    const current = meta.getAttribute('content') || '';
+                    if (data.content) {
+                        if (originalViewport === undefined) originalViewport = current;
+                        if (!current.includes(data.content)) {
+                            meta.setAttribute('content', current + (current ? ', ' : '') + data.content);
+                        }
+                    } else {
+                        meta.setAttribute('content', originalViewport ?? current);
+                        originalViewport = undefined;
+                    }
                 }
             });
 

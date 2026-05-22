@@ -1,6 +1,6 @@
 {
   "name": "@bootdesk/js-web-adapter-react",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "React components for BootDesk Chat SDK WebAdapter",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -14,7 +14,9 @@
     },
     "./styles.css": "./dist/styles.css"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup && tailwindcss -i ./src/styles/tailwind.css -o ./dist/styles.css --minify",
     "build:dev": "tsup && tailwindcss -i ./src/styles/tailwind.css -o ./dist/styles.css",

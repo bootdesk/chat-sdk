@@ -10,8 +10,8 @@ export { FloatingButton } from "./components/FloatingButton";
 
 export { CardRenderer } from "./cards/CardRenderer";
 export { DefaultCard } from "./cards/DefaultCard";
-export { ImageCardComponent as ImageCardComponent } from "./cards/ImageCard";
-export { FileCardComponent as FileCardComponent } from "./cards/FileCard";
+export { ImageCardComponent } from "./cards/ImageCard";
+export { FileCardComponent } from "./cards/FileCard";
 export { CardProvider, useCardRegistry } from "./cards/CardContext";
 export { ChatProvider, useChatContext } from "./providers/ChatProvider";
 export type { CardRendererProps, CardRenderer as CardRendererType } from "./cards/types";

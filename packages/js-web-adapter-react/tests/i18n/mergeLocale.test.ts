@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mergeLocale, registerLocale } from "../../src/i18n/mergeLocale";
-import type { LocaleStrings } from "../../src/i18n/types";
+import { describe, it, expect } from "vitest";
+import { mergeLocale } from "../../src/i18n/mergeLocale";
 
 describe("mergeLocale", () => {
   it("returns English strings for en locale", () => {
@@ -8,9 +7,7 @@ describe("mergeLocale", () => {
     expect(result.chatWidget.title).toBe("Chat");
     expect(result.typingIndicator.isTyping).toBe("is typing...");
   });
-});
 
-describe("mergeLocale", () => {
   it("returns Portuguese strings for pt locale", () => {
     const result = mergeLocale("pt");
     expect(result.chatWidget.title).toBe("Chat");

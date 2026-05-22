@@ -235,7 +235,8 @@ export function ChatWidget({
   }, [isInIframe, onNotificationClicked, reloadMessages]);
 
   const effectiveTitle = (isInIframe && iframeConfig?.title) || title;
-  const effectivePlaceholder = (isInIframe && iframeConfig?.placeholder) || placeholder || merged.chatWidget.placeholder;
+  const effectivePlaceholder =
+    (isInIframe && iframeConfig?.placeholder) || placeholder || merged.chatWidget.placeholder;
 
   const currentUserId = "getCurrentUserId" in client ? client.getCurrentUserId() : "";
 
@@ -287,22 +288,34 @@ export function ChatWidget({
     }
   }, [isInIframe]);
 
-  const widget = effectiveEmbedded ? (
-    <div
-      dir={dir}
-      className="flex flex-col h-full min-h-[300px] overflow-hidden bg-chat-background"
-      data-chat-widget="embedded"
-      data-chat-theme={effectiveTheme}
-    >
+  const panelContent = (
+    <>
       <Header
         title={effectiveTitle}
-        isFullscreen={false}
+        onClose={
+          effectiveEmbedded
+            ? isInIframe
+              ? embeddedClose
+              : undefined
+            : displayMode === "floating"
+              ? close
+              : showClose
+                ? close
+                : undefined
+        }
+        onToggleFullscreen={
+          effectiveEmbedded
+            ? undefined
+            : showFullscreenToggle && !isSmallScreen
+              ? toggleFullscreen
+              : undefined
+        }
+        isFullscreen={effectiveEmbedded ? false : displayMode === "fullscreen"}
         showConnectionStatus
         isConnected={isConnected}
         className={className?.header}
         theme={theme}
         onThemeChange={handleThemeChange}
-        onClose={isInIframe ? embeddedClose : undefined}
         pushStatus={pushConfig ? push.status : undefined}
         onPushToggle={pushConfig ? handlePushToggle : undefined}
       />
@@ -331,16 +344,28 @@ export function ChatWidget({
       <InputArea
         onSend={handleSend}
         placeholder={effectivePlaceholder}
+        disabled={!effectiveEmbedded && loading}
         className={className?.inputArea}
         enableAttachments={enableAttachments}
         uploadConfig={uploadConfig}
         accept={accept}
         maxFileSize={maxFileSize}
       />
+    </>
+  );
+
+  const widget = effectiveEmbedded ? (
+    <div
+      dir={dir}
+      className="flex flex-col h-full min-h-[300px] overflow-hidden bg-chat-background"
+      data-chat-widget="embedded"
+      data-chat-theme={effectiveTheme}
+    >
+      {panelContent}
     </div>
   ) : (
     <>
-      {!effectiveEmbedded && !isOpen && (
+      {!isOpen && (
         <FloatingButton
           onClick={toggleOpen}
           isOpen={isOpen}
@@ -361,59 +386,23 @@ export function ChatWidget({
           className={`flex flex-col overflow-hidden ${
             displayMode === "fullscreen"
               ? "fixed inset-0 z-50"
-              : `absolute ${position === "bottom-right" ? "bottom-20 right-5" : position === "bottom-left" ? "bottom-20 left-5" : ""} w-[480px] max-w-[min(800px,calc(100dvw-40px))] h-dvh max-h-[min(600px,80dvh)] z-10 shadow-xl border border-chat-border rounded-2xl`
+              : `absolute ${
+                  position === "bottom-right"
+                    ? "bottom-20 right-5"
+                    : position === "bottom-left"
+                      ? "bottom-20 left-5"
+                      : position === "top-right"
+                        ? "top-20 right-5"
+                        : position === "top-left"
+                          ? "top-20 left-5"
+                          : ""
+                } w-[480px] max-w-[min(800px,calc(100dvw-40px))] h-dvh max-h-[min(600px,80dvh)] z-10 shadow-xl border border-chat-border rounded-2xl`
           } bg-chat-background`}
           data-chat-widget={displayMode}
           data-chat-position={position}
           data-chat-theme={effectiveTheme}
         >
-          <Header
-            title={effectiveTitle}
-            onClose={displayMode === "floating" ? close : showClose ? close : undefined}
-            onToggleFullscreen={
-              showFullscreenToggle && !isSmallScreen ? toggleFullscreen : undefined
-            }
-            isFullscreen={displayMode === "fullscreen"}
-            showConnectionStatus
-            isConnected={isConnected}
-            className={className?.header}
-            theme={theme}
-            onThemeChange={handleThemeChange}
-            pushStatus={pushConfig ? push.status : undefined}
-            onPushToggle={pushConfig ? handlePushToggle : undefined}
-          />
-
-          <MessageList
-            messages={messages}
-            currentUserId={currentUserId}
-            isLoading={isLoadingHistory || loading}
-            onActionClick={handleActionClick}
-            onReactionClick={handleReactionClick}
-            className={className?.messageList}
-          />
-
-          {isSomeoneTyping && <TypingIndicator />}
-
-          {pushConfig ? (
-            <PushPermissionPrompt
-              getVapidPublicKey={pushConfig.getVapidPublicKey}
-              onSubscribe={pushConfig.onSubscribe}
-              onUnsubscribe={pushConfig.onUnsubscribe}
-            />
-          ) : (
-            renderPushPrompt?.()
-          )}
-
-          <InputArea
-            onSend={handleSend}
-            placeholder={effectivePlaceholder}
-            disabled={loading}
-            className={className?.inputArea}
-            enableAttachments={enableAttachments}
-            uploadConfig={uploadConfig}
-            accept={accept}
-            maxFileSize={maxFileSize}
-          />
+          {panelContent}
         </div>
       )}
     </>

@@ -5,7 +5,7 @@ function generateAttachmentId(): string {
   return `att-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-export function useAttachmentUpload(uploadConfig: UploadConfig) {
+export function useAttachmentUpload(uploadConfig?: UploadConfig) {
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const abortControllers = useRef<Map<string, AbortController>>(new Map());
   const uploadFileRef = useRef<(attachment: PendingAttachment) => Promise<void>>();
@@ -30,6 +30,8 @@ export function useAttachmentUpload(uploadConfig: UploadConfig) {
 
   const uploadFile = useCallback(
     async (attachment: PendingAttachment) => {
+      if (!uploadConfig) return;
+
       const controller = new AbortController();
       abortControllers.current.set(attachment.id, controller);
 

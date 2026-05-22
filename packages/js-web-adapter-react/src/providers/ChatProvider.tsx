@@ -34,5 +34,3 @@ export function useChatContext(): ChatContextValue {
   }
   return context;
 }
-
-export { ChatWidget } from "../components/ChatWidget";

@@ -34,7 +34,7 @@ export function InputArea({
   const sendingRef = useRef(false);
 
   const { attachments, addFiles, removeAttachment, clearAttachments, isUploading } =
-    useAttachmentUpload(uploadConfig!);
+    useAttachmentUpload(uploadConfig);
 
   const { t } = useLocale();
 

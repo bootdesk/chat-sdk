@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { ChatWidget } from "../../src/components/ChatWidget";
 
-function createMockClient() {
+function createMockClient(overrides: Record<string, unknown> = {}) {
   const listeners = new Map<string, Set<(...args: unknown[]) => void>>();
   return {
     getCurrentUserId: () => "user-1",
@@ -35,6 +35,7 @@ function createMockClient() {
     connect: vi.fn(),
     disconnect: vi.fn(),
     setLocaleHeader: vi.fn(),
+    ...overrides,
   };
 }
 
@@ -43,71 +44,56 @@ describe("ChatWidget", () => {
     const client = createMockClient();
     const { container } = render(<ChatWidget client={client} embedded />);
 
-    await waitFor(() => {
-      expect(container.querySelector('[data-chat-widget="embedded"]')).toBeInTheDocument();
-    });
+    expect(await screen.findByTestId("chat-message-list")).toBeInTheDocument();
+    expect(container.querySelector('[data-chat-widget="embedded"]')).toBeInTheDocument();
   });
 
   it("renders header with default title in embedded mode", async () => {
     const client = createMockClient();
     render(<ChatWidget client={client} embedded />);
 
-    await waitFor(() => {
-      expect(screen.getByText("Chat")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Chat")).toBeInTheDocument();
   });
 
   it("renders header with custom title", async () => {
     const client = createMockClient();
     render(<ChatWidget client={client} embedded title="Support" />);
 
-    await waitFor(() => {
-      expect(screen.getByText("Support")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Support")).toBeInTheDocument();
   });
 
   it("renders floating button when not open", async () => {
     const client = createMockClient();
     render(<ChatWidget client={client} />);
 
-    await waitFor(() => {
-      expect(screen.getByTestId("chat-floating-button")).toBeInTheDocument();
-    });
+    expect(await screen.findByTestId("chat-floating-button")).toBeInTheDocument();
   });
 
   it("opens chat when floating button is clicked", async () => {
     const client = createMockClient();
     render(<ChatWidget client={client} />);
 
-    await waitFor(() => {
-      expect(screen.getByTestId("chat-floating-button")).toBeInTheDocument();
-    });
+    const fab = await screen.findByTestId("chat-floating-button");
+    fab.click();
 
-    screen.getByTestId("chat-floating-button").click();
-
-    await waitFor(() => {
-      expect(screen.getByText("Chat")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Chat")).toBeInTheDocument();
   });
 
   it("renders InputArea in embedded mode", async () => {
     const client = createMockClient();
     const { container } = render(<ChatWidget client={client} embedded />);
 
-    await waitFor(() => {
-      expect(container.querySelector('[data-chat-input-area="true"]')).toBeInTheDocument();
-    });
+    expect(await screen.findByTestId("chat-input-area")).toBeInTheDocument();
+    expect(container.querySelector('[data-chat-input-area="true"]')).toBeInTheDocument();
   });
 
   it("renders with empty state message when no messages", async () => {
     const client = createMockClient();
     render(<ChatWidget client={client} embedded />);
 
-    await waitFor(() => {
-      expect(
-        screen.getByText("No messages yet. Start the conversation!"),
-      ).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByText("No messages yet. Start the conversation!"),
+    ).toBeInTheDocument();
   });
 
   it("uses custom placeholder text", async () => {
@@ -116,9 +102,7 @@ describe("ChatWidget", () => {
       <ChatWidget client={client} embedded placeholder="Ask me anything..." />,
     );
 
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText("Ask me anything...")).toBeInTheDocument();
-    });
+    expect(await screen.findByPlaceholderText("Ask me anything...")).toBeInTheDocument();
   });
 
   it("calls onOpen callback when chat opens", async () => {
@@ -126,16 +110,10 @@ describe("ChatWidget", () => {
     const onOpen = vi.fn();
     render(<ChatWidget client={client} onOpen={onOpen} />);
 
-    await waitFor(() => {
-      expect(screen.getByTestId("chat-floating-button")).toBeInTheDocument();
-    });
+    const fab = await screen.findByTestId("chat-floating-button");
+    fab.click();
 
-    screen.getByTestId("chat-floating-button").click();
-
-    await waitFor(() => {
-      expect(screen.getByText("Chat")).toBeInTheDocument();
-    });
-
+    expect(await screen.findByText("Chat")).toBeInTheDocument();
     expect(onOpen).toHaveBeenCalledOnce();
   });
 
@@ -144,42 +122,35 @@ describe("ChatWidget", () => {
     const onClose = vi.fn();
     render(<ChatWidget client={client} onClose={onClose} showClose />);
 
-    await waitFor(() => {
-      expect(screen.getByTestId("chat-floating-button")).toBeInTheDocument();
-    });
+    const fab = await screen.findByTestId("chat-floating-button");
+    fab.click();
 
-    screen.getByTestId("chat-floating-button").click();
-
-    await waitFor(() => {
-      expect(screen.getByLabelText("Close chat")).toBeInTheDocument();
-    });
-
-    screen.getByLabelText("Close chat").click();
+    const closeBtn = await screen.findByLabelText("Close chat");
+    closeBtn.click();
 
     expect(onClose).toHaveBeenCalled();
   });
 
   it("renders messages passed through from client", async () => {
-    const client = createMockClient();
-    client.loadMessages = vi.fn().mockResolvedValue({
-      messages: [
-        {
-          id: "m1",
-          content: { text: "Hello world", cards: [] },
-          author: { id: "user-other", name: "Bot" },
-          timestamp: Date.now(),
-          reactions: [],
-          attachments: [],
-        },
-      ],
-      hasMore: false,
-      nextCursor: undefined,
+    const client = createMockClient({
+      loadMessages: vi.fn().mockResolvedValue({
+        messages: [
+          {
+            id: "m1",
+            content: { text: "Hello world", cards: [] },
+            author: { id: "user-other", name: "Bot" },
+            timestamp: Date.now(),
+            reactions: [],
+            attachments: [],
+          },
+        ],
+        hasMore: false,
+        nextCursor: undefined,
+      }),
     });
 
     render(<ChatWidget client={client} embedded />);
 
-    await waitFor(() => {
-      expect(screen.getByText("Hello world")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Hello world")).toBeInTheDocument();
   });
 });

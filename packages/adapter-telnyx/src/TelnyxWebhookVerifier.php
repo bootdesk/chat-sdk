@@ -9,7 +9,7 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class TelnyxWebhookVerifier
 {
-    private const int TIMESTAMP_MAX_AGE_SECONDS = 300;
+    private const TIMESTAMP_MAX_AGE_SECONDS = 300;
 
     public function __construct(
         private readonly string $publicKey,

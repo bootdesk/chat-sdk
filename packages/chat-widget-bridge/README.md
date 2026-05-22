@@ -129,6 +129,8 @@ Via a `<script>` tag:
 ### Behavior
 
 - Exposes `window.ChatSDK.initialize()` to create a floating chat button, overlay, and iframe
+- Exposes `window.ChatSDK.destroy()` to remove all DOM elements and event listeners
+- Waits for `DOMContentLoaded` before creating elements if script runs in `<head>`
 - On click, opens a panel with the iframe (slide + fade animation)
 - On small screens (<800px) the iframe goes fullscreen and the overlay is hidden
 - Reads `localStorage` key `chat-theme` and passes it to the iframe via `chat-config`
@@ -146,6 +148,18 @@ Via a `<script>` tag:
 | `buttonInnerHtml` | `string` | Chat bubble SVG | Inner HTML of the floating button |
 | `buttonStyle` | `object` | Default button styles | CSS overrides for the button |
 | `overlayStyle` | `object` | Default overlay styles | CSS overrides for the overlay |
+
+### Cleanup
+
+Call `ChatSDK.destroy()` to remove all DOM elements (button, iframe, overlay, style) and event listeners:
+
+```js
+// Module import
+import "@bootdesk/chat-widget-bridge/embed-chat";
+ChatSDK.initialize({ iframeSrc: "/chat" });
+// later...
+ChatSDK.destroy();
+```
 
 ## License
 

@@ -16,6 +16,15 @@ export function useIframeBridge(): IframeBridgeHook {
     [isInIframe],
   );
 
+  const notifyViewportConfig = useCallback(
+    (content: string) => {
+      if (!isInIframe) return;
+      const msg: BridgeMessage = { type: "chat-viewport-config", content };
+      window.parent.postMessage(msg, "*");
+    },
+    [isInIframe],
+  );
+
   const onNotificationClicked = useCallback((cb: () => void) => {
     notificationCbRef.current = cb;
   }, []);
@@ -44,5 +53,5 @@ export function useIframeBridge(): IframeBridgeHook {
     return () => window.removeEventListener("message", handleMessage);
   }, [isInIframe]);
 
-  return { config, isInIframe, notifyMessage, onNotificationClicked };
+  return { config, isInIframe, notifyMessage, notifyViewportConfig, onNotificationClicked };
 }

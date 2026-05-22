@@ -41,8 +41,10 @@
     button: null,
     iframe: null,
     overlay: null,
+    styleEl: null,
     isOpen: false,
     originalViewport: undefined,
+    initialized: false,
   };
 
   function mergeStyles(base, overrides) {
@@ -129,11 +131,6 @@
     });
   }
 
-  function close() {
-    if (!state.isOpen) return;
-    toggle();
-  }
-
   function toggle() {
     state.isOpen = !state.isOpen;
     var open = state.isOpen;
@@ -162,7 +159,7 @@
       console.log("[Embed Chat] Message:", data.text);
     }
     if (data.type === "chat-close") {
-      close();
+      toggle();
     }
     if (data.type === "chat-viewport-config") {
       var meta = document.querySelector('meta[name="viewport"]');
@@ -180,7 +177,17 @@
     }
   }
 
-  function initialize(opts) {
+  function destroy() {
+    if (!state.initialized) return;
+    if (state.button && state.button.parentNode) state.button.parentNode.removeChild(state.button);
+    if (state.iframe && state.iframe.parentNode) state.iframe.parentNode.removeChild(state.iframe);
+    if (state.overlay && state.overlay.parentNode) state.overlay.parentNode.removeChild(state.overlay);
+    if (state.styleEl && state.styleEl.parentNode) state.styleEl.parentNode.removeChild(state.styleEl);
+    window.removeEventListener("message", handleMessage);
+    state.initialized = false;
+  }
+
+  function _initialize(opts) {
     if (document.querySelector("[data-embed-chat-btn]")) return;
 
     state.opts = {};
@@ -201,12 +208,22 @@
     style.textContent =
       '@media (max-width: 799px) { [data-embed-chat-iframe] { width: 100dvw !important; height: 100dvh !important; bottom: 0 !important; right: 0 !important; max-width: none !important; max-height: none !important; border-radius: 0 !important; } [data-embed-chat-overlay] { display: none !important; } }';
     document.head.appendChild(style);
+    state.styleEl = style;
 
     createOverlay();
     createIframe();
     createButton();
     window.addEventListener("message", handleMessage);
+    state.initialized = true;
   }
 
-  window.ChatSDK = { initialize: initialize };
+  function initialize(opts) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", function () { _initialize(opts); });
+    } else {
+      _initialize(opts);
+    }
+  }
+
+  window.ChatSDK = { initialize: initialize, destroy: destroy };
 })();

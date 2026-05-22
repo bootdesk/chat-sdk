@@ -205,4 +205,23 @@ describe("HttpClient", () => {
       expect.objectContaining({ method: "DELETE" }),
     );
   });
+
+  it("postFormData sends FormData without Content-Type header", async () => {
+    const fn = mockFetch({ ok: true });
+    const formData = new FormData();
+    formData.append("file", "test");
+
+    await client.postFormData("/api/upload", formData);
+
+    expect(fn).toHaveBeenCalledWith(
+      "https://api.example.com/api/upload",
+      expect.objectContaining({
+        method: "POST",
+        body: formData,
+      }),
+    );
+    // Should NOT include Content-Type (browser sets multipart boundary)
+    const headers = fn.mock.calls[0][1].headers as Record<string, string>;
+    expect(headers["Content-Type"]).toBeUndefined();
+  });
 });

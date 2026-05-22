@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Trò chuyện",
+    "placeholder": "Nhập tin nhắn...",
+    "openChat": "Mở trò chuyện",
+    "closeChat": "Đóng trò chuyện",
+    "connectionStatus": {
+      "connected": "Đã kết nối",
+      "disconnected": "Đã ngắt kết nối"
+    }
+  },
+  "inputArea": {
+    "send": "Gửi",
+    "uploading": "Đang tải lên...",
+    "dropzone": {
+      "dropFiles": "Thả tệp tại đây",
+      "dropOrClick": "Thả hoặc nhấp để đính kèm"
+    }
+  },
+  "typingIndicator": {
+    "typing": "đang nhập",
+    "isTyping": "đang nhập..."
+  },
+  "messageList": {
+    "emptyState": "Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!"
+  },
+  "attachmentList": {
+    "remove": "Xóa",
+    "uploadFailed": "Tải lên thất bại"
+  },
+  "header": {
+    "enterFullscreen": "Toàn màn hình",
+    "exitFullscreen": "Thoát toàn màn hình",
+    "closeChat": "Đóng trò chuyện",
+    "lightMode": "Chế độ sáng",
+    "darkMode": "Chế độ tối",
+    "autoMode": "Giao diện hệ thống"
+  },
+  "floatingButton": {
+    "openChat": "Mở trò chuyện",
+    "closeChat": "Đóng trò chuyện"
+  },
+  "push": {
+    "title": "Thông báo",
+    "description": "Nhận tin nhắn ngay cả khi trò chuyện đã đóng",
+    "enable": "Bật thông báo",
+    "disable": "Tắt thông báo",
+    "denied": "Thông báo bị chặn",
+    "unsupported": "Thông báo không được hỗ trợ",
+    "subscribing": "Đang đăng ký...",
+    "notifications": "Thông báo"
+  },
+  "notification": {
+    "openChat": "Mở Trò chuyện",
+    "dismiss": "Bỏ qua"
+  },
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "retry": "Thử lại",
+    "cancel": "Hủy",
+    "download": "Tải xuống"
+  }
+}

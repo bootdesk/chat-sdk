@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocale } from "../i18n/LocaleProvider";
+import type { PushSubscriptionStatus } from "@bootdesk/js-web-adapter-core";
 
 interface HeaderProps {
   title?: string;
@@ -11,6 +12,8 @@ interface HeaderProps {
   className?: string;
   theme?: string;
   onThemeChange?: (theme: "light" | "dark" | "auto") => void;
+  pushStatus?: PushSubscriptionStatus;
+  onPushToggle?: () => void;
 }
 
 export function Header({
@@ -23,8 +26,18 @@ export function Header({
   className,
   theme,
   onThemeChange,
+  pushStatus,
+  onPushToggle,
 }: HeaderProps): React.JSX.Element {
   const { t } = useLocale();
+
+  const pushLabel = (() => {
+    if (!pushStatus) return "";
+    if (pushStatus === "subscribed") return t("push.disable");
+    if (pushStatus === "denied") return t("push.denied");
+    if (pushStatus === "subscribing") return t("push.subscribing");
+    return t("push.enable");
+  })();
 
   return (
     <div
@@ -44,6 +57,61 @@ export function Header({
       </div>
 
       <div className="flex items-center gap-1">
+        {onPushToggle && pushStatus && pushStatus !== "unsupported" && (
+          <button
+            onClick={onPushToggle}
+            className="p-1 bg-transparent border-none cursor-pointer text-chat-text-secondary rounded hover:bg-chat-surface transition"
+            data-chat-push-toggle="true"
+            aria-label={pushLabel}
+            title={pushLabel}
+          >
+            {pushStatus === "subscribed" ? (
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                stroke="currentColor"
+                strokeWidth="1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            ) : pushStatus === "denied" ? (
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            ) : (
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            )}
+          </button>
+        )}
+
         {onThemeChange && (
           <button
             onClick={() =>

@@ -4,6 +4,7 @@ import { mergeLocale } from "./mergeLocale";
 
 interface LocaleContextValue {
   locale: string;
+  dir: "ltr" | "rtl";
   strings: LocaleStrings;
   t: (path: string) => string;
 }
@@ -35,7 +36,7 @@ export function LocaleProvider({ children, locale }: LocaleProviderProps): React
       return typeof current === "string" ? current : path;
     };
 
-    return { locale: config.locale, strings, t };
+    return { locale: config.locale, dir: strings.direction, strings, t };
   }, [config.locale, config.overrides]);
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
@@ -47,6 +48,7 @@ export function useLocale(): LocaleContextValue {
     const strings = mergeLocale("en");
     return {
       locale: "en",
+      dir: strings.direction,
       strings,
       t: (path: string) => {
         const parts = path.split(".");

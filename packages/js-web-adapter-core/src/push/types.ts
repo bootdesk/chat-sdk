@@ -10,6 +10,7 @@ export interface PushConfig {
   getVapidPublicKey: () => Promise<string>;
   serviceWorkerUrl?: string;
   serviceWorkerScope?: string;
+  serviceWorkerType?: "classic" | "module";
   onSubscribe: (subscription: PushSubscriptionJSON) => Promise<void>;
   onUnsubscribe: (subscription: PushSubscriptionJSON) => Promise<void>;
   notificationOptions?: {

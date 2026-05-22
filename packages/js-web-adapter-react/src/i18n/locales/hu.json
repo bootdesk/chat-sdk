@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Chat",
+    "placeholder": "Írj egy üzenetet...",
+    "openChat": "Chat megnyitása",
+    "closeChat": "Chat bezárása",
+    "connectionStatus": {
+      "connected": "Csatlakozva",
+      "disconnected": "Lecsatlakozva"
+    }
+  },
+  "inputArea": {
+    "send": "Küldés",
+    "uploading": "Feltöltés...",
+    "dropzone": {
+      "dropFiles": "Dobja ide a fájlokat",
+      "dropOrClick": "Dobja vagy kattintson a csatoláshoz"
+    }
+  },
+  "typingIndicator": {
+    "typing": "ír",
+    "isTyping": "ír..."
+  },
+  "messageList": {
+    "emptyState": "Még nincsenek üzenetek. Indítsa el a beszélgetést!"
+  },
+  "attachmentList": {
+    "remove": "Eltávolítás",
+    "uploadFailed": "Feltöltés sikertelen"
+  },
+  "header": {
+    "enterFullscreen": "Teljes képernyő",
+    "exitFullscreen": "Kilépés a teljes képernyőből",
+    "closeChat": "Chat bezárása",
+    "lightMode": "Világos mód",
+    "darkMode": "Sötét mód",
+    "autoMode": "Rendszertéma"
+  },
+  "floatingButton": {
+    "openChat": "Chat megnyitása",
+    "closeChat": "Chat bezárása"
+  },
+  "push": {
+    "title": "Értesítések",
+    "description": "Üzenetek fogadása akkor is, ha a chat be van zárva",
+    "enable": "Értesítések engedélyezése",
+    "disable": "Értesítések letiltása",
+    "denied": "Értesítések blokkolva",
+    "unsupported": "Értesítések nem támogatottak",
+    "subscribing": "Feliratkozás...",
+    "notifications": "Értesítések"
+  },
+  "notification": {
+    "openChat": "Chat Megnyitása",
+    "dismiss": "Elutasítás"
+  },
+  "common": {
+    "loading": "Betöltés...",
+    "error": "Hiba",
+    "retry": "Újrapróbálkozás",
+    "cancel": "Mégse",
+    "download": "Letöltés"
+  }
+}

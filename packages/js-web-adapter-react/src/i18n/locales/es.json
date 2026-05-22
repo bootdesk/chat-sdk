@@ -1,4 +1,5 @@
 {
+  "direction": "ltr",
   "chatWidget": {
     "title": "Chat",
     "placeholder": "Escribe un mensaje...",
@@ -31,11 +32,28 @@
   "header": {
     "enterFullscreen": "Pantalla completa",
     "exitFullscreen": "Salir de pantalla completa",
-    "closeChat": "Cerrar chat"
+    "closeChat": "Cerrar chat",
+    "lightMode": "Modo claro",
+    "darkMode": "Modo oscuro",
+    "autoMode": "Tema del sistema"
   },
   "floatingButton": {
     "openChat": "Abrir chat",
     "closeChat": "Cerrar chat"
+  },
+  "push": {
+    "title": "Notificaciones",
+    "description": "Recibe mensajes incluso con el chat cerrado",
+    "enable": "Habilitar notificaciones",
+    "disable": "Deshabilitar notificaciones",
+    "denied": "Notificaciones bloqueadas",
+    "unsupported": "Notificaciones no compatibles",
+    "subscribing": "Suscribiendo...",
+    "notifications": "Notificaciones"
+  },
+  "notification": {
+    "openChat": "Abrir chat",
+    "dismiss": "Descartar"
   },
   "common": {
     "loading": "Cargando...",

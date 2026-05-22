@@ -51,9 +51,20 @@ export class PushManager {
     try {
       this.registration = await navigator.serviceWorker.register(
         this.config.serviceWorkerUrl || "/chat-service-worker.js",
-        { scope: this.config.serviceWorkerScope || "/" },
+        {
+          scope: this.config.serviceWorkerScope || "/",
+          type: this.config.serviceWorkerType,
+        },
       );
       await navigator.serviceWorker.ready;
+
+      navigator.serviceWorker.addEventListener("message", (event: MessageEvent) => {
+        const msg = event.data as Record<string, unknown>;
+        if (msg?.type === "chat-widget:push-data") {
+          const pushData = msg.data as PushEventData;
+          this.messageListeners.forEach((listener) => listener(pushData));
+        }
+      });
 
       const subscription = await this.registration.pushManager.getSubscription();
       this.setStatus(subscription ? "subscribed" : "default");

@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Obrolan",
+    "placeholder": "Ketik pesan...",
+    "openChat": "Buka obrolan",
+    "closeChat": "Tutup obrolan",
+    "connectionStatus": {
+      "connected": "Terhubung",
+      "disconnected": "Terputus"
+    }
+  },
+  "inputArea": {
+    "send": "Kirim",
+    "uploading": "Mengunggah...",
+    "dropzone": {
+      "dropFiles": "Letakkan file di sini",
+      "dropOrClick": "Letakkan atau klik untuk melampirkan"
+    }
+  },
+  "typingIndicator": {
+    "typing": "mengetik",
+    "isTyping": "sedang mengetik..."
+  },
+  "messageList": {
+    "emptyState": "Belum ada pesan. Mulai percakapan!"
+  },
+  "attachmentList": {
+    "remove": "Hapus",
+    "uploadFailed": "Unggahan gagal"
+  },
+  "header": {
+    "enterFullscreen": "Layar penuh",
+    "exitFullscreen": "Keluar layar penuh",
+    "closeChat": "Tutup obrolan",
+    "lightMode": "Mode terang",
+    "darkMode": "Mode gelap",
+    "autoMode": "Tema sistem"
+  },
+  "floatingButton": {
+    "openChat": "Buka obrolan",
+    "closeChat": "Tutup obrolan"
+  },
+  "push": {
+    "title": "Notifikasi",
+    "description": "Terima pesan bahkan saat obrolan tertutup",
+    "enable": "Aktifkan notifikasi",
+    "disable": "Nonaktifkan notifikasi",
+    "denied": "Notifikasi diblokir",
+    "unsupported": "Notifikasi tidak didukung",
+    "subscribing": "Berlangganan...",
+    "notifications": "Notifikasi"
+  },
+  "notification": {
+    "openChat": "Buka Obrolan",
+    "dismiss": "Tutup"
+  },
+  "common": {
+    "loading": "Memuat...",
+    "error": "Kesalahan",
+    "retry": "Coba lagi",
+    "cancel": "Batal",
+    "download": "Unduh"
+  }
+}

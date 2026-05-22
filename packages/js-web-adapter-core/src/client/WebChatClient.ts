@@ -3,6 +3,14 @@ import type { BroadcastClient, EventHandlers, Unsubscribe } from "./BroadcastCli
 import type { Message } from "../types";
 import { ChatEvent } from "../events/base/ChatEvent";
 import { parseChatEvent } from "../events/ChatEventFactory";
+import type { MessagePostedEvent } from "../events/MessagePostedEvent";
+import type { MessageEditedEvent } from "../events/MessageEditedEvent";
+import type { MessageDeletedEvent } from "../events/MessageDeletedEvent";
+import type { ReactionAddedEvent } from "../events/ReactionAddedEvent";
+import type { ReactionRemovedEvent } from "../events/ReactionRemovedEvent";
+import type { TypingStartedEvent } from "../events/TypingStartedEvent";
+import type { StreamingChunkEvent } from "../events/StreamingChunkEvent";
+import type { DMRequestedEvent } from "../events/DMRequestedEvent";
 import { generateId, generateConversationId } from "../utils/eventIdGenerator";
 
 export interface WebChatClientConfig {
@@ -34,6 +42,13 @@ interface StreamingState {
   isComplete: boolean;
 }
 
+interface AttachmentInput {
+  url: string;
+  name?: string;
+  mimeType?: string;
+  size?: number;
+}
+
 export interface LoadMessagesOptions {
   limit?: number;
   before?: number;
@@ -58,7 +73,7 @@ export class WebChatClient {
   private eventHandlers: EventHandlers = {};
   private streamingMessages: Map<string, StreamingState> = new Map();
   private pendingTyping: ReturnType<typeof setTimeout> | null = null;
-  private subscribers: Map<string, Array<(event: any) => void>> = new Map();
+  private subscribers: Map<string, Array<(event: unknown) => void>> = new Map();
   private unsubscribeUserChannel?: Unsubscribe;
 
   constructor(config: WebChatClientConfig) {
@@ -75,6 +90,10 @@ export class WebChatClient {
     this.broadcastClient = config.broadcastClient;
     this.conversationId = config.conversationId ?? generateConversationId();
     this.currentUserId = config.userId;
+  }
+
+  setLocaleHeader(locale: string): void {
+    this.httpClient.setHeader("X-Locale", locale);
   }
 
   async connect(): Promise<void> {
@@ -135,26 +154,30 @@ export class WebChatClient {
       `${endpoint}?${params.toString()}`,
       signal,
     )) as Record<string, unknown>;
-    const messages: Message[] = ((response.messages as any[]) || []).map((msg) => ({
-      id: msg.id,
+    const rawMessages = (response.messages as Record<string, unknown>[]) ?? [];
+    const messages: Message[] = rawMessages.map((msg) => ({
+      id: msg.id as string,
       threadId,
-      content: { text: msg.text, cards: msg.card ? [msg.card] : undefined },
-      author: {
-        id: msg.author.id,
-        name: msg.author.name,
-        isBot: msg.author.isBot ?? false,
-        isMe: msg.author.id === this.currentUserId,
+      content: {
+        text: msg.text as string,
+        cards: msg.card ? ([msg.card as Record<string, unknown>] as never[]) : undefined,
       },
-      timestamp: msg.timestamp,
-      attachments: msg.attachments?.map((a: any) => ({
-        id: `att-${msg.id}-${a.url}`,
-        url: a.url,
-        name: a.name,
-        type: a.type,
-        mimeType: a.mime_type,
-        size: a.size,
+      author: {
+        id: (msg.author as Record<string, unknown>).id as string,
+        name: (msg.author as Record<string, unknown>).name as string,
+        isBot: ((msg.author as Record<string, unknown>).isBot as boolean) ?? false,
+        isMe: (msg.author as Record<string, unknown>).id === this.currentUserId,
+      },
+      timestamp: msg.timestamp as number,
+      attachments: (msg.attachments as Record<string, unknown>[])?.map((a) => ({
+        id: `att-${msg.id as string}-${a.url as string}`,
+        url: a.url as string,
+        name: a.name as string,
+        type: a.type as string,
+        mimeType: a.mime_type as string,
+        size: a.size as number,
       })),
-      reactions: msg.reactions ?? [],
+      reactions: (msg.reactions as { emoji: string; count: number; users: string[] }[]) ?? [],
     }));
 
     if (!options?.before && !options?.after && !options?.skipStateSeed) {
@@ -170,7 +193,7 @@ export class WebChatClient {
     };
   }
 
-  async sendMessage(text: string, attachments: any[] = []): Promise<void> {
+  async sendMessage(text: string, attachments: AttachmentInput[] = []): Promise<void> {
     const messageId = generateId();
 
     const userMessage: Message = {
@@ -183,7 +206,7 @@ export class WebChatClient {
         attachments.length > 0
           ? attachments.map((a, i) => ({
               id: `att-${messageId}-${i}`,
-              name: a.name || "",
+              name: a.name ?? "",
               url: a.url,
               size: a.size,
               mimeType: a.mimeType,
@@ -201,7 +224,7 @@ export class WebChatClient {
           id: messageId,
           role: "user",
           text,
-          attachments: attachments?.map((a: any) => ({
+          attachments: attachments.map((a) => ({
             url: a.url,
             name: a.name,
             mime_type: a.mimeType,
@@ -220,20 +243,20 @@ export class WebChatClient {
       });
     }
 
-    if (response.text && !response.events?.some((e: any) => e.type === "message.posted")) {
+    if (response.text && !response.events?.some((e) => e.type === "message.posted")) {
       const assistantMessage: Message = {
-        id: response.id || generateId(),
+        id: response.id ?? generateId(),
         threadId: this.getThreadId(),
         content: { text: response.text },
         author: { id: "assistant", name: "Assistant", isBot: true },
         timestamp: Date.now(),
-        attachments: (response.attachments as any[])?.map((a, i) => ({
-          id: `att-${response.id || "msg"}-${i}`,
-          name: a.name || "",
-          url: a.url || "",
-          type: a.type,
-          mimeType: a.mime_type,
-          size: a.size,
+        attachments: (response.attachments as Record<string, unknown>[])?.map((a, i) => ({
+          id: `att-${response.id ?? "msg"}-${i}`,
+          name: (a.name as string) ?? "",
+          url: (a.url as string) ?? "",
+          type: a.type as string,
+          mimeType: a.mime_type as string,
+          size: a.size as number,
         })),
       };
       this.messages.push(assistantMessage);
@@ -252,7 +275,7 @@ export class WebChatClient {
     );
 
     if (response.events) {
-      (response.events as any[]).forEach((eventData) => {
+      (response.events as Array<Record<string, unknown>>).forEach((eventData) => {
         const event = parseChatEvent(eventData);
         this.dispatchEvent(event);
       });
@@ -292,22 +315,32 @@ export class WebChatClient {
     await this.httpClient.removeReaction(messageId, emoji, endpoint);
   }
 
-  onMessagePosted(
-    handler: (event: import("../events/MessagePostedEvent").MessagePostedEvent) => void,
-  ): Unsubscribe {
+  onMessagePosted(handler: (event: MessagePostedEvent) => void): Unsubscribe {
     return this.addEventListener("message.posted", handler);
   }
 
-  onStreamingChunk(
-    handler: (event: import("../events/StreamingChunkEvent").StreamingChunkEvent) => void,
-  ): Unsubscribe {
-    return this.addEventListener("streaming.chunk", handler);
+  onMessageEdited(handler: (event: MessageEditedEvent) => void): Unsubscribe {
+    return this.addEventListener("message:edited", handler);
   }
 
-  onTypingStarted(
-    handler: (event: import("../events/TypingStartedEvent").TypingStartedEvent) => void,
-  ): Unsubscribe {
-    return this.addEventListener("typing.started", handler);
+  onMessageDeleted(handler: (event: MessageDeletedEvent) => void): Unsubscribe {
+    return this.addEventListener("message:deleted", handler);
+  }
+
+  onReactionAdded(handler: (event: ReactionAddedEvent) => void): Unsubscribe {
+    return this.addEventListener("reaction:added", handler);
+  }
+
+  onReactionRemoved(handler: (event: ReactionRemovedEvent) => void): Unsubscribe {
+    return this.addEventListener("reaction:removed", handler);
+  }
+
+  onStreamingChunk(handler: (event: StreamingChunkEvent) => void): Unsubscribe {
+    return this.addEventListener("streaming:chunk", handler);
+  }
+
+  onTypingStarted(handler: (event: TypingStartedEvent) => void): Unsubscribe {
+    return this.addEventListener("typing:started", handler);
   }
 
   getConversationId(): string {
@@ -332,19 +365,19 @@ export class WebChatClient {
     return this.httpClient;
   }
 
-  addEventListener(eventType: string, handler: (event: any) => void): Unsubscribe {
+  addEventListener<T = unknown>(eventType: string, handler: (event: T) => void): Unsubscribe {
     if (!this.subscribers.has(eventType)) this.subscribers.set(eventType, []);
-    this.subscribers.get(eventType)!.push(handler);
+    this.subscribers.get(eventType)!.push(handler as (event: unknown) => void);
     return () => {
       const handlers = this.subscribers.get(eventType);
       if (handlers) {
-        const index = handlers.indexOf(handler);
+        const index = handlers.indexOf(handler as (event: unknown) => void);
         if (index !== -1) handlers.splice(index, 1);
       }
     };
   }
 
-  private handleMessagePosted(event: any): void {
+  private handleMessagePosted(event: MessagePostedEvent): void {
     if (this.messages.some((m) => m.id === event.messageId)) return;
     if (this.streamingMessages.has(event.messageId)) return;
 
@@ -354,13 +387,13 @@ export class WebChatClient {
       content: { text: event.text, cards: event.card ? [event.card] : undefined },
       author: event.author,
       timestamp: event.timestamp,
-      attachments: event.attachments?.map((a: any) => ({
+      attachments: event.attachments?.map((a) => ({
         id: `att-${event.messageId}-${Math.random().toString(36).slice(2, 8)}`,
-        name: a.name || "",
-        url: a.url || "",
+        name: a.name ?? "",
+        url: a.url ?? "",
         type: a.type,
         mimeType: a.mimeType,
-        size: a.size,
+        size: a.size ?? undefined,
       })),
     };
     this.messages.push(message);
@@ -368,26 +401,23 @@ export class WebChatClient {
     this.notifySubscribers("message.posted", event);
   }
 
-  private handleMessageEdited(event: any): void {
+  private handleMessageEdited(event: MessageEditedEvent): void {
     const message = this.messages.find((m) => m.id === event.messageId);
     if (message?.content) {
       message.content.text = event.newText;
-      this.notifySubscribers("message:edited", {
-        messageId: event.messageId,
-        newText: event.newText,
-      });
+      this.notifySubscribers("message:edited", event);
     }
   }
 
-  private handleMessageDeleted(event: any): void {
+  private handleMessageDeleted(event: MessageDeletedEvent): void {
     const index = this.messages.findIndex((m) => m.id === event.messageId);
     if (index !== -1) {
       this.messages.splice(index, 1);
-      this.notifySubscribers("message:deleted", { messageId: event.messageId });
+      this.notifySubscribers("message:deleted", event);
     }
   }
 
-  private handleReactionAdded(event: any): void {
+  private handleReactionAdded(event: ReactionAddedEvent): void {
     const message = this.messages.find((m) => m.id === event.messageId);
     if (!message) return;
     if (!message.reactions) message.reactions = [];
@@ -399,10 +429,10 @@ export class WebChatClient {
     } else {
       message.reactions.push({ emoji: event.emoji, count: 1, users: [event.user.id] });
     }
-    this.notifySubscribers("reaction:added", { messageId: event.messageId, emoji: event.emoji });
+    this.notifySubscribers("reaction:added", event);
   }
 
-  private handleReactionRemoved(event: any): void {
+  private handleReactionRemoved(event: ReactionRemovedEvent): void {
     const message = this.messages.find((m) => m.id === event.messageId);
     if (!message?.reactions) return;
 
@@ -413,15 +443,15 @@ export class WebChatClient {
       reaction.users = reaction.users.filter((id) => id !== event.user.id);
       if (reaction.count === 0) message.reactions.splice(index, 1);
     }
-    this.notifySubscribers("reaction:removed", { messageId: event.messageId, emoji: event.emoji });
+    this.notifySubscribers("reaction:removed", event);
   }
 
-  private handleStreamingChunk(event: any): void {
+  private handleStreamingChunk(event: StreamingChunkEvent): void {
     const { messageId, chunk, isFinal } = event;
 
     if (!this.streamingMessages.has(messageId)) {
       this.streamingMessages.set(messageId, { messageId, accumulatedText: "", isComplete: false });
-      this.notifySubscribers("streaming:started", { messageId });
+      this.notifySubscribers("streaming:started", event);
     }
 
     const state = this.streamingMessages.get(messageId)!;
@@ -443,57 +473,51 @@ export class WebChatClient {
       this.streamingMessages.delete(messageId);
       this.notifySubscribers("streaming:complete", { messageId, text: state.accumulatedText });
     } else {
-      this.notifySubscribers("streaming:chunk", {
-        messageId,
-        chunk,
-        fullText: state.accumulatedText,
-      });
+      this.notifySubscribers("streaming:chunk", event);
     }
-    this.notifySubscribers("streaming.chunk", event);
   }
 
-  private handleTypingStarted(event: any): void {
+  private handleTypingStarted(event: TypingStartedEvent): void {
     if (this.pendingTyping) clearTimeout(this.pendingTyping);
-    this.notifySubscribers("typing:started", { userId: event.userId });
+    this.notifySubscribers("typing:started", event);
     this.pendingTyping = setTimeout(() => {
       this.notifySubscribers("typing:stopped", { userId: event.userId });
     }, 3000);
-    this.notifySubscribers("typing.started", event);
   }
 
-  private handleDMRequested(event: any): void {
-    this.notifySubscribers("dm.requested", { userId: event.userId, threadId: event.threadId });
+  private handleDMRequested(event: DMRequestedEvent): void {
+    this.notifySubscribers("dm.requested", event);
   }
 
-  private notifySubscribers(eventType: string, data: any): void {
+  private notifySubscribers<T>(eventType: string, data: T): void {
     this.subscribers.get(eventType)?.forEach((handler) => handler(data));
   }
 
   private dispatchEvent(event: ChatEvent): void {
     switch (event.type) {
       case "message.posted":
-        this.handleMessagePosted(event);
+        this.handleMessagePosted(event as MessagePostedEvent);
         break;
       case "message.edited":
-        this.handleMessageEdited(event);
+        this.handleMessageEdited(event as MessageEditedEvent);
         break;
       case "message.deleted":
-        this.handleMessageDeleted(event);
+        this.handleMessageDeleted(event as MessageDeletedEvent);
         break;
       case "reaction.added":
-        this.handleReactionAdded(event);
+        this.handleReactionAdded(event as ReactionAddedEvent);
         break;
       case "reaction.removed":
-        this.handleReactionRemoved(event);
+        this.handleReactionRemoved(event as ReactionRemovedEvent);
         break;
       case "typing.started":
-        this.handleTypingStarted(event);
+        this.handleTypingStarted(event as TypingStartedEvent);
         break;
       case "streaming.chunk":
-        this.handleStreamingChunk(event);
+        this.handleStreamingChunk(event as StreamingChunkEvent);
         break;
       case "dm.requested":
-        this.handleDMRequested(event);
+        this.handleDMRequested(event as DMRequestedEvent);
         break;
     }
   }

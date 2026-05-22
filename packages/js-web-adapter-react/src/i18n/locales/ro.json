@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Chat",
+    "placeholder": "Scrie un mesaj...",
+    "openChat": "Deschide chat",
+    "closeChat": "Închide chat",
+    "connectionStatus": {
+      "connected": "Conectat",
+      "disconnected": "Deconectat"
+    }
+  },
+  "inputArea": {
+    "send": "Trimite",
+    "uploading": "Se încarcă...",
+    "dropzone": {
+      "dropFiles": "Plasați fișierele aici",
+      "dropOrClick": "Plasați sau faceți clic pentru a atașa"
+    }
+  },
+  "typingIndicator": {
+    "typing": "scrie",
+    "isTyping": "scrie..."
+  },
+  "messageList": {
+    "emptyState": "Încă nu există mesaje. Începe conversația!"
+  },
+  "attachmentList": {
+    "remove": "Elimină",
+    "uploadFailed": "Încărcare eșuată"
+  },
+  "header": {
+    "enterFullscreen": "Ecran complet",
+    "exitFullscreen": "Ieșiți din ecran complet",
+    "closeChat": "Închide chat",
+    "lightMode": "Mod luminos",
+    "darkMode": "Mod întunecat",
+    "autoMode": "Temă sistem"
+  },
+  "floatingButton": {
+    "openChat": "Deschide chat",
+    "closeChat": "Închide chat"
+  },
+  "push": {
+    "title": "Notificări",
+    "description": "Primiți mesaje chiar și când chatul este închis",
+    "enable": "Activează notificările",
+    "disable": "Dezactivează notificările",
+    "denied": "Notificări blocate",
+    "unsupported": "Notificări nesuportate",
+    "subscribing": "Abonare...",
+    "notifications": "Notificări"
+  },
+  "notification": {
+    "openChat": "Deschide Chat",
+    "dismiss": "Ignoră"
+  },
+  "common": {
+    "loading": "Se încarcă...",
+    "error": "Eroare",
+    "retry": "Reîncearcă",
+    "cancel": "Anulează",
+    "download": "Descarcă"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Чат",
+    "placeholder": "Напишіть повідомлення...",
+    "openChat": "Відкрити чат",
+    "closeChat": "Закрити чат",
+    "connectionStatus": {
+      "connected": "Підключено",
+      "disconnected": "Відключено"
+    }
+  },
+  "inputArea": {
+    "send": "Надіслати",
+    "uploading": "Завантаження...",
+    "dropzone": {
+      "dropFiles": "Перетягніть файли сюди",
+      "dropOrClick": "Перетягніть або натисніть, щоб прикріпити"
+    }
+  },
+  "typingIndicator": {
+    "typing": "друкує",
+    "isTyping": "друкує..."
+  },
+  "messageList": {
+    "emptyState": "Повідомлень ще немає. Почніть розмову!"
+  },
+  "attachmentList": {
+    "remove": "Видалити",
+    "uploadFailed": "Не вдалося завантажити"
+  },
+  "header": {
+    "enterFullscreen": "Повний екран",
+    "exitFullscreen": "Вийти з повного екрану",
+    "closeChat": "Закрити чат",
+    "lightMode": "Світлий режим",
+    "darkMode": "Темний режим",
+    "autoMode": "Системна тема"
+  },
+  "floatingButton": {
+    "openChat": "Відкрити чат",
+    "closeChat": "Закрити чат"
+  },
+  "push": {
+    "title": "Сповіщення",
+    "description": "Отримуйте повідомлення, навіть коли чат закрито",
+    "enable": "Увімкнути сповіщення",
+    "disable": "Вимкнути сповіщення",
+    "denied": "Сповіщення заблоковано",
+    "unsupported": "Сповіщення не підтримуються",
+    "subscribing": "Підписка...",
+    "notifications": "Сповіщення"
+  },
+  "notification": {
+    "openChat": "Відкрити Чат",
+    "dismiss": "Відхилити"
+  },
+  "common": {
+    "loading": "Завантаження...",
+    "error": "Помилка",
+    "retry": "Повторити",
+    "cancel": "Скасувати",
+    "download": "Завантажити"
+  }
+}

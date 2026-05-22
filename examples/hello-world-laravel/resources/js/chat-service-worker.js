@@ -1,4 +1,4 @@
-/* eslint-env serviceworker */
+/// <reference lib="webworker" />
 
 self.addEventListener("push", (event) => {
   if (!event.data) return;
@@ -17,7 +17,7 @@ self.addEventListener("push", (event) => {
     data: {
       threadId,
       messageId,
-      deepLink: deepLink || `/chat?thread=${threadId}`,
+      deepLink: deepLink || null,
     },
     actions: [
       { action: "open", title: "Open Chat" },
@@ -36,8 +36,11 @@ self.addEventListener("notificationclick", (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes("chat-widget") || client.url.includes(deepLink)) {
+      const origin = self.location.origin;
+      const sameOrigin = clientList.filter((c) => c.url.startsWith(origin));
+
+      for (const client of deepLink ? clientList : sameOrigin) {
+        if (!deepLink || client.url.includes(deepLink) || client.url.includes("chat-widget")) {
           client.postMessage({
             type: "chat-widget:notification-clicked",
             threadId,
@@ -48,7 +51,8 @@ self.addEventListener("notificationclick", (event) => {
           return client.focus();
         }
       }
-      return clients.openWindow(deepLink);
+
+      return clients.openWindow(deepLink || `/chat?thread=${threadId}`);
     }),
   );
 });

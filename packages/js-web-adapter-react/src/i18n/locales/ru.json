@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Чат",
+    "placeholder": "Напишите сообщение...",
+    "openChat": "Открыть чат",
+    "closeChat": "Закрыть чат",
+    "connectionStatus": {
+      "connected": "Подключено",
+      "disconnected": "Отключено"
+    }
+  },
+  "inputArea": {
+    "send": "Отправить",
+    "uploading": "Загрузка...",
+    "dropzone": {
+      "dropFiles": "Перетащите файлы сюда",
+      "dropOrClick": "Перетащите или нажмите, чтобы прикрепить"
+    }
+  },
+  "typingIndicator": {
+    "typing": "печатает",
+    "isTyping": "печатает..."
+  },
+  "messageList": {
+    "emptyState": "Сообщений пока нет. Начните разговор!"
+  },
+  "attachmentList": {
+    "remove": "Удалить",
+    "uploadFailed": "Ошибка загрузки"
+  },
+  "header": {
+    "enterFullscreen": "Полный экран",
+    "exitFullscreen": "Выйти из полного экрана",
+    "closeChat": "Закрыть чат",
+    "lightMode": "Светлая тема",
+    "darkMode": "Тёмная тема",
+    "autoMode": "Системная тема"
+  },
+  "floatingButton": {
+    "openChat": "Открыть чат",
+    "closeChat": "Закрыть чат"
+  },
+  "push": {
+    "title": "Уведомления",
+    "description": "Получайте сообщения, даже когда чат закрыт",
+    "enable": "Включить уведомления",
+    "disable": "Отключить уведомления",
+    "denied": "Уведомления заблокированы",
+    "unsupported": "Уведомления не поддерживаются",
+    "subscribing": "Подписка...",
+    "notifications": "Уведомления"
+  },
+  "notification": {
+    "openChat": "Открыть Чат",
+    "dismiss": "Закрыть"
+  },
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "retry": "Повторить",
+    "cancel": "Отмена",
+    "download": "Скачать"
+  }
+}

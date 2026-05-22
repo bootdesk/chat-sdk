@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Vestlus",
+    "placeholder": "Kirjuta sõnum...",
+    "openChat": "Ava vestlus",
+    "closeChat": "Sulge vestlus",
+    "connectionStatus": {
+      "connected": "Ühendatud",
+      "disconnected": "Ühendus katkenud"
+    }
+  },
+  "inputArea": {
+    "send": "Saada",
+    "uploading": "Laadimine...",
+    "dropzone": {
+      "dropFiles": "Lohista failid siia",
+      "dropOrClick": "Lohista või klõpsa manustamiseks"
+    }
+  },
+  "typingIndicator": {
+    "typing": "kirjutab",
+    "isTyping": "kirjutab..."
+  },
+  "messageList": {
+    "emptyState": "Veel pole sõnumeid. Alusta vestlust!"
+  },
+  "attachmentList": {
+    "remove": "Eemalda",
+    "uploadFailed": "Üleslaadimine ebaõnnestus"
+  },
+  "header": {
+    "enterFullscreen": "Täisekraan",
+    "exitFullscreen": "Välju täisekraanist",
+    "closeChat": "Sulge vestlus",
+    "lightMode": "Heledrežiim",
+    "darkMode": "Tumedrežiim",
+    "autoMode": "Süsteemi teema"
+  },
+  "floatingButton": {
+    "openChat": "Ava vestlus",
+    "closeChat": "Sulge vestlus"
+  },
+  "push": {
+    "title": "Teavitused",
+    "description": "Saage sõnumeid ka siis, kui vestlus on suletud",
+    "enable": "Luba teavitused",
+    "disable": "Keela teavitused",
+    "denied": "Teavitused blokeeritud",
+    "unsupported": "Teavitused pole toetatud",
+    "subscribing": "Tellimine...",
+    "notifications": "Teavitused"
+  },
+  "notification": {
+    "openChat": "Ava Vestlus",
+    "dismiss": "Loobu"
+  },
+  "common": {
+    "loading": "Laadimine...",
+    "error": "Viga",
+    "retry": "Proovi uuesti",
+    "cancel": "Tühista",
+    "download": "Laadi alla"
+  }
+}

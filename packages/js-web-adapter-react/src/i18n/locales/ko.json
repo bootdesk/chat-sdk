@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "채팅",
+    "placeholder": "메시지를 입력하세요...",
+    "openChat": "채팅 열기",
+    "closeChat": "채팅 닫기",
+    "connectionStatus": {
+      "connected": "연결됨",
+      "disconnected": "연결 끊김"
+    }
+  },
+  "inputArea": {
+    "send": "전송",
+    "uploading": "업로드 중...",
+    "dropzone": {
+      "dropFiles": "파일을 여기에 놓으세요",
+      "dropOrClick": "놓거나 클릭하여 첨부"
+    }
+  },
+  "typingIndicator": {
+    "typing": "입력 중",
+    "isTyping": "입력 중..."
+  },
+  "messageList": {
+    "emptyState": "아직 메시지가 없습니다. 대화를 시작하세요!"
+  },
+  "attachmentList": {
+    "remove": "제거",
+    "uploadFailed": "업로드 실패"
+  },
+  "header": {
+    "enterFullscreen": "전체 화면",
+    "exitFullscreen": "전체 화면 종료",
+    "closeChat": "채팅 닫기",
+    "lightMode": "라이트 모드",
+    "darkMode": "다크 모드",
+    "autoMode": "시스템 테마"
+  },
+  "floatingButton": {
+    "openChat": "채팅 열기",
+    "closeChat": "채팅 닫기"
+  },
+  "push": {
+    "title": "알림",
+    "description": "채팅이 닫혀 있어도 메시지 수신",
+    "enable": "알림 활성화",
+    "disable": "알림 비활성화",
+    "denied": "알림이 차단됨",
+    "unsupported": "알림이 지원되지 않음",
+    "subscribing": "구독 중...",
+    "notifications": "알림"
+  },
+  "notification": {
+    "openChat": "채팅 열기",
+    "dismiss": "닫기"
+  },
+  "common": {
+    "loading": "로딩 중...",
+    "error": "오류",
+    "retry": "재시도",
+    "cancel": "취소",
+    "download": "다운로드"
+  }
+}

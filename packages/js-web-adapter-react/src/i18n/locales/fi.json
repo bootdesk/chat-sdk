@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Chat",
+    "placeholder": "Kirjoita viesti...",
+    "openChat": "Avaa chat",
+    "closeChat": "Sulje chat",
+    "connectionStatus": {
+      "connected": "Yhdistetty",
+      "disconnected": "Katkaistu"
+    }
+  },
+  "inputArea": {
+    "send": "Lähetä",
+    "uploading": "Ladataan...",
+    "dropzone": {
+      "dropFiles": "Pudota tiedostot tähän",
+      "dropOrClick": "Pudota tai klikkaa liittääksesi"
+    }
+  },
+  "typingIndicator": {
+    "typing": "kirjoittaa",
+    "isTyping": "kirjoittaa..."
+  },
+  "messageList": {
+    "emptyState": "Ei viestejä vielä. Aloita keskustelu!"
+  },
+  "attachmentList": {
+    "remove": "Poista",
+    "uploadFailed": "Lataus epäonnistui"
+  },
+  "header": {
+    "enterFullscreen": "Koko näyttö",
+    "exitFullscreen": "Poistu koko näytöstä",
+    "closeChat": "Sulje chat",
+    "lightMode": "Vaalea tila",
+    "darkMode": "Tumma tila",
+    "autoMode": "Järjestelmän teema"
+  },
+  "floatingButton": {
+    "openChat": "Avaa chat",
+    "closeChat": "Sulje chat"
+  },
+  "push": {
+    "title": "Ilmoitukset",
+    "description": "Vastaanota viestejä, vaikka chat olisi suljettu",
+    "enable": "Ota ilmoitukset käyttöön",
+    "disable": "Poista ilmoitukset käytöstä",
+    "denied": "Ilmoitukset estetty",
+    "unsupported": "Ilmoituksia ei tueta",
+    "subscribing": "Tilataan...",
+    "notifications": "Ilmoitukset"
+  },
+  "notification": {
+    "openChat": "Avaa Chat",
+    "dismiss": "Hylkää"
+  },
+  "common": {
+    "loading": "Ladataan...",
+    "error": "Virhe",
+    "retry": "Yritä uudelleen",
+    "cancel": "Peruuta",
+    "download": "Lataa"
+  }
+}

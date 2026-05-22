@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Chat",
+    "placeholder": "Typ een bericht...",
+    "openChat": "Open chat",
+    "closeChat": "Sluit chat",
+    "connectionStatus": {
+      "connected": "Verbonden",
+      "disconnected": "Verbinding verbroken"
+    }
+  },
+  "inputArea": {
+    "send": "Versturen",
+    "uploading": "Uploaden...",
+    "dropzone": {
+      "dropFiles": "Zet bestanden hier neer",
+      "dropOrClick": "Sleep of klik om bij te voegen"
+    }
+  },
+  "typingIndicator": {
+    "typing": "typt",
+    "isTyping": "typt..."
+  },
+  "messageList": {
+    "emptyState": "Nog geen berichten. Start het gesprek!"
+  },
+  "attachmentList": {
+    "remove": "Verwijderen",
+    "uploadFailed": "Upload mislukt"
+  },
+  "header": {
+    "enterFullscreen": "Volledig scherm",
+    "exitFullscreen": "Volledig scherm afsluiten",
+    "closeChat": "Sluit chat",
+    "lightMode": "Lichte modus",
+    "darkMode": "Donkere modus",
+    "autoMode": "Systeemthema"
+  },
+  "floatingButton": {
+    "openChat": "Open chat",
+    "closeChat": "Sluit chat"
+  },
+  "push": {
+    "title": "Meldingen",
+    "description": "Ontvang berichten zelfs wanneer de chat gesloten is",
+    "enable": "Meldingen inschakelen",
+    "disable": "Meldingen uitschakelen",
+    "denied": "Meldingen geblokkeerd",
+    "unsupported": "Meldingen niet ondersteund",
+    "subscribing": "Abonneren...",
+    "notifications": "Meldingen"
+  },
+  "notification": {
+    "openChat": "Open Chat",
+    "dismiss": "Sluiten"
+  },
+  "common": {
+    "loading": "Laden...",
+    "error": "Fout",
+    "retry": "Opnieuw proberen",
+    "cancel": "Annuleren",
+    "download": "Downloaden"
+  }
+}

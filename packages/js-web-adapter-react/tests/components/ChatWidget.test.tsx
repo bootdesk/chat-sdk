@@ -34,6 +34,7 @@ function createMockClient() {
     removeReaction: vi.fn(),
     connect: vi.fn(),
     disconnect: vi.fn(),
+    setLocaleHeader: vi.fn(),
   };
 }
 

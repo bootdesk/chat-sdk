@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Sohbet",
+    "placeholder": "Bir mesaj yazın...",
+    "openChat": "Sohbeti aç",
+    "closeChat": "Sohbeti kapat",
+    "connectionStatus": {
+      "connected": "Bağlandı",
+      "disconnected": "Bağlantı kesildi"
+    }
+  },
+  "inputArea": {
+    "send": "Gönder",
+    "uploading": "Yükleniyor...",
+    "dropzone": {
+      "dropFiles": "Dosyaları buraya bırakın",
+      "dropOrClick": "Eklemek için bırakın veya tıklayın"
+    }
+  },
+  "typingIndicator": {
+    "typing": "yazıyor",
+    "isTyping": "yazıyor..."
+  },
+  "messageList": {
+    "emptyState": "Henüz mesaj yok. Sohbeti başlatın!"
+  },
+  "attachmentList": {
+    "remove": "Kaldır",
+    "uploadFailed": "Yükleme başarısız"
+  },
+  "header": {
+    "enterFullscreen": "Tam ekran",
+    "exitFullscreen": "Tam ekrandan çık",
+    "closeChat": "Sohbeti kapat",
+    "lightMode": "Açık mod",
+    "darkMode": "Koyu mod",
+    "autoMode": "Sistem teması"
+  },
+  "floatingButton": {
+    "openChat": "Sohbeti aç",
+    "closeChat": "Sohbeti kapat"
+  },
+  "push": {
+    "title": "Bildirimler",
+    "description": "Sohbet kapalıyken bile mesaj alın",
+    "enable": "Bildirimleri etkinleştir",
+    "disable": "Bildirimleri devre dışı bırak",
+    "denied": "Bildirimler engellendi",
+    "unsupported": "Bildirimler desteklenmiyor",
+    "subscribing": "Abone olunuyor...",
+    "notifications": "Bildirimler"
+  },
+  "notification": {
+    "openChat": "Sohbeti Aç",
+    "dismiss": "Kapat"
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "error": "Hata",
+    "retry": "Tekrar dene",
+    "cancel": "İptal",
+    "download": "İndir"
+  }
+}

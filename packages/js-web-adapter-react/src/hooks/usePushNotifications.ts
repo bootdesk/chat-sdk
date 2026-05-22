@@ -7,6 +7,8 @@ interface UsePushNotificationsOptions {
   onSubscribe: PushConfig["onSubscribe"];
   onUnsubscribe: PushConfig["onUnsubscribe"];
   serviceWorkerUrl?: string;
+  serviceWorkerScope?: string;
+  serviceWorkerType?: "classic" | "module";
   notificationOptions?: PushConfig["notificationOptions"];
 }
 
@@ -23,6 +25,8 @@ export function usePushNotifications(options: UsePushNotificationsOptions) {
       onSubscribe: options.onSubscribe,
       onUnsubscribe: options.onUnsubscribe,
       serviceWorkerUrl: options.serviceWorkerUrl,
+      serviceWorkerScope: options.serviceWorkerScope,
+      serviceWorkerType: options.serviceWorkerType,
       notificationOptions: options.notificationOptions,
     });
 

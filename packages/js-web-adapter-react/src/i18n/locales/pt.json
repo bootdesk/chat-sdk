@@ -1,4 +1,5 @@
 {
+  "direction": "ltr",
   "chatWidget": {
     "title": "Chat",
     "placeholder": "Digite uma mensagem...",
@@ -31,11 +32,28 @@
   "header": {
     "enterFullscreen": "Tela cheia",
     "exitFullscreen": "Sair da tela cheia",
-    "closeChat": "Fechar chat"
+    "closeChat": "Fechar chat",
+    "lightMode": "Modo claro",
+    "darkMode": "Modo escuro",
+    "autoMode": "Tema do sistema"
   },
   "floatingButton": {
     "openChat": "Abrir chat",
     "closeChat": "Fechar chat"
+  },
+  "push": {
+    "title": "Notificações",
+    "description": "Receba mensagens mesmo com o chat fechado",
+    "enable": "Habilitar notificações",
+    "disable": "Desabilitar notificações",
+    "denied": "Notificações bloqueadas",
+    "unsupported": "Notificações não suportadas",
+    "subscribing": "Inscrevendo...",
+    "notifications": "Notificações"
+  },
+  "notification": {
+    "openChat": "Abrir chat",
+    "dismiss": "Dispensar"
   },
   "common": {
     "loading": "Carregando...",

@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "聊天",
+    "placeholder": "輸入訊息...",
+    "openChat": "開啟聊天",
+    "closeChat": "關閉聊天",
+    "connectionStatus": {
+      "connected": "已連線",
+      "disconnected": "已斷線"
+    }
+  },
+  "inputArea": {
+    "send": "傳送",
+    "uploading": "上傳中...",
+    "dropzone": {
+      "dropFiles": "將檔案拖放到此處",
+      "dropOrClick": "拖放或點擊以附加檔案"
+    }
+  },
+  "typingIndicator": {
+    "typing": "正在輸入",
+    "isTyping": "正在輸入..."
+  },
+  "messageList": {
+    "emptyState": "尚無訊息。開始對話吧！"
+  },
+  "attachmentList": {
+    "remove": "移除",
+    "uploadFailed": "上傳失敗"
+  },
+  "header": {
+    "enterFullscreen": "進入全螢幕",
+    "exitFullscreen": "退出全螢幕",
+    "closeChat": "關閉聊天",
+    "lightMode": "淺色模式",
+    "darkMode": "深色模式",
+    "autoMode": "系統主題"
+  },
+  "floatingButton": {
+    "openChat": "開啟聊天",
+    "closeChat": "關閉聊天"
+  },
+  "push": {
+    "title": "通知",
+    "description": "即使在聊天關閉時也能接收訊息",
+    "enable": "啟用通知",
+    "disable": "停用通知",
+    "denied": "通知已被封鎖",
+    "unsupported": "不支援通知",
+    "subscribing": "訂閱中...",
+    "notifications": "通知"
+  },
+  "notification": {
+    "openChat": "開啟聊天",
+    "dismiss": "關閉"
+  },
+  "common": {
+    "loading": "載入中...",
+    "error": "錯誤",
+    "retry": "重試",
+    "cancel": "取消",
+    "download": "下載"
+  }
+}

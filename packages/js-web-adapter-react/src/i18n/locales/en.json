@@ -1,4 +1,5 @@
 {
+  "direction": "ltr",
   "chatWidget": {
     "title": "Chat",
     "placeholder": "Type a message...",
@@ -39,6 +40,20 @@
   "floatingButton": {
     "openChat": "Open chat",
     "closeChat": "Close chat"
+  },
+  "push": {
+    "title": "Notifications",
+    "description": "Receive messages even when chat is closed",
+    "enable": "Enable Notifications",
+    "disable": "Disable Notifications",
+    "denied": "Notifications blocked",
+    "unsupported": "Notifications not supported",
+    "subscribing": "Subscribing...",
+    "notifications": "Notifications"
+  },
+  "notification": {
+    "openChat": "Open Chat",
+    "dismiss": "Dismiss"
   },
   "common": {
     "loading": "Loading...",

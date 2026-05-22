@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "聊天",
+    "placeholder": "输入消息...",
+    "openChat": "打开聊天",
+    "closeChat": "关闭聊天",
+    "connectionStatus": {
+      "connected": "已连接",
+      "disconnected": "已断开"
+    }
+  },
+  "inputArea": {
+    "send": "发送",
+    "uploading": "上传中...",
+    "dropzone": {
+      "dropFiles": "将文件拖放到此处",
+      "dropOrClick": "拖放或点击以附加文件"
+    }
+  },
+  "typingIndicator": {
+    "typing": "正在输入",
+    "isTyping": "正在输入..."
+  },
+  "messageList": {
+    "emptyState": "暂无消息。开始对话吧！"
+  },
+  "attachmentList": {
+    "remove": "移除",
+    "uploadFailed": "上传失败"
+  },
+  "header": {
+    "enterFullscreen": "进入全屏",
+    "exitFullscreen": "退出全屏",
+    "closeChat": "关闭聊天",
+    "lightMode": "浅色模式",
+    "darkMode": "深色模式",
+    "autoMode": "系统主题"
+  },
+  "floatingButton": {
+    "openChat": "打开聊天",
+    "closeChat": "关闭聊天"
+  },
+  "push": {
+    "title": "通知",
+    "description": "即使在聊天关闭时也能接收消息",
+    "enable": "启用通知",
+    "disable": "禁用通知",
+    "denied": "通知已被阻止",
+    "unsupported": "不支持通知",
+    "subscribing": "订阅中...",
+    "notifications": "通知"
+  },
+  "notification": {
+    "openChat": "打开聊天",
+    "dismiss": "关闭"
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "retry": "重试",
+    "cancel": "取消",
+    "download": "下载"
+  }
+}

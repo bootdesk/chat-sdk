@@ -55,12 +55,19 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 1rem;
         }
 
         .app-header h1 {
             font-size: 1rem;
             font-weight: 600;
             margin: 0;
+        }
+
+        .app-header .left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
         .app-header .subtitle {
@@ -82,6 +89,7 @@
             font-family: inherit;
             cursor: pointer;
             transition: background 0.2s;
+            white-space: nowrap;
         }
 
         .open-chat-btn:hover {
@@ -175,7 +183,7 @@
             top: 0;
             right: 0;
             bottom: 0;
-            width: 420px;
+            width: 480px;
             max-width: 100dvw;
             background: #fff;
             z-index: 101;
@@ -194,29 +202,48 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0.75rem 1rem;
+            padding: 0.5rem 0.75rem;
             border-bottom: 1px solid #e3e3e0;
+            gap: 0.5rem;
+            min-height: 48px;
         }
 
         .chat-panel-header .panel-title {
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             font-weight: 600;
+            white-space: nowrap;
         }
 
-        .chat-panel-header .panel-controls {
+        .config-group {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.375rem;
         }
 
-        .chat-panel-header .panel-controls input,
-        .chat-panel-header .panel-controls select {
+        .config-group label {
+            font-size: 0.6875rem;
+            color: #706f6c;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 500;
+        }
+
+        .config-group select,
+        .config-group input {
             font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
+            padding: 0.25rem 0.375rem;
             border: 1px solid #e3e3e0;
             border-radius: 4px;
             font-family: inherit;
-            max-width: 120px;
+            background: #fff;
+            color: #1b1b18;
+            max-width: 110px;
+        }
+
+        .config-divider {
+            width: 1px;
+            height: 22px;
+            background: #e3e3e0;
         }
 
         .chat-panel-header button {
@@ -229,6 +256,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
 
         .chat-panel-header button:hover {
@@ -274,7 +302,7 @@
 
 <body>
     <header class="app-header">
-        <div style="display:flex;align-items:center;gap:1rem;">
+        <div class="left">
             <div>
                 <h1>BootDesk Chat</h1>
                 <div class="subtitle">Iframe Bridge Demo</div>
@@ -297,7 +325,7 @@
     <div class="main-content">
         <h2>iframe Bridge Test</h2>
         <p>This page embeds the chat widget in an <code>&lt;iframe&gt;</code> and communicates via <code>postMessage</code>.</p>
-        <p>The parent sends config overrides (title, placeholder) to the iframe. The iframe forwards every chat message back to the parent.</p>
+        <p>The parent sends config overrides (locale, title, placeholder, theme) to the iframe. The iframe forwards every chat message back to the parent.</p>
 
         <div class="message-log">
             <div class="message-log-header">Messages from iframe</div>
@@ -312,15 +340,66 @@
     <div class="chat-panel" id="chatPanel">
         <div class="chat-panel-header">
             <span class="panel-title">Chat Widget</span>
-            <div class="panel-controls">
-                <input type="text" id="titleInput" value="My Own Chat" placeholder="Title" />
-                <input type="text" id="placeholderInput" value="Type a message..." placeholder="Placeholder" />
-                <select id="themeSelect">
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                    <option value="auto" selected>Auto</option>
-                </select>
+
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:flex-end;">
+                <div class="config-group">
+                    <label for="localeSelect">Lang</label>
+                    <select id="localeSelect">
+                        <option value="">Default (en)</option>
+                        <option value="en">English</option>
+                        <option value="pt">Português</option>
+                        <option value="es">Español</option>
+                        <option value="fr">Français</option>
+                        <option value="de">Deutsch</option>
+                        <option value="it">Italiano</option>
+                        <option value="nl">Nederlands</option>
+                        <option value="da">Dansk</option>
+                        <option value="sv">Svenska</option>
+                        <option value="nb">Norsk</option>
+                        <option value="fi">Suomi</option>
+                        <option value="pl">Polski</option>
+                        <option value="cs">Čeština</option>
+                        <option value="ro">Română</option>
+                        <option value="hu">Magyar</option>
+                        <option value="uk">Українська</option>
+                        <option value="ru">Русский</option>
+                        <option value="el">Ελληνικά</option>
+                        <option value="tr">Türkçe</option>
+                        <option value="et">Eesti</option>
+                        <option value="ja">日本語</option>
+                        <option value="zh-CN">简体中文</option>
+                        <option value="zh-TW">繁體中文</option>
+                        <option value="ko">한국어</option>
+                        <option value="vi">Tiếng Việt</option>
+                        <option value="th">ไทย</option>
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="hi">हिन्दी</option>
+                        <option value="ar">العربية</option>
+                    </select>
+                </div>
+
+                <div class="config-divider"></div>
+
+                <div class="config-group">
+                    <label for="titleInput">Title</label>
+                    <input type="text" id="titleInput" value="My Own Chat" placeholder="Title" />
+                </div>
+
+                <div class="config-group">
+                    <label for="placeholderInput">Placeholder</label>
+                    <input type="text" id="placeholderInput" value="Type a message..." placeholder="Placeholder" />
+                </div>
+
+                <div class="config-group">
+                    <label for="themeSelect">Theme</label>
+                    <select id="themeSelect">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="auto" selected>Auto</option>
+                    </select>
+                </div>
             </div>
+
             <button id="closePanelBtn" title="Close">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M18 6L6 18M6 6l12 12" />
@@ -345,6 +424,7 @@
             const titleInput = document.getElementById('titleInput');
             const placeholderInput = document.getElementById('placeholderInput');
             const themeSelect = document.getElementById('themeSelect');
+            const localeSelect = document.getElementById('localeSelect');
             const messageLog = document.getElementById('messageLog');
 
             let isOpen = false;
@@ -355,6 +435,7 @@
                 const theme = themeSelect.value;
                 const payload = {
                     type: 'chat-config',
+                    locale: localeSelect.value || undefined,
                     title: titleInput.value || undefined,
                     placeholder: placeholderInput.value || undefined,
                     theme: {
@@ -399,6 +480,7 @@
             titleInput.addEventListener('input', sendConfig);
             placeholderInput.addEventListener('input', sendConfig);
             themeSelect.addEventListener('change', sendConfig);
+            localeSelect.addEventListener('change', sendConfig);
 
             window.addEventListener('message', function(event) {
                 if (event.source !== iframe.contentWindow) return;

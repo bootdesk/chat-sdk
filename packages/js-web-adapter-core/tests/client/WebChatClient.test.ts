@@ -286,6 +286,63 @@ describe("WebChatClient", () => {
     expect(states).toEqual(["started:bot-1"]);
   });
 
+  it("onMessageEdited typed listener receives events", () => {
+    const client = createClient();
+    (client as any).handleMessagePosted({
+      messageId: "msg-edit", threadId: "t", text: "Orig", author: { id: "bot" }, timestamp: 1,
+    });
+
+    const events: any[] = [];
+    client.onMessageEdited((e) => events.push(e));
+
+    (client as any).handleMessageEdited({ messageId: "msg-edit", newText: "Updated" });
+    expect(events).toHaveLength(1);
+    expect(events[0].newText).toBe("Updated");
+  });
+
+  it("onMessageDeleted typed listener receives events", () => {
+    const client = createClient();
+    (client as any).handleMessagePosted({
+      messageId: "msg-del", threadId: "t", text: "Bye", author: { id: "bot" }, timestamp: 1,
+    });
+
+    const events: any[] = [];
+    client.onMessageDeleted((e) => events.push(e));
+
+    (client as any).handleMessageDeleted({ messageId: "msg-del" });
+    expect(events).toHaveLength(1);
+    expect(events[0].messageId).toBe("msg-del");
+  });
+
+  it("onReactionAdded typed listener receives events", () => {
+    const client = createClient();
+    (client as any).handleMessagePosted({
+      messageId: "msg-reaction", threadId: "t", text: "Hi", author: { id: "bot" }, timestamp: 1,
+    });
+
+    const events: any[] = [];
+    client.onReactionAdded((e) => events.push(e));
+
+    (client as any).handleReactionAdded({ messageId: "msg-reaction", emoji: "👍", user: { id: "user-2" } });
+    expect(events).toHaveLength(1);
+    expect(events[0].emoji).toBe("👍");
+  });
+
+  it("onReactionRemoved typed listener receives events", () => {
+    const client = createClient();
+    (client as any).handleMessagePosted({
+      messageId: "msg-unreact", threadId: "t", text: "Hi", author: { id: "bot" }, timestamp: 1,
+    });
+
+    const events: any[] = [];
+    client.onReactionRemoved((e) => events.push(e));
+
+    (client as any).handleReactionAdded({ messageId: "msg-unreact", emoji: "👍", user: { id: "user-2" } });
+    (client as any).handleReactionRemoved({ messageId: "msg-unreact", emoji: "👍", user: { id: "user-2" } });
+    expect(events).toHaveLength(1);
+    expect(events[0].emoji).toBe("👍");
+  });
+
   it("loads messages and seeds local state", async () => {
     mockFetch({
       messages: [

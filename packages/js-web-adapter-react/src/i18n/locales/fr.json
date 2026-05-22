@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Chat",
+    "placeholder": "Écrivez un message...",
+    "openChat": "Ouvrir le chat",
+    "closeChat": "Fermer le chat",
+    "connectionStatus": {
+      "connected": "Connecté",
+      "disconnected": "Déconnecté"
+    }
+  },
+  "inputArea": {
+    "send": "Envoyer",
+    "uploading": "Téléchargement...",
+    "dropzone": {
+      "dropFiles": "Déposez les fichiers ici",
+      "dropOrClick": "Déposez ou cliquez pour joindre"
+    }
+  },
+  "typingIndicator": {
+    "typing": "tape",
+    "isTyping": "tape..."
+  },
+  "messageList": {
+    "emptyState": "Aucun message pour l'instant. Lancez la conversation !"
+  },
+  "attachmentList": {
+    "remove": "Supprimer",
+    "uploadFailed": "Échec du téléchargement"
+  },
+  "header": {
+    "enterFullscreen": "Plein écran",
+    "exitFullscreen": "Quitter le plein écran",
+    "closeChat": "Fermer le chat",
+    "lightMode": "Mode clair",
+    "darkMode": "Mode sombre",
+    "autoMode": "Thème système"
+  },
+  "floatingButton": {
+    "openChat": "Ouvrir le chat",
+    "closeChat": "Fermer le chat"
+  },
+  "push": {
+    "title": "Notifications",
+    "description": "Recevez des messages même lorsque le chat est fermé",
+    "enable": "Activer les notifications",
+    "disable": "Désactiver les notifications",
+    "denied": "Notifications bloquées",
+    "unsupported": "Notifications non prises en charge",
+    "subscribing": "Abonnement...",
+    "notifications": "Notifications"
+  },
+  "notification": {
+    "openChat": "Ouvrir le Chat",
+    "dismiss": "Ignorer"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "retry": "Réessayer",
+    "cancel": "Annuler",
+    "download": "Télécharger"
+  }
+}

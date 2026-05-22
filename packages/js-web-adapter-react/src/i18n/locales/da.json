@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Chat",
+    "placeholder": "Skriv en besked...",
+    "openChat": "Åbn chat",
+    "closeChat": "Luk chat",
+    "connectionStatus": {
+      "connected": "Forbundet",
+      "disconnected": "Afbrudt"
+    }
+  },
+  "inputArea": {
+    "send": "Send",
+    "uploading": "Uploader...",
+    "dropzone": {
+      "dropFiles": "Slip filer her",
+      "dropOrClick": "Slip eller klik for at vedhæfte"
+    }
+  },
+  "typingIndicator": {
+    "typing": "skriver",
+    "isTyping": "skriver..."
+  },
+  "messageList": {
+    "emptyState": "Ingen beskeder endnu. Start samtalen!"
+  },
+  "attachmentList": {
+    "remove": "Fjern",
+    "uploadFailed": "Upload fejlede"
+  },
+  "header": {
+    "enterFullscreen": "Fuld skærm",
+    "exitFullscreen": "Afslut fuld skærm",
+    "closeChat": "Luk chat",
+    "lightMode": "Lys tilstand",
+    "darkMode": "Mørk tilstand",
+    "autoMode": "Systemtema"
+  },
+  "floatingButton": {
+    "openChat": "Åbn chat",
+    "closeChat": "Luk chat"
+  },
+  "push": {
+    "title": "Notifikationer",
+    "description": "Modtag beskeder, selv når chatten er lukket",
+    "enable": "Aktiver notifikationer",
+    "disable": "Deaktiver notifikationer",
+    "denied": "Notifikationer blokeret",
+    "unsupported": "Notifikationer understøttes ikke",
+    "subscribing": "Abonnerer...",
+    "notifications": "Notifikationer"
+  },
+  "notification": {
+    "openChat": "Åbn Chat",
+    "dismiss": "Afvis"
+  },
+  "common": {
+    "loading": "Indlæser...",
+    "error": "Fejl",
+    "retry": "Prøv igen",
+    "cancel": "Annuller",
+    "download": "Download"
+  }
+}

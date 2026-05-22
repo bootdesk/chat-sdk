@@ -1,18 +1,22 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { WebChatClient } from "@bootdesk/js-web-adapter-core";
 
-import { useBridge, useMessages, useTyping } from "../hooks";
+import { useBridge, useMessages, useTyping, usePushNotifications } from "../hooks";
+import { LocaleProvider, mergeLocale, useLocale } from "../i18n";
 import { FloatingButton } from "./FloatingButton";
 import { Header } from "./Header";
 import { MessageList } from "./MessageList";
 import { InputArea } from "./InputArea";
 import { TypingIndicator } from "./TypingIndicator";
+import { PushPermissionPrompt } from "./PushPermissionPrompt";
+import type { PushConfig } from "@bootdesk/js-web-adapter-core";
 
 type DisplayMode = "floating" | "fullscreen" | "embedded";
 export type ThemeMode = "light" | "dark" | "auto";
 
 export interface ChatWidgetProps {
   client: WebChatClient;
+  locale?: string;
   initialMode?: DisplayMode;
   theme?: ThemeMode;
   onThemeChange?: (theme: ThemeMode) => void;
@@ -44,10 +48,20 @@ export interface ChatWidgetProps {
   accept?: string;
   maxFileSize?: number;
   renderPushPrompt?: () => React.ReactNode;
+  pushConfig?: {
+    getVapidPublicKey: () => Promise<string>;
+    onSubscribe: PushConfig["onSubscribe"];
+    onUnsubscribe: PushConfig["onUnsubscribe"];
+    serviceWorkerUrl?: string;
+    serviceWorkerScope?: string;
+    serviceWorkerType?: "classic" | "module";
+    notificationOptions?: PushConfig["notificationOptions"];
+  };
 }
 
 export function ChatWidget({
   client,
+  locale: localeProp,
   initialMode = "floating",
   theme: themeProp,
   onThemeChange,
@@ -56,7 +70,7 @@ export function ChatWidget({
   showClose = true,
   showFullscreenToggle = true,
   title = "Chat",
-  placeholder = "Type a message...",
+  placeholder,
   onOpen,
   onClose,
   embedded,
@@ -66,6 +80,7 @@ export function ChatWidget({
   accept,
   maxFileSize,
   renderPushPrompt,
+  pushConfig,
 }: ChatWidgetProps): React.JSX.Element {
   const {
     config: iframeConfig,
@@ -74,6 +89,15 @@ export function ChatWidget({
     notifyViewportConfig,
     onNotificationClicked,
   } = useBridge();
+
+  const effectiveLocale =
+    localeProp ?? (isInIframe ? iframeConfig?.locale : undefined) ?? useLocale().locale;
+  const merged = mergeLocale(effectiveLocale);
+  const dir = merged.direction;
+
+  useEffect(() => {
+    client.setLocaleHeader(effectiveLocale);
+  }, [client, effectiveLocale]);
 
   const autoEmbedded = isInIframe && embedded !== false;
   const effectiveEmbedded = embedded === true || autoEmbedded;
@@ -173,6 +197,22 @@ export function ChatWidget({
   );
   const { isSomeoneTyping } = useTyping(client);
 
+  const push = usePushNotifications({
+    enabled: !!pushConfig,
+    getVapidPublicKey: pushConfig?.getVapidPublicKey ?? (() => Promise.resolve("")),
+    onSubscribe: pushConfig?.onSubscribe ?? (async () => {}),
+    onUnsubscribe: pushConfig?.onUnsubscribe ?? (async () => {}),
+    serviceWorkerUrl: pushConfig?.serviceWorkerUrl,
+    serviceWorkerScope: pushConfig?.serviceWorkerScope,
+    serviceWorkerType: pushConfig?.serviceWorkerType,
+    notificationOptions: pushConfig?.notificationOptions,
+  });
+
+  const handlePushToggle = useCallback(() => {
+    if (push.isSubscribed) push.unsubscribe();
+    else push.subscribe();
+  }, [push.isSubscribed, push.subscribe, push.unsubscribe]);
+
   useEffect(() => {
     if (!isInIframe || !iframeConfig) return;
     if (iframeConfig.theme?.cssVariables) {
@@ -195,7 +235,7 @@ export function ChatWidget({
   }, [isInIframe, onNotificationClicked, reloadMessages]);
 
   const effectiveTitle = (isInIframe && iframeConfig?.title) || title;
-  const effectivePlaceholder = (isInIframe && iframeConfig?.placeholder) || placeholder;
+  const effectivePlaceholder = (isInIframe && iframeConfig?.placeholder) || placeholder || merged.chatWidget.placeholder;
 
   const currentUserId = "getCurrentUserId" in client ? client.getCurrentUserId() : "";
 
@@ -247,51 +287,58 @@ export function ChatWidget({
     }
   }, [isInIframe]);
 
-  if (effectiveEmbedded) {
-    return (
-      <div
-        className="flex flex-col h-full min-h-[300px] overflow-hidden bg-chat-background"
-        data-chat-widget="embedded"
-        data-chat-theme={effectiveTheme}
-      >
-        <Header
-          title={effectiveTitle}
-          isFullscreen={false}
-          showConnectionStatus
-          isConnected={isConnected}
-          className={className?.header}
-          theme={theme}
-          onThemeChange={handleThemeChange}
-          onClose={isInIframe ? embeddedClose : undefined}
+  const widget = effectiveEmbedded ? (
+    <div
+      dir={dir}
+      className="flex flex-col h-full min-h-[300px] overflow-hidden bg-chat-background"
+      data-chat-widget="embedded"
+      data-chat-theme={effectiveTheme}
+    >
+      <Header
+        title={effectiveTitle}
+        isFullscreen={false}
+        showConnectionStatus
+        isConnected={isConnected}
+        className={className?.header}
+        theme={theme}
+        onThemeChange={handleThemeChange}
+        onClose={isInIframe ? embeddedClose : undefined}
+        pushStatus={pushConfig ? push.status : undefined}
+        onPushToggle={pushConfig ? handlePushToggle : undefined}
+      />
+
+      <MessageList
+        messages={messages}
+        currentUserId={currentUserId}
+        isLoading={isLoadingHistory || loading}
+        onActionClick={handleActionClick}
+        onReactionClick={handleReactionClick}
+        className={className?.messageList}
+      />
+
+      {isSomeoneTyping && <TypingIndicator />}
+
+      {pushConfig ? (
+        <PushPermissionPrompt
+          getVapidPublicKey={pushConfig.getVapidPublicKey}
+          onSubscribe={pushConfig.onSubscribe}
+          onUnsubscribe={pushConfig.onUnsubscribe}
         />
+      ) : (
+        renderPushPrompt?.()
+      )}
 
-        <MessageList
-          messages={messages}
-          currentUserId={currentUserId}
-          isLoading={isLoadingHistory || loading}
-          onActionClick={handleActionClick}
-          onReactionClick={handleReactionClick}
-          className={className?.messageList}
-        />
-
-        {isSomeoneTyping && <TypingIndicator />}
-
-        {renderPushPrompt?.()}
-
-        <InputArea
-          onSend={handleSend}
-          placeholder={effectivePlaceholder}
-          className={className?.inputArea}
-          enableAttachments={enableAttachments}
-          uploadConfig={uploadConfig}
-          accept={accept}
-          maxFileSize={maxFileSize}
-        />
-      </div>
-    );
-  }
-
-  return (
+      <InputArea
+        onSend={handleSend}
+        placeholder={effectivePlaceholder}
+        className={className?.inputArea}
+        enableAttachments={enableAttachments}
+        uploadConfig={uploadConfig}
+        accept={accept}
+        maxFileSize={maxFileSize}
+      />
+    </div>
+  ) : (
     <>
       {!effectiveEmbedded && !isOpen && (
         <FloatingButton
@@ -310,6 +357,7 @@ export function ChatWidget({
 
       {isOpen && (
         <div
+          dir={dir}
           className={`flex flex-col overflow-hidden ${
             displayMode === "fullscreen"
               ? "fixed inset-0 z-50"
@@ -331,6 +379,8 @@ export function ChatWidget({
             className={className?.header}
             theme={theme}
             onThemeChange={handleThemeChange}
+            pushStatus={pushConfig ? push.status : undefined}
+            onPushToggle={pushConfig ? handlePushToggle : undefined}
           />
 
           <MessageList
@@ -344,7 +394,15 @@ export function ChatWidget({
 
           {isSomeoneTyping && <TypingIndicator />}
 
-          {renderPushPrompt?.()}
+          {pushConfig ? (
+            <PushPermissionPrompt
+              getVapidPublicKey={pushConfig.getVapidPublicKey}
+              onSubscribe={pushConfig.onSubscribe}
+              onUnsubscribe={pushConfig.onUnsubscribe}
+            />
+          ) : (
+            renderPushPrompt?.()
+          )}
 
           <InputArea
             onSend={handleSend}
@@ -360,4 +418,6 @@ export function ChatWidget({
       )}
     </>
   );
+
+  return <LocaleProvider locale={effectiveLocale}>{widget}</LocaleProvider>;
 }

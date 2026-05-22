@@ -6,6 +6,7 @@ import {
 import { ChatProvider, ChatWidget } from "@bootdesk/js-web-adapter-react";
 import Echo from "laravel-echo";
 import Pusher from "pusher-js";
+import swUrl from "../chat-service-worker.js?url";
 
 window.Pusher = Pusher;
 
@@ -52,16 +53,48 @@ if (!existingId) {
     saveConversationId(client.getConversationId());
 }
 
+async function getVapidPublicKey() {
+    const res = await fetch("/api/push/vapid-public-key");
+    const data = await res.json();
+    return data.publicKey;
+}
+
+const httpClient = client.getHttpClient();
+const userId = client.getCurrentUserId();
+const threadId = client.getConversationId();
+
+const pushHandlers = {
+    onSubscribe: async (subscription) => {
+        await httpClient.post("/api/push/subscriptions", {
+            userId,
+            subscription,
+            userAgent: navigator.userAgent,
+            threadId,
+        });
+    },
+    onUnsubscribe: async (subscription) => {
+        await httpClient.delete(
+            `/api/push/subscriptions?userId=${encodeURIComponent(userId)}&endpoint=${encodeURIComponent(subscription.endpoint || "")}`,
+        );
+    },
+};
+
 export function ChatApp() {
     return (
         <ChatProvider client={client}>
             <ChatWidget
                 client={client}
                 title="My Own Chat"
-                placeholder="Type a message..."
                 enableAttachments
                 uploadConfig={{ endpoint: "/api/chat/upload" }}
                 initialMode="floating"
+                pushConfig={{
+                    getVapidPublicKey,
+                    onSubscribe: pushHandlers.onSubscribe,
+                    onUnsubscribe: pushHandlers.onUnsubscribe,
+                    serviceWorkerUrl: swUrl,
+                    serviceWorkerType: "module",
+                }}
             />
         </ChatProvider>
     );

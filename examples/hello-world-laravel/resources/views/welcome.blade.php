@@ -122,6 +122,10 @@
                 Signed Upload Demo
                 <span>Multi-step signed URL attachment upload (AttachmentUploadConfig)</span>
             </a>
+            <a href="/push-test">
+                Push Test
+                <span>Web push notification test — manage subscriptions, send test pushes</span>
+            </a>
         </div>
     </div>
 

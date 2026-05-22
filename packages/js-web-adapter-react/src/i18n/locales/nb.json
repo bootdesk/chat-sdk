@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Chat",
+    "placeholder": "Skriv en melding...",
+    "openChat": "Åpne chat",
+    "closeChat": "Lukk chat",
+    "connectionStatus": {
+      "connected": "Tilkoblet",
+      "disconnected": "Frakoblet"
+    }
+  },
+  "inputArea": {
+    "send": "Send",
+    "uploading": "Laster opp...",
+    "dropzone": {
+      "dropFiles": "Slipp filer her",
+      "dropOrClick": "Slipp eller klikk for å legge ved"
+    }
+  },
+  "typingIndicator": {
+    "typing": "skriver",
+    "isTyping": "skriver..."
+  },
+  "messageList": {
+    "emptyState": "Ingen meldinger ennå. Start samtalen!"
+  },
+  "attachmentList": {
+    "remove": "Fjern",
+    "uploadFailed": "Opplasting mislyktes"
+  },
+  "header": {
+    "enterFullscreen": "Fullskjerm",
+    "exitFullscreen": "Avslutt fullskjerm",
+    "closeChat": "Lukk chat",
+    "lightMode": "Lys modus",
+    "darkMode": "Mørk modus",
+    "autoMode": "Systemtema"
+  },
+  "floatingButton": {
+    "openChat": "Åpne chat",
+    "closeChat": "Lukk chat"
+  },
+  "push": {
+    "title": "Varsler",
+    "description": "Motta meldinger selv når chatten er lukket",
+    "enable": "Aktiver varsler",
+    "disable": "Deaktiver varsler",
+    "denied": "Varsler blokkert",
+    "unsupported": "Varsler støttes ikke",
+    "subscribing": "Abonnerer...",
+    "notifications": "Varsler"
+  },
+  "notification": {
+    "openChat": "Åpne Chat",
+    "dismiss": "Avvis"
+  },
+  "common": {
+    "loading": "Laster...",
+    "error": "Feil",
+    "retry": "Prøv igjen",
+    "cancel": "Avbryt",
+    "download": "Last ned"
+  }
+}

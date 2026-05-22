@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "チャット",
+    "placeholder": "メッセージを入力...",
+    "openChat": "チャットを開く",
+    "closeChat": "チャットを閉じる",
+    "connectionStatus": {
+      "connected": "接続済み",
+      "disconnected": "切断済み"
+    }
+  },
+  "inputArea": {
+    "send": "送信",
+    "uploading": "アップロード中...",
+    "dropzone": {
+      "dropFiles": "ファイルをここにドロップ",
+      "dropOrClick": "ドロップまたはクリックして添付"
+    }
+  },
+  "typingIndicator": {
+    "typing": "入力中",
+    "isTyping": "入力中..."
+  },
+  "messageList": {
+    "emptyState": "まだメッセージがありません。会話を始めましょう！"
+  },
+  "attachmentList": {
+    "remove": "削除",
+    "uploadFailed": "アップロードに失敗しました"
+  },
+  "header": {
+    "enterFullscreen": "全画面表示",
+    "exitFullscreen": "全画面を終了",
+    "closeChat": "チャットを閉じる",
+    "lightMode": "ライトモード",
+    "darkMode": "ダークモード",
+    "autoMode": "システムテーマ"
+  },
+  "floatingButton": {
+    "openChat": "チャットを開く",
+    "closeChat": "チャットを閉じる"
+  },
+  "push": {
+    "title": "通知",
+    "description": "チャットが閉じていてもメッセージを受信",
+    "enable": "通知を有効にする",
+    "disable": "通知を無効にする",
+    "denied": "通知がブロックされています",
+    "unsupported": "通知はサポートされていません",
+    "subscribing": "登録中...",
+    "notifications": "通知"
+  },
+  "notification": {
+    "openChat": "チャットを開く",
+    "dismiss": "閉じる"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "retry": "再試行",
+    "cancel": "キャンセル",
+    "download": "ダウンロード"
+  }
+}

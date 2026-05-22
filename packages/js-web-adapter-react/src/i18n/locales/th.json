@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "แชท",
+    "placeholder": "พิมพ์ข้อความ...",
+    "openChat": "เปิดแชท",
+    "closeChat": "ปิดแชท",
+    "connectionStatus": {
+      "connected": "เชื่อมต่อแล้ว",
+      "disconnected": "ตัดการเชื่อมต่อแล้ว"
+    }
+  },
+  "inputArea": {
+    "send": "ส่ง",
+    "uploading": "กำลังอัปโหลด...",
+    "dropzone": {
+      "dropFiles": "วางไฟล์ที่นี่",
+      "dropOrClick": "วางหรือคลิกเพื่อแนบ"
+    }
+  },
+  "typingIndicator": {
+    "typing": "กำลังพิมพ์",
+    "isTyping": "กำลังพิมพ์..."
+  },
+  "messageList": {
+    "emptyState": "ยังไม่มีข้อความ เริ่มการสนทนา!"
+  },
+  "attachmentList": {
+    "remove": "ลบ",
+    "uploadFailed": "อัปโหลดล้มเหลว"
+  },
+  "header": {
+    "enterFullscreen": "เต็มหน้าจอ",
+    "exitFullscreen": "ออกจากเต็มหน้าจอ",
+    "closeChat": "ปิดแชท",
+    "lightMode": "โหมดสว่าง",
+    "darkMode": "โหมดมืด",
+    "autoMode": "ธีมระบบ"
+  },
+  "floatingButton": {
+    "openChat": "เปิดแชท",
+    "closeChat": "ปิดแชท"
+  },
+  "push": {
+    "title": "การแจ้งเตือน",
+    "description": "รับข้อความแม้ในขณะที่ปิดแชทอยู่",
+    "enable": "เปิดการแจ้งเตือน",
+    "disable": "ปิดการแจ้งเตือน",
+    "denied": "การแจ้งเตือนถูกบล็อก",
+    "unsupported": "ไม่รองรับการแจ้งเตือน",
+    "subscribing": "กำลังสมัครรับ...",
+    "notifications": "การแจ้งเตือน"
+  },
+  "notification": {
+    "openChat": "เปิดแชท",
+    "dismiss": "ปิด"
+  },
+  "common": {
+    "loading": "กำลังโหลด...",
+    "error": "ข้อผิดพลาด",
+    "retry": "ลองอีกครั้ง",
+    "cancel": "ยกเลิก",
+    "download": "ดาวน์โหลด"
+  }
+}

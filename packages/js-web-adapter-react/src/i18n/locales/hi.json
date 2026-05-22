@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "चैट",
+    "placeholder": "संदेश लिखें...",
+    "openChat": "चैट खोलें",
+    "closeChat": "चैट बंद करें",
+    "connectionStatus": {
+      "connected": "कनेक्टेड",
+      "disconnected": "डिस्कनेक्टेड"
+    }
+  },
+  "inputArea": {
+    "send": "भेजें",
+    "uploading": "अपलोड हो रहा है...",
+    "dropzone": {
+      "dropFiles": "फ़ाइलें यहां छोड़ें",
+      "dropOrClick": "संलग्न करने के लिए छोड़ें या क्लिक करें"
+    }
+  },
+  "typingIndicator": {
+    "typing": "लिख रहा है",
+    "isTyping": "लिख रहा है..."
+  },
+  "messageList": {
+    "emptyState": "अभी तक कोई संदेश नहीं। बातचीत शुरू करें!"
+  },
+  "attachmentList": {
+    "remove": "हटाएं",
+    "uploadFailed": "अपलोड विफल"
+  },
+  "header": {
+    "enterFullscreen": "पूर्ण स्क्रीन",
+    "exitFullscreen": "पूर्ण स्क्रीन से बाहर निकलें",
+    "closeChat": "चैट बंद करें",
+    "lightMode": "लाइट मोड",
+    "darkMode": "डार्क मोड",
+    "autoMode": "सिस्टम थीम"
+  },
+  "floatingButton": {
+    "openChat": "चैट खोलें",
+    "closeChat": "चैट बंद करें"
+  },
+  "push": {
+    "title": "सूचनाएं",
+    "description": "चैट बंद होने पर भी संदेश प्राप्त करें",
+    "enable": "सूचनाएं सक्षम करें",
+    "disable": "सूचनाएं अक्षम करें",
+    "denied": "सूचनाएं अवरुद्ध",
+    "unsupported": "सूचनाएं समर्थित नहीं",
+    "subscribing": "सब्सक्राइब हो रहा है...",
+    "notifications": "सूचनाएं"
+  },
+  "notification": {
+    "openChat": "चैट खोलें",
+    "dismiss": "खारिज करें"
+  },
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "error": "त्रुटि",
+    "retry": "पुनः प्रयास करें",
+    "cancel": "रद्द करें",
+    "download": "डाउनलोड करें"
+  }
+}

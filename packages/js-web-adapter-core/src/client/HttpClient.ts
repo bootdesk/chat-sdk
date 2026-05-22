@@ -152,6 +152,34 @@ export class HttpClient {
     await this.delete(url);
   }
 
+  async postFormData(url: string, formData: FormData, signal?: AbortSignal): Promise<unknown> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+
+    try {
+      const fullUrl = this.resolve(url);
+      const combined = signal ? AbortSignal.any([controller.signal, signal]) : controller.signal;
+      const response = await fetch(fullUrl, {
+        method: "POST",
+        headers: this.config.headers,
+        signal: combined,
+        body: formData,
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      return response.json();
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  setHeader(name: string, value: string): void {
+    this.config.headers[name] = value;
+  }
+
+  removeHeader(name: string): void {
+    delete this.config.headers[name];
+  }
+
   private resolve(url: string): string {
     return /^https?:\/\//.test(url) ? url : `${this.config.apiUrl}${url}`;
   }

@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Chatt",
+    "placeholder": "Skriv ett meddelande...",
+    "openChat": "Öppna chatt",
+    "closeChat": "Stäng chatt",
+    "connectionStatus": {
+      "connected": "Ansluten",
+      "disconnected": "Frånkopplad"
+    }
+  },
+  "inputArea": {
+    "send": "Skicka",
+    "uploading": "Laddar upp...",
+    "dropzone": {
+      "dropFiles": "Släpp filer här",
+      "dropOrClick": "Släpp eller klicka för att bifoga"
+    }
+  },
+  "typingIndicator": {
+    "typing": "skriver",
+    "isTyping": "skriver..."
+  },
+  "messageList": {
+    "emptyState": "Inga meddelanden än. Starta konversationen!"
+  },
+  "attachmentList": {
+    "remove": "Ta bort",
+    "uploadFailed": "Uppladdning misslyckades"
+  },
+  "header": {
+    "enterFullscreen": "Fullskärm",
+    "exitFullscreen": "Avsluta fullskärm",
+    "closeChat": "Stäng chatt",
+    "lightMode": "Ljust läge",
+    "darkMode": "Mörkt läge",
+    "autoMode": "Systemtema"
+  },
+  "floatingButton": {
+    "openChat": "Öppna chatt",
+    "closeChat": "Stäng chatt"
+  },
+  "push": {
+    "title": "Notifikationer",
+    "description": "Ta emot meddelanden även när chatten är stängd",
+    "enable": "Aktivera notifikationer",
+    "disable": "Inaktivera notifikationer",
+    "denied": "Notifikationer blockerade",
+    "unsupported": "Notifikationer stöds inte",
+    "subscribing": "Prenumererar...",
+    "notifications": "Notifikationer"
+  },
+  "notification": {
+    "openChat": "Öppna Chatt",
+    "dismiss": "Avfärda"
+  },
+  "common": {
+    "loading": "Laddar...",
+    "error": "Fel",
+    "retry": "Försök igen",
+    "cancel": "Avbryt",
+    "download": "Ladda ner"
+  }
+}

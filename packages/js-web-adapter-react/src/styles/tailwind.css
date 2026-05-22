@@ -126,6 +126,18 @@
     @apply px-4 pl-6 text-sm italic text-[var(--chat-text-secondary)];
   }
 
+  [dir="rtl"] .chat-message-bubble-own {
+    @apply rounded-br-2xl rounded-bl-sm;
+  }
+
+  [dir="rtl"] .chat-message-bubble-other {
+    @apply rounded-bl-2xl rounded-br-sm;
+  }
+
+  [dir="rtl"] .chat-typing-indicator {
+    @apply pl-4 pr-6;
+  }
+
   [data-chat-widget="fullscreen"] {
     height: 100dvh;
   }

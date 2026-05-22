@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Chat",
+    "placeholder": "Scrivi un messaggio...",
+    "openChat": "Apri chat",
+    "closeChat": "Chiudi chat",
+    "connectionStatus": {
+      "connected": "Connesso",
+      "disconnected": "Disconnesso"
+    }
+  },
+  "inputArea": {
+    "send": "Invia",
+    "uploading": "Caricamento...",
+    "dropzone": {
+      "dropFiles": "Rilascia i file qui",
+      "dropOrClick": "Rilascia o clicca per allegare"
+    }
+  },
+  "typingIndicator": {
+    "typing": "sta scrivendo",
+    "isTyping": "sta scrivendo..."
+  },
+  "messageList": {
+    "emptyState": "Nessun messaggio ancora. Inizia la conversazione!"
+  },
+  "attachmentList": {
+    "remove": "Rimuovi",
+    "uploadFailed": "Caricamento fallito"
+  },
+  "header": {
+    "enterFullscreen": "Schermo intero",
+    "exitFullscreen": "Esci da schermo intero",
+    "closeChat": "Chiudi chat",
+    "lightMode": "Modalità chiara",
+    "darkMode": "Modalità scura",
+    "autoMode": "Tema sistema"
+  },
+  "floatingButton": {
+    "openChat": "Apri chat",
+    "closeChat": "Chiudi chat"
+  },
+  "push": {
+    "title": "Notifiche",
+    "description": "Ricevi messaggi anche quando la chat è chiusa",
+    "enable": "Attiva notifiche",
+    "disable": "Disattiva notifiche",
+    "denied": "Notifiche bloccate",
+    "unsupported": "Notifiche non supportate",
+    "subscribing": "Iscrizione...",
+    "notifications": "Notifiche"
+  },
+  "notification": {
+    "openChat": "Apri Chat",
+    "dismiss": "Ignora"
+  },
+  "common": {
+    "loading": "Caricamento...",
+    "error": "Errore",
+    "retry": "Riprova",
+    "cancel": "Annulla",
+    "download": "Scarica"
+  }
+}

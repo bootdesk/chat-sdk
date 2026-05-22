@@ -1,4 +1,5 @@
 export interface LocaleStrings {
+  direction: "ltr" | "rtl";
   chatWidget: {
     title: string;
     placeholder: string;
@@ -40,6 +41,20 @@ export interface LocaleStrings {
     openChat: string;
     closeChat: string;
   };
+  push: {
+    title: string;
+    description: string;
+    enable: string;
+    disable: string;
+    denied: string;
+    unsupported: string;
+    subscribing: string;
+    notifications: string;
+  };
+  notification: {
+    openChat: string;
+    dismiss: string;
+  };
   common: {
     loading: string;
     error: string;
@@ -49,7 +64,40 @@ export interface LocaleStrings {
   };
 }
 
-export type SupportedLocale = "en" | "en-US" | "en-GB" | "pt" | "pt-BR" | "pt-PT" | "es";
+export type SupportedLocale =
+  | "en"
+  | "en-US"
+  | "en-GB"
+  | "pt"
+  | "pt-BR"
+  | "pt-PT"
+  | "es"
+  | "da"
+  | "sv"
+  | "nb"
+  | "fi"
+  | "fr"
+  | "de"
+  | "it"
+  | "nl"
+  | "pl"
+  | "cs"
+  | "ro"
+  | "hu"
+  | "uk"
+  | "ru"
+  | "el"
+  | "tr"
+  | "et"
+  | "ja"
+  | "zh-CN"
+  | "zh-TW"
+  | "ko"
+  | "vi"
+  | "th"
+  | "id"
+  | "hi"
+  | "ar";
 
 export function getBaseLocale(locale: string): string {
   return locale.split("-")[0] || locale;
@@ -73,6 +121,8 @@ export type PartialLocaleStrings = Partial<{
     dropzone?: Partial<LocaleStrings["inputArea"]["dropzone"]>;
   };
   messageList?: Partial<LocaleStrings["messageList"]>;
+  push?: Partial<LocaleStrings["push"]>;
+  notification?: Partial<LocaleStrings["notification"]>;
   common?: Partial<LocaleStrings["common"]>;
 };
 

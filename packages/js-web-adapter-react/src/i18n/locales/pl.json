@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Czat",
+    "placeholder": "Napisz wiadomość...",
+    "openChat": "Otwórz czat",
+    "closeChat": "Zamknij czat",
+    "connectionStatus": {
+      "connected": "Połączono",
+      "disconnected": "Rozłączono"
+    }
+  },
+  "inputArea": {
+    "send": "Wyślij",
+    "uploading": "Przesyłanie...",
+    "dropzone": {
+      "dropFiles": "Upuść pliki tutaj",
+      "dropOrClick": "Upuść lub kliknij, aby dołączyć"
+    }
+  },
+  "typingIndicator": {
+    "typing": "pisze",
+    "isTyping": "pisze..."
+  },
+  "messageList": {
+    "emptyState": "Brak wiadomości. Rozpocznij rozmowę!"
+  },
+  "attachmentList": {
+    "remove": "Usuń",
+    "uploadFailed": "Przesyłanie nie powiodło się"
+  },
+  "header": {
+    "enterFullscreen": "Pełny ekran",
+    "exitFullscreen": "Opuść pełny ekran",
+    "closeChat": "Zamknij czat",
+    "lightMode": "Jasny tryb",
+    "darkMode": "Ciemny tryb",
+    "autoMode": "Motyw systemu"
+  },
+  "floatingButton": {
+    "openChat": "Otwórz czat",
+    "closeChat": "Zamknij czat"
+  },
+  "push": {
+    "title": "Powiadomienia",
+    "description": "Otrzymuj wiadomości nawet przy zamkniętym czacie",
+    "enable": "Włącz powiadomienia",
+    "disable": "Wyłącz powiadomienia",
+    "denied": "Powiadomienia zablokowane",
+    "unsupported": "Powiadomienia nieobsługiwane",
+    "subscribing": "Subskrybowanie...",
+    "notifications": "Powiadomienia"
+  },
+  "notification": {
+    "openChat": "Otwórz Czat",
+    "dismiss": "Odrzuć"
+  },
+  "common": {
+    "loading": "Ładowanie...",
+    "error": "Błąd",
+    "retry": "Spróbuj ponownie",
+    "cancel": "Anuluj",
+    "download": "Pobierz"
+  }
+}

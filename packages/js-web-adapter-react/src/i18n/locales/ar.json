@@ -1,0 +1,65 @@
+{
+  "direction": "rtl",
+  "chatWidget": {
+    "title": "الدردشة",
+    "placeholder": "اكتب رسالة...",
+    "openChat": "فتح الدردشة",
+    "closeChat": "إغلاق الدردشة",
+    "connectionStatus": {
+      "connected": "متصل",
+      "disconnected": "غير متصل"
+    }
+  },
+  "inputArea": {
+    "send": "إرسال",
+    "uploading": "جارٍ الرفع...",
+    "dropzone": {
+      "dropFiles": "أسقط الملفات هنا",
+      "dropOrClick": "أسقط أو انقر للإرفاق"
+    }
+  },
+  "typingIndicator": {
+    "typing": "يكتب",
+    "isTyping": "يكتب..."
+  },
+  "messageList": {
+    "emptyState": "لا توجد رسائل بعد. ابدأ المحادثة!"
+  },
+  "attachmentList": {
+    "remove": "إزالة",
+    "uploadFailed": "فشل الرفع"
+  },
+  "header": {
+    "enterFullscreen": "دخول وضع الملء",
+    "exitFullscreen": "خروج من وضع الملء",
+    "closeChat": "إغلاق الدردشة",
+    "lightMode": "وضع فاتح",
+    "darkMode": "وضع داكن",
+    "autoMode": "تلقائي"
+  },
+  "floatingButton": {
+    "openChat": "فتح الدردشة",
+    "closeChat": "إغلاق الدردشة"
+  },
+  "push": {
+    "title": "الإشعارات",
+    "description": "استلم الرسائل حتى عند إغلاق الدردشة",
+    "enable": "تفعيل الإشعارات",
+    "disable": "تعطيل الإشعارات",
+    "denied": "الإشعارات محظورة",
+    "unsupported": "الإشعارات غير مدعومة",
+    "subscribing": "جارٍ الاشتراك...",
+    "notifications": "الإشعارات"
+  },
+  "notification": {
+    "openChat": "فتح الدردشة",
+    "dismiss": "تجاهل"
+  },
+  "common": {
+    "loading": "جارٍ التحميل...",
+    "error": "خطأ",
+    "retry": "إعادة المحاولة",
+    "cancel": "إلغاء",
+    "download": "تنزيل"
+  }
+}

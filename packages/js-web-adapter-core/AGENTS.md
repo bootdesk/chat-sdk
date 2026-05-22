@@ -20,7 +20,7 @@ npm run typecheck       # tsc --noEmit
 - `src/client/HttpClient.ts` — HTTP transport
 - `src/events/` — typed event classes (MessagePosted, Edited, Deleted, Reactions, Typing, Streaming, DM)
 - `src/push/` — Web Push API integration (PushManager, subscription handlers)
-- `src/types.ts` — core types (Message, User, Card, etc.)
+- `src/types/index.ts` — core types (Message, User, Card, etc.)
 - `src/utils/eventIdGenerator.ts` — unique ID generation
 
 ## entrypoints

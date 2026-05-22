@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Συνομιλία",
+    "placeholder": "Γράψτε ένα μήνυμα...",
+    "openChat": "Άνοιγμα συνομιλίας",
+    "closeChat": "Κλείσιμο συνομιλίας",
+    "connectionStatus": {
+      "connected": "Συνδεδεμένο",
+      "disconnected": "Αποσυνδεδεμένο"
+    }
+  },
+  "inputArea": {
+    "send": "Αποστολή",
+    "uploading": "Μεταφόρτωση...",
+    "dropzone": {
+      "dropFiles": "Αφήστε αρχεία εδώ",
+      "dropOrClick": "Αφήστε ή κάντε κλικ για επισύναψη"
+    }
+  },
+  "typingIndicator": {
+    "typing": "γράφει",
+    "isTyping": "γράφει..."
+  },
+  "messageList": {
+    "emptyState": "Δεν υπάρχουν ακόμη μηνύματα. Ξεκινήστε τη συνομιλία!"
+  },
+  "attachmentList": {
+    "remove": "Αφαίρεση",
+    "uploadFailed": "Η μεταφόρτωση απέτυχε"
+  },
+  "header": {
+    "enterFullscreen": "Πλήρης οθόνη",
+    "exitFullscreen": "Έξοδος από πλήρη οθόνη",
+    "closeChat": "Κλείσιμο συνομιλίας",
+    "lightMode": "Φωτεινή λειτουργία",
+    "darkMode": "Σκοτεινή λειτουργία",
+    "autoMode": "Θέμα συστήματος"
+  },
+  "floatingButton": {
+    "openChat": "Άνοιγμα συνομιλίας",
+    "closeChat": "Κλείσιμο συνομιλίας"
+  },
+  "push": {
+    "title": "Ειδοποιήσεις",
+    "description": "Λάβετε μηνύματα ακόμα και όταν η συνομιλία είναι κλειστή",
+    "enable": "Ενεργοποίηση ειδοποιήσεων",
+    "disable": "Απενεργοποίηση ειδοποιήσεων",
+    "denied": "Ειδοποιήσεις αποκλεισμένες",
+    "unsupported": "Οι ειδοποιήσεις δεν υποστηρίζονται",
+    "subscribing": "Εγγραφή...",
+    "notifications": "Ειδοποιήσεις"
+  },
+  "notification": {
+    "openChat": "Άνοιγμα Συνομιλίας",
+    "dismiss": "Απόρριψη"
+  },
+  "common": {
+    "loading": "Φόρτωση...",
+    "error": "Σφάλμα",
+    "retry": "Δοκιμή ξανά",
+    "cancel": "Ακύρωση",
+    "download": "Λήψη"
+  }
+}

@@ -62,7 +62,6 @@ if (root) {
         <ChatWidget
           client={client}
           title="My Own Chat"
-          placeholder="Type a message..."
           enableAttachments
           uploadConfig={{ endpoint: "/api/chat/upload" }}
           initialMode="floating"

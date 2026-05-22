@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Chat",
+    "placeholder": "Napište zprávu...",
+    "openChat": "Otevřít chat",
+    "closeChat": "Zavřít chat",
+    "connectionStatus": {
+      "connected": "Připojeno",
+      "disconnected": "Odpojeno"
+    }
+  },
+  "inputArea": {
+    "send": "Odeslat",
+    "uploading": "Nahrávání...",
+    "dropzone": {
+      "dropFiles": "Přetáhněte soubory sem",
+      "dropOrClick": "Přetáhněte nebo klikněte pro přiložení"
+    }
+  },
+  "typingIndicator": {
+    "typing": "píše",
+    "isTyping": "píše..."
+  },
+  "messageList": {
+    "emptyState": "Zatím žádné zprávy. Zahajte konverzaci!"
+  },
+  "attachmentList": {
+    "remove": "Odebrat",
+    "uploadFailed": "Nahrávání selhalo"
+  },
+  "header": {
+    "enterFullscreen": "Celá obrazovka",
+    "exitFullscreen": "Opustit celou obrazovku",
+    "closeChat": "Zavřít chat",
+    "lightMode": "Světlý režim",
+    "darkMode": "Tmavý režim",
+    "autoMode": "Systémové téma"
+  },
+  "floatingButton": {
+    "openChat": "Otevřít chat",
+    "closeChat": "Zavřít chat"
+  },
+  "push": {
+    "title": "Oznámení",
+    "description": "Přijímejte zprávy i když je chat zavřený",
+    "enable": "Povolit oznámení",
+    "disable": "Zakázat oznámení",
+    "denied": "Oznámení blokována",
+    "unsupported": "Oznámení nejsou podporována",
+    "subscribing": "Přihlašování...",
+    "notifications": "Oznámení"
+  },
+  "notification": {
+    "openChat": "Otevřít Chat",
+    "dismiss": "Zavřít"
+  },
+  "common": {
+    "loading": "Načítání...",
+    "error": "Chyba",
+    "retry": "Zkusit znovu",
+    "cancel": "Zrušit",
+    "download": "Stáhnout"
+  }
+}

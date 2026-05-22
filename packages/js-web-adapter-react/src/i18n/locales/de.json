@@ -1,0 +1,65 @@
+{
+  "direction": "ltr",
+  "chatWidget": {
+    "title": "Chat",
+    "placeholder": "Nachricht schreiben...",
+    "openChat": "Chat öffnen",
+    "closeChat": "Chat schließen",
+    "connectionStatus": {
+      "connected": "Verbunden",
+      "disconnected": "Getrennt"
+    }
+  },
+  "inputArea": {
+    "send": "Senden",
+    "uploading": "Hochladen...",
+    "dropzone": {
+      "dropFiles": "Dateien hier ablegen",
+      "dropOrClick": "Ablegen oder klicken zum Anhängen"
+    }
+  },
+  "typingIndicator": {
+    "typing": "schreibt",
+    "isTyping": "schreibt..."
+  },
+  "messageList": {
+    "emptyState": "Noch keine Nachrichten. Starten Sie die Unterhaltung!"
+  },
+  "attachmentList": {
+    "remove": "Entfernen",
+    "uploadFailed": "Hochladen fehlgeschlagen"
+  },
+  "header": {
+    "enterFullscreen": "Vollbild",
+    "exitFullscreen": "Vollbild beenden",
+    "closeChat": "Chat schließen",
+    "lightMode": "Heller Modus",
+    "darkMode": "Dunkler Modus",
+    "autoMode": "System-Design"
+  },
+  "floatingButton": {
+    "openChat": "Chat öffnen",
+    "closeChat": "Chat schließen"
+  },
+  "push": {
+    "title": "Benachrichtigungen",
+    "description": "Nachrichten auch bei geschlossenem Chat erhalten",
+    "enable": "Benachrichtigungen aktivieren",
+    "disable": "Benachrichtigungen deaktivieren",
+    "denied": "Benachrichtigungen blockiert",
+    "unsupported": "Benachrichtigungen nicht unterstützt",
+    "subscribing": "Abonnieren...",
+    "notifications": "Benachrichtigungen"
+  },
+  "notification": {
+    "openChat": "Chat öffnen",
+    "dismiss": "Schließen"
+  },
+  "common": {
+    "loading": "Lädt...",
+    "error": "Fehler",
+    "retry": "Erneut versuchen",
+    "cancel": "Abbrechen",
+    "download": "Herunterladen"
+  }
+}

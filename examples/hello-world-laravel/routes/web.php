@@ -31,6 +31,14 @@ Route::get('/chat-signed-upload', function () {
     return view('chat-signed-upload');
 });
 
+Route::get('/chat', function () {
+    return view('chat');
+});
+
+Route::get('/push-test', function () {
+    return view('push-test');
+});
+
 // Taken from https://github.com/mnapoli/laravel-local-temporary-upload-url/blob/1.0.0/src/LocalTemporaryUploadServiceProvider.php so I don't have to fork it just to update the version number.
 Route::put('_local-storage/upload', LocalUploadController::class)
     ->name('local-storage.upload')

@@ -127,6 +127,22 @@ client.addEventListener("message:added", (event) => {});
 
 Internal event types: `message:added`, `message:edited`, `message:deleted`, `reaction:added`, `reaction:removed`, `typing:started`, `typing:stopped`, `streaming:started`, `streaming:chunk`, `streaming:complete`, `dm:requested`.
 
+### Reconfiguration
+
+Update the client's identity after construction — useful for pre-entry flows where user info is collected via a form before chat starts:
+
+```typescript
+client.reconfigure({
+  userId: "user-abc",
+  userName: "Alice",
+  verifyToken: "encrypted-token",
+  conversationId: "conv-xyz",
+  headers: { "X-Custom": "value" },
+});
+```
+
+Updates HTTP headers (`X-User-Id`, `X-User-Name`, `X-Verify-Token`) and internal state. Fields not included are left unchanged.
+
 ### Optimistic Updates
 
 `sendMessage()` adds your message to local state immediately — before the server responds. The server response can include `events[]` that the client dispatches. Duplicate `message.posted` events with the same `messageId` are ignored.

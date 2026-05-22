@@ -88,6 +88,93 @@ Auto-detects iframe — when inside an `<iframe>`, switches to embedded mode aut
 | `floatingButton.size` | `number` | `56` |
 | `floatingButton.backgroundColor` | `string?` | `var(--chat-primary)` |
 | `className` | `{ container?, header?, messageList?, inputArea? }?` | — |
+| `preEntry` | `{ render: (helpers: { start: (config?) => void }) => ReactNode }?` | — |
+| `onChatStart` | `(config?: ReconfigureConfig) => void?` | — |
+
+### Pre-Entry Screen
+
+Show a custom form before the conversation starts — useful for collecting a name, email, verification code, or terms acceptance. The developer controls all logic; call `start(config)` when ready.
+
+The `config` passed to `start()` is forwarded to `client.reconfigure()` (see [JS Core → Reconfiguration](/guide/10-js-core.md#reconfiguration)), updating the client's identity before messages load.
+
+```tsx
+function EmailVerificationForm({ start }) {
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [step, setStep] = useState("email");
+  const [error, setError] = useState("");
+
+  const handleEmailSubmit = async (e) => {
+    e.preventDefault();
+    // Send code to user's email
+    const { id } = await fetch("/api/request-code", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }).then((r) => r.json());
+    setStep("code");
+  };
+
+  const handleCodeSubmit = async (e) => {
+    e.preventDefault();
+    const data = await fetch("/api/verify-code", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }).then((r) => r.json());
+    // Configure the client and start the conversation
+    start({ userId: data.userId, verifyToken: data.verifyToken });
+  };
+
+  if (step === "email") {
+    return (
+      <form onSubmit={handleEmailSubmit}>
+        <h2>Welcome!</h2>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="your@email.com"
+          required
+        />
+        <button type="submit">Send Code</button>
+        {error && <p style={{ color: "red" }}>{error}</p>}
+      </form>
+    );
+  }
+
+  return (
+    <form onSubmit={handleCodeSubmit}>
+      <h2>Enter the 6-digit code</h2>
+      <input
+        type="text"
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        placeholder="000000"
+        maxLength={6}
+        required
+      />
+      <button type="submit">Verify</button>
+    </form>
+  );
+}
+
+function App() {
+  return (
+    <ChatWidget
+      client={client}
+      title="Support"
+      preEntry={{
+        render: ({ start }) => <EmailVerificationForm start={start} />,
+      }}
+      onChatStart={(config) => {
+        // Persist session so returning users skip the form
+        document.cookie = `session=${JSON.stringify(config)}; max-age=604800`;
+      }}
+    />
+  );
+}
+```
+
+Messages only begin loading after `start()` is called. While the pre-entry form is shown, the header remains visible (close button, theme toggle, etc.). Works in all three display modes (floating, fullscreen, embedded).
 
 ## Hooks
 

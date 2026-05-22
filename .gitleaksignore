@@ -1,0 +1,14 @@
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-slack/tests/fixtures/slack-multi-workspace/team1.json:generic-api-key:7
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-slack/tests/fixtures/slack-multi-workspace/team2.json:generic-api-key:7
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-slack/tests/fixtures/slack-direct.json:generic-api-key:6
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-slack/tests/fixtures/slack-direct.json:generic-api-key:49
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-slack/tests/fixtures/modals/slack-private-metadata.json:generic-api-key:5
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-slack/tests/fixtures/modals/slack-private-metadata.json:generic-api-key:63
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-slack/tests/fixtures/modals/slack-private-metadata.json:generic-api-key:159
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-slack/tests/fixtures/slack-streaming.json:generic-api-key:188
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-discord/tests/fixtures/discord.json:generic-api-key:186
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-discord/tests/fixtures/discord.json:generic-api-key:363
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-discord/tests/fixtures/discord.json:generic-api-key:1025
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-discord/tests/fixtures/discord.json:generic-api-key:1202
+cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-discord/tests/fixtures/discord.json:generic-api-key:1433
+5a3f413566da4c8857e8dd6caa25e484e7734a8f:packages/adapter-linear/tests/LinearAdapterTest.php:generic-api-key:156

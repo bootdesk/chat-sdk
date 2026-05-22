@@ -28,6 +28,8 @@ jobs:
           node-version: 22
       - name: Install JS dependencies
         run: npm ci
+      - name: Build JS packages
+        run: npm run build -w packages/js-web-adapter-core -w packages/js-web-adapter-react -w packages/chat-widget-bridge
       - name: Generate all docs
         run: npm run docs
       - uses: actions/upload-pages-artifact@v5
@@ -40,4 +42,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/deploy-pages@v4
+      - uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

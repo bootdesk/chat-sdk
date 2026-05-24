@@ -15,6 +15,7 @@ use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
 use BootDesk\ChatSDK\Core\Contracts\HandlesSlashCommands;
 use BootDesk\ChatSDK\Core\Contracts\HandlesStatuses;
 use BootDesk\ChatSDK\Core\Contracts\HasAuthorInfo;
+use BootDesk\ChatSDK\Core\Contracts\RequiresAsyncResponse;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
 use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
@@ -34,7 +35,7 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatchedWebhooks, HandlesReactions, HandlesSlashCommands, HandlesStatuses, HasAuthorInfo
+class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatchedWebhooks, HandlesReactions, HandlesSlashCommands, HandlesStatuses, HasAuthorInfo, RequiresAsyncResponse
 {
     protected ?string $botUserId = null;
 

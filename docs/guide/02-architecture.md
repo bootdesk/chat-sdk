@@ -54,7 +54,25 @@ Interface for platform-specific implementations. Each adapter handles auth, webh
 
 The SDK normalizes markdown across all platforms using a CommonMark pipeline. Every adapter has a `FormatConverter` that converts between the SDK's internal AST and the platform's native format. See the [Markdown guide](08-markdown.html) for details on supported features and per-platform behavior.
 
-## Concurrency Strategies
+## Concurrency
+
+### Architecture
+
+Concurrency is pluggable via the `ConcurrencyHandler` interface. The core provides `DefaultConcurrencyHandler` (synchronous, uses locks and `usleep` for debounce). Framework packages can replace it with async implementations — for example, Laravel binds `QueueConcurrencyHandler` which dispatches jobs to workers.
+
+The `Chat` constructor accepts an optional `ConcurrencyHandler` parameter. If none is provided, it creates a `DefaultConcurrencyHandler` automatically.
+
+### Adapter Markers
+
+Two marker interfaces control how the handler processes messages:
+
+| Marker | Behavior | Adapters |
+|---|---|---|
+| `RequiresSyncResponse` | Always process inline — the platform expects the bot's answer in the HTTP response | WebAdapter, DiscordAdapter |
+| `RequiresAsyncResponse` | Always defer to async — the platform just needs a quick 200 ACK | Slack, Telegram, WhatsApp, Messenger, Instagram |
+| (no marker) | Try inline first. On lock contention, apply the configured strategy | GitHub, Linear, Telnyx |
+
+### Strategies
 
 Control how simultaneous messages from the same thread are handled via the `concurrency` config:
 
@@ -70,10 +88,27 @@ Control how simultaneous messages from the same thread are handled via the `conc
 'concurrency' => 'drop',        // Strategy
 'debounceMs' => 1500,           // Wait time for debounce (ms)
 'maxConcurrent' => 5,           // Max concurrent threads (when strategy=concurrent)
+'maxQueueSize' => 10,           // Max enqueued messages (when strategy=queue)
 'lock_scope' => 'thread',       // 'thread' or 'channel'
 ```
 
 **`lock_scope: channel`** is required for platforms like WhatsApp/Telegram where the thread ID format doesn't distinguish between threads (one phone number = one conversation).
+
+### DefaultConcurrencyHandler (Core)
+
+The built-in handler for framework-agnostic use. Used when no custom `ConcurrencyHandler` is injected:
+- **drop**: acquire lock → process inline, drop if contention
+- **queue**: enqueue via `StateAdapter`, acquire lock → drain queue
+- **debounce**: acquire lock → `usleep(debounceMs)` → drain queue → process latest only
+- **concurrent**: in-memory slot counter (per-request, single-process only)
+
+### QueueConcurrencyHandler (Laravel)
+
+Replaces the default in Laravel. Uses jobs instead of sync processing:
+- **drop**: no job, message dropped
+- **queue**: `ProcessMessageJob::dispatch()`
+- **debounce**: cache latest message, dispatch unique delayed `ProcessDebouncedMessageJob`. Only one pending job per thread — subsequent updates replace the cached message before the job runs.
+- **concurrent**: `ProcessMessageJob::dispatch()` (parallel workers)
 
 ## State System
 

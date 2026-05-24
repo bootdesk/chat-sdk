@@ -9,7 +9,7 @@ use BootDesk\ChatSDK\Core\AssistantThreadStartedEvent;
 use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\Channel;
 use BootDesk\ChatSDK\Core\Chat;
-use BootDesk\ChatSDK\Core\Concurrency\Handler;
+use BootDesk\ChatSDK\Core\Concurrency\DefaultConcurrencyHandler;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\ReceivingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
@@ -1811,9 +1811,10 @@ class ChatTest extends TestCase
         $adapter = new MockAdapter;
         $chat->registerAdapter('mock', $adapter);
 
-        // Set slots to capacity directly
-        $ref = new \ReflectionProperty(Chat::class, 'concurrentSlots');
-        $ref->setValue($chat, ['mock:C:conc' => 3]);
+        $chatRef = new \ReflectionProperty(Chat::class, 'concurrencyHandler');
+        $handler = $chatRef->getValue($chat);
+        $handlerRef = new \ReflectionProperty(DefaultConcurrencyHandler::class, 'concurrentSlots');
+        $handlerRef->setValue($handler, ['mock:C:conc' => 3]);
 
         $called = false;
         $chat->onNewMessage('/.*/', function () use (&$called) {
@@ -1832,25 +1833,28 @@ class ChatTest extends TestCase
         $this->assertFalse($called);
     }
 
-    public function test_drain_all_queued_early_return_when_empty(): void
+    public function test_process_message_in_job_dispatches_inline(): void
     {
-        $ref = new \ReflectionMethod(Chat::class, 'drainAllQueued');
-        $handler = new Handler(
-            new MemoryStateAdapter,
-        );
-
         $chat = new Chat(
             state: new MemoryStateAdapter,
         );
+        $adapter = new MockAdapter;
+        $chat->registerAdapter('mock', $adapter);
 
-        // Calling drainAllQueued with an empty queue should be a no-op
-        $ref->invokeArgs($chat, [
-            new MockAdapter,
-            'mock:C:empty_q',
-            $handler,
-        ]);
+        $called = false;
+        $chat->onNewMessage('/.*/', function () use (&$called) {
+            $called = true;
+        });
 
-        $this->assertTrue(true);
+        $chat->processMessageInJob(
+            $adapter,
+            'mock:C:job_test',
+            \BootDesk\ChatSDK\Core\Tests\Helpers\createTestMessage(id: 'job1', threadId: 'mock:C:job_test'),
+            skippedMessages: [],
+            totalSinceLastHandler: 1,
+        );
+
+        $this->assertTrue($called);
     }
 
     public function test_pattern_skip_stops_further_patterns(): void

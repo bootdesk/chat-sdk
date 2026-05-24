@@ -2,11 +2,11 @@
 
 namespace BootDesk\ChatSDK\Core;
 
-use BootDesk\ChatSDK\Core\Concurrency\Handler;
-use BootDesk\ChatSDK\Core\Concurrency\Strategy;
+use BootDesk\ChatSDK\Core\Concurrency\DefaultConcurrencyHandler;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\AdapterResolver;
 use BootDesk\ChatSDK\Core\Contracts\BroadcastAdapter;
+use BootDesk\ChatSDK\Core\Contracts\ConcurrencyHandler;
 use BootDesk\ChatSDK\Core\Contracts\HandlesActions;
 use BootDesk\ChatSDK\Core\Contracts\HandlesBatchedWebhooks;
 use BootDesk\ChatSDK\Core\Contracts\HandlesModals;
@@ -62,18 +62,18 @@ class Chat
     /** @var array<string, callable> */
     private array $messageHandlers = [];
 
-    /** @var array<string, int> */
-    private array $concurrentSlots = [];
+    private ?ConcurrencyHandler $concurrencyHandler = null;
 
     public function __construct(
         public readonly StateAdapter $state,
         array $adapters = [],
-        private readonly array $config = [],
+        array $config = [],
         ?AdapterResolver $adapterResolver = null,
         ?ResponseFactoryInterface $responseFactory = null,
         ?callable $identity = null,
         ?array $transcripts = null,
         ?BroadcastAdapter $broadcaster = null,
+        ?ConcurrencyHandler $concurrencyHandler = null,
     ) {
         $this->adapters = $adapters;
         $this->adapterResolver = $adapterResolver;
@@ -86,6 +86,7 @@ class Chat
         $this->listenerProvider = new ListenerProvider;
         $this->dispatcher = new EventDispatcher($this->listenerProvider);
         $this->middleware = new MiddlewareDispatcher;
+        $this->concurrencyHandler = $concurrencyHandler ?? new DefaultConcurrencyHandler($state, $config);
 
         if ($identity !== null) {
             $this->identityResolver = $identity instanceof \Closure ? $identity : \Closure::fromCallable($identity);
@@ -739,165 +740,36 @@ class Chat
 
     public function processMessage(Adapter $adapter, string $threadId, Message $message): void
     {
-        // 1. Self-filter
         if ($message->author->isMe) {
             return;
         }
 
-        // 2. Deduplication
         $dedupeKey = "dedupe:{$adapter->getName()}:{$message->id}";
         if (! $this->state->setIfNotExists($dedupeKey, true, 300_000)) {
             return;
         }
 
-        // 3. Run receiving middleware
         $message = $this->runReceivingMiddleware($message, $adapter);
         if (! $message instanceof Message) {
             return;
         }
 
-        // 4. Concurrency strategy
-        $strategy = Strategy::tryFrom($this->config['concurrency'] ?? 'drop') ?? Strategy::Drop;
-        $debounceMs = (int) ($this->config['debounceMs'] ?? 1500);
-        $maxConcurrent = (int) ($this->config['maxConcurrent'] ?? 0);
-        $maxQueueSize = (int) ($this->config['maxQueueSize'] ?? 10);
-        $lockScope = $this->config['lockScope'] ?? 'thread';
-
-        $lockKey = $lockScope === 'channel'
-            ? $adapter->getName().':'.$adapter->channelIdFromThreadId($threadId)
-            : $threadId;
-
-        $handler = new Handler($this->state, $strategy);
-
-        match ($strategy) {
-            Strategy::Drop => $this->processDrop($adapter, $threadId, $lockKey, $message, $handler),
-            Strategy::Queue => $this->processQueue($adapter, $threadId, $lockKey, $message, $handler, $maxQueueSize),
-            Strategy::Debounce => $this->processDebounce($adapter, $threadId, $lockKey, $message, $handler, $debounceMs, $maxQueueSize),
-            Strategy::Concurrent => $this->processConcurrent($adapter, $threadId, $message, $maxConcurrent),
-        };
+        $this->concurrencyHandler->process(
+            $adapter,
+            $threadId,
+            $message,
+            fn (Adapter $a, string $tid, Message $msg, array $skipped, int $total) => $this->dispatchIncomingMessage($a, $tid, $msg, $skipped, $total),
+        );
     }
 
-    private function processDrop(Adapter $adapter, string $threadId, string $lockKey, Message $message, Handler $handler): void
-    {
-        $lock = $handler->acquire($lockKey);
-        if (! $lock instanceof Lock) {
-            return;
-        }
-
-        try {
-            $this->dispatchIncomingMessage($adapter, $threadId, $message, [], 1);
-        } finally {
-            $handler->release($lock);
-        }
-    }
-
-    private function processQueue(Adapter $adapter, string $threadId, string $lockKey, Message $message, Handler $handler, int $maxQueueSize): void
-    {
-        $entry = new QueueEntry($message->id, serialize($message), microtime(true));
-        $handler->enqueue($threadId, $entry, $maxQueueSize);
-
-        $lock = $handler->acquire($lockKey);
-        if (! $lock instanceof Lock) {
-            return;
-        }
-
-        try {
-            $this->drainAllQueued($adapter, $threadId, $handler);
-        } finally {
-            $handler->release($lock);
-        }
-    }
-
-    private function processDebounce(Adapter $adapter, string $threadId, string $lockKey, Message $message, Handler $handler, int $debounceMs, int $maxQueueSize): void
-    {
-        $lock = $handler->acquire($lockKey);
-        if (! $lock instanceof Lock) {
-            $handler->enqueue($threadId, new QueueEntry($message->id, serialize($message), microtime(true)), $maxQueueSize);
-
-            return;
-        }
-
-        try {
-            usleep($debounceMs * 1000);
-
-            $handler->extendLock($lock, 30_000);
-
-            $messages = $this->dequeueAll($threadId, $handler);
-
-            if ($messages !== []) {
-                $latest = array_pop($messages);
-                $this->dispatchIncomingMessage($adapter, $threadId, $latest, $messages, count($messages) + 1);
-
-                return;
-            }
-
-            $this->dispatchIncomingMessage($adapter, $threadId, $message, [], 1);
-        } finally {
-            $handler->release($lock);
-        }
-    }
-
-    private function processConcurrent(Adapter $adapter, string $threadId, Message $message, int $maxConcurrent): void
-    {
-        $slotKey = $threadId;
-
-        if ($maxConcurrent > 0) {
-            $current = $this->concurrentSlots[$slotKey] ?? 0;
-            if ($current >= $maxConcurrent) {
-                return;
-            }
-            $this->concurrentSlots[$slotKey] = $current + 1;
-        }
-
-        try {
-            $this->dispatchIncomingMessage($adapter, $threadId, $message, [], 1);
-        } finally {
-            if ($maxConcurrent > 0) {
-                $this->concurrentSlots[$slotKey]--;
-                if ($this->concurrentSlots[$slotKey] <= 0) {
-                    unset($this->concurrentSlots[$slotKey]);
-                }
-            }
-        }
-    }
-
-    private function drainAllQueued(Adapter $adapter, string $threadId, Handler $handler): void
-    {
-        $messages = $this->dequeueAll($threadId, $handler);
-        if ($messages === []) {
-            return;
-        }
-
-        foreach ($messages as $msg) {
-            $this->dispatchIncomingMessage($adapter, $threadId, $msg, [], 1);
-        }
-    }
-
-    /**
-     * @return Message[]
-     */
-    private function dequeueAll(string $threadId, Handler $handler): array
-    {
-        $messages = [];
-        while ($entry = $handler->dequeue($threadId)) {
-            $msg = unserialize($entry->payload);
-            if ($msg instanceof Message) {
-                $msg = new Message(
-                    id: $entry->messageId,
-                    threadId: $threadId,
-                    author: $msg->author,
-                    text: $msg->text,
-                    formatted: $msg->formatted,
-                    attachments: $msg->attachments,
-                    isMention: $msg->isMention,
-                    isDM: $msg->isDM,
-                    raw: $msg->raw,
-                );
-                $messages[] = $msg;
-            }
-        }
-
-        return $messages;
+    public function processMessageInJob(
+        Adapter $adapter,
+        string $threadId,
+        Message $message,
+        array $skippedMessages = [],
+        int $totalSinceLastHandler = 1,
+    ): void {
+        $this->dispatchIncomingMessage($adapter, $threadId, $message, $skippedMessages, $totalSinceLastHandler);
     }
 
     private function dispatchIncomingMessage(Adapter $adapter, string $threadId, Message $message, array $skippedMessages, int $totalSinceLastHandler): void

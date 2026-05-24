@@ -18,6 +18,8 @@ class ProcessMessageJob implements ShouldQueue
         private readonly string $adapterName,
         private readonly string $threadId,
         private readonly Message $message,
+        private readonly array $skippedMessages = [],
+        private readonly int $totalSinceLastHandler = 1,
     ) {}
 
     public function handle(Chat $chat): void
@@ -28,6 +30,12 @@ class ProcessMessageJob implements ShouldQueue
             return;
         }
 
-        $chat->processMessage($adapter, $this->threadId, $this->message);
+        $chat->processMessageInJob(
+            $adapter,
+            $this->threadId,
+            $this->message,
+            $this->skippedMessages,
+            $this->totalSinceLastHandler,
+        );
     }
 }

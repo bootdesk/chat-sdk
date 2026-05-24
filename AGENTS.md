@@ -18,9 +18,9 @@ CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> forma
 - `core` is framework-agnostic, never depends on adapters
 - `laravel` depends on core only; discovers adapters at runtime via `class_exists()` + config
 - adapters implement `BootDesk\ChatSDK\Core\Contracts\Adapter`
-- Optional adapter contracts: `HandlesActions`, `HandlesSlashCommands`, `HandlesReactions`, `HandlesModals`, `HandlesOptionsLoad`, `HandlesSlackEvents`, `SupportsModals`, `AdapterHasMessagingWindow`
+- Optional adapter contracts: `HandlesActions`, `HandlesSlashCommands`, `HandlesReactions`, `HandlesModals`, `HandlesOptionsLoad`, `HandlesSlackEvents`, `SupportsModals`, `AdapterHasMessagingWindow`, `RequiresSyncResponse`, `RequiresAsyncResponse`
 - thread IDs are canonical: `"{adapter}:{platformChannelId}:{platformThreadId}"` (e.g., `slack:C123:1234567890.123456`)
-- concurrency strategies: `drop`, `queue`, `debounce`, `concurrent` (default: drop)
+- concurrency: pluggable via `ConcurrencyHandler` interface. Core provides `DefaultConcurrencyHandler` (sync/blocking). Laravel provides `QueueConcurrencyHandler` (async via jobs). Strategies: `drop`, `queue`, `debounce`, `concurrent` (default: drop). Adapters declare sync/async preference via `RequiresSyncResponse`/`RequiresAsyncResponse` markers.
 - state is pluggable via `StateAdapter`; Laravel uses `CacheStateAdapter`
 - attachments: URL-based `Attachment` objects handled by all adapters; binary `FileUpload` objects handled natively by Slack/TG/Discord, converted via `FileUploadConverter` on others
 - multipart uploads use `php-http/multipart-stream-builder`

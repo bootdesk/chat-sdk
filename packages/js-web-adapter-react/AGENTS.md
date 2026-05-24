@@ -49,3 +49,10 @@ npm run typecheck       # tsc --noEmit
 - Locale override chain: en → en-X → runtime overrides via `mergeLocale`
 - Build: tsup for JS, tailwindcss for CSS, both outputs in `dist/`
 - Pre-entry: `preEntry.render({ start })` receives a `start(config?)` callback; calling it calls `client.reconfigure(config)` and transitions to normal chat
+
+## WebView bridge (useBridge.ts)
+
+- `hasNativeBridge()` detects WebView via `__chatBridge`, `webkit.messageHandlers.chatBridge`, `ReactNativeWebView`, `AndroidBridge`
+- `bridgeSend()` routes through `__chatBridge.send()` (WebView) or `window.parent.postMessage` (iframe)
+- Timing race fix: if shim hasn't injected yet, fallback `__chatBridge` includes a `send()` that posts via `ReactNativeWebView.postMessage` or `window.parent.postMessage` (avoids `{_ready: true}` with no `send`)
+- `ChatWidget.tsx`: `close()` and `embeddedClose()` both send bridge message in WebView/iframe mode

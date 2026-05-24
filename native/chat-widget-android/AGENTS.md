@@ -68,5 +68,5 @@ docker run --rm \
 The `sdk/` dir is gitignored.
 
 ## testing
-- **Unit tests**: pure JVM, test enums, data classes, Shim JS string validity. No device needed.
+- **Unit tests**: pure JVM, test enums and data classes. No device needed.
 - **Instrumented tests**: `ChatWidgetViewTest` — shim injection, `@JavascriptInterface` message flow, `sendConfig`/`sendPushState`/`notifyNotificationClicked`. Needs emulator/device.

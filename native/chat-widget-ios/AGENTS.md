@@ -27,14 +27,14 @@ swift build
 - No `swiftlint` (requires full Xcode.app, not just CLT).
 
 ## architecture
-- `ChatWidgetView` extends `WKWebView`; shim injected via `WKUserScript` at `.atDocumentStart`
+- `ChatWidgetView` extends `WKWebView`; two shims via `WKUserScript`: `webViewShim` at `.atDocumentStart`, `viewportShim` at `.atDocumentEnd`
 - JS↔Native via `WKUserContentController.add(handler, name: "chatBridge")` + `evaluateJavaScript`
 - Host→WebView uses `CustomEvent('chat-bridge', { detail: json })` via `evaluateJavaScript`
 - `pendingConfig` cached until `chat-ready` received
 - Push state: 6-value `PushSubscriptionStatus` enum (mirrors TS/Android types)
 - `WebViewMessageHandler` wraps `WKScriptMessageHandler` with `[String: Any]` callback
 - SwiftUI target provides `ChatWidgetViewRepresentable` (`UIViewRepresentable`)
-- Keyboard: observes `UIResponder.keyboardWillShow/HideNotification` → `chat-viewport-insets`
+- Keyboard: `UIResponder.keyboardWillShow/HideNotification` → adjusts `scrollView.contentInset.bottom`
 
 ## files
 - `Sources/BootdeskChatWidget/` — core library

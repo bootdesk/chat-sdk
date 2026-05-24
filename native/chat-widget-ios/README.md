@@ -125,9 +125,9 @@ xcrun swift-format format --recursive --in-place Sources/ Tests/
 
 ## Architecture
 
-- `ChatWidgetView` extends `WKWebView`; shim injected via `WKUserScript` at `.atDocumentStart`
+- `ChatWidgetView` extends `WKWebView`; two shims injected via `WKUserScript`: `webViewShim` at `.atDocumentStart`, `viewportShim` at `.atDocumentEnd`
 - JS↔Native bridge via `WKUserContentController("chatBridge")` + `evaluateJavaScript`
 - Host→WebView messages dispatched as `CustomEvent('chat-bridge', { detail: ... })`
 - Shim caches events until ready; `pendingConfig` sent on `chat-ready`
 - Push state tracked via `PushSubscriptionStatus` enum (6 values)
-- Keyboard insets sent to WebView via `chat-viewport-insets` event
+- Keyboard: adjusts `scrollView.contentInset.bottom` via `UIResponder.keyboardWillShow/HideNotification`

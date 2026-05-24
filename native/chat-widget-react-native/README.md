@@ -51,6 +51,38 @@ interface ChatWidgetRef {
 }
 ```
 
+## useBridgePushNotifications
+
+A hook for bridging native push tokens (FCM/APNs) to your server.
+
+```ts
+import { useBridgePushNotifications } from '@bootdesk/chat-widget-react-native';
+
+function PushManager() {
+  const { status, subscribe, unsubscribe } = useBridgePushNotifications({
+    getToken: async () => messaging().getToken(),
+    endpoint: '/api/push/subscriptions',
+  });
+  // ...
+}
+```
+
+### Options
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `getToken` | `() => Promise<string>` | — | Async function returning the native push token |
+| `endpoint` | `string` | `'/api/push/subscriptions'` | Server endpoint for push registration (POST to subscribe, DELETE to unsubscribe) |
+| `onStatusChange` | `(status: BridgePushStatus) => void` | — | Called when push status changes |
+
+### Return Value
+
+| Field | Type | Description |
+|---|---|---|
+| `status` | `BridgePushStatus` | Current push status (`"default"`, `"subscribing"`, `"subscribed"`, `"denied"`, `"unsupported"`, `"error"`) |
+| `subscribe` | `() => Promise<void>` | Registers the device token with the server |
+| `unsubscribe` | `() => Promise<void>` | Removes the device token from the server |
+
 ## Bridge Protocol
 
 The WebView communicates using `window.__chatBridge` and `CustomEvent('chat-bridge', ...)`. See `packages/chat-widget-bridge/src/shim.ts` for the shim implementation.

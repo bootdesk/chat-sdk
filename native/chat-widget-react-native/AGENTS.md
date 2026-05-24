@@ -25,7 +25,10 @@ npm run format      # prettier --write "src/**/*.{ts,tsx}"
 | `chat-config` | Host→WV | Title, locale, placeholder, theme |
 | `chat-message` | WV→Host | User typed a message |
 | `chat-close` | WV→Host | Close/dismiss WebView |
-| `chat-push-*` | Both | Push subscription lifecycle |
+| `chat-push-subscribe` | WV→Host | User enabled push |
+| `chat-push-unsubscribe` | WV→Host | User disabled push |
+| `chat-push-state` | Host→WV | Push subscription status |
+| `chat-notification-clicked` | Host→WV | User tapped notification |
 
 ## peer deps
 - `react` ^18 || ^19

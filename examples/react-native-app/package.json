@@ -1,0 +1,31 @@
+{
+  "name": "chat-widget-react-native-example",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "clean": "rm -rf node_modules ios android"
+  },
+  "dependencies": {
+    "@bootdesk/chat-widget-bridge": "file:../../packages/chat-widget-bridge",
+    "@bootdesk/chat-widget-react-native": "file:../../native/chat-widget-react-native",
+    "expo": "~52.0.0",
+    "expo-asset": "^56.0.14",
+    "expo-constants": "^56.0.15",
+    "expo-dev-client": "~5.0.0",
+    "expo-file-system": "^56.0.7",
+    "expo-font": "^56.0.5",
+    "expo-status-bar": "~2.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.7",
+    "react-native-webview": "13.12.5"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.0",
+    "@types/react": "~18.3.0",
+    "typescript": "^5.3.0"
+  }
+}

@@ -1,0 +1,17 @@
+*.iml
+.gradle/
+/local.properties
+/.idea
+.DS_Store
+build/
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.aar
+*.ap_
+local.properties
+
+# Docker SDK cache (host-local, not part of the library)
+sdk/
+gradle-caches/

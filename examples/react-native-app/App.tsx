@@ -1,69 +1,51 @@
-import React, { useCallback, useRef, useState } from "react";
+import { useState } from "react";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import {
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { ChatWidget, useBridgePushNotifications } from "@bootdesk/chat-widget-react-native";
-import type { ChatWidgetRef } from "@bootdesk/chat-widget-react-native";
+  ChatWidget,
+  useBridgePushNotifications,
+} from "@bootdesk/chat-widget-react-native";
 
-const CHAT_URL =
-  process.env.EXPO_PUBLIC_CHAT_URL ?? "https://example.com/chat";
+const CHAT_URL = process.env.EXPO_PUBLIC_CHAT_URL ?? "https://example.com/chat";
 
-function App(): React.JSX.Element {
+export default function App() {
   const [showChat, setShowChat] = useState(false);
-  const chatRef = useRef<ChatWidgetRef>(null);
-
-  const handlePushSubscribe = useCallback(() => {
-    if (Platform.OS === "ios") {
-      chatRef.current?.sendPushState("subscribed");
-    } else {
-      chatRef.current?.sendPushState("unsupported");
-    }
-  }, []);
-
-  const handlePushUnsubscribe = useCallback(() => {
-    chatRef.current?.sendPushState("default");
-  }, []);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.icon}>💬</Text>
-        <Text style={styles.heading}>Chat Widget Example</Text>
-        <Text style={styles.subtitle}>Tap the bubble to start chatting</Text>
-      </View>
+    <SafeAreaProvider>
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.heading}>Chat Widget Example</Text>
+          <Text style={styles.subtitle}>Tap the bubble to start chatting</Text>
+        </View>
 
-      <View style={styles.bubbleContainer}>
-        <TouchableOpacity
-          style={styles.bubble}
-          onPress={() => setShowChat(true)}
-          activeOpacity={0.8}
+        <View style={styles.bubbleContainer}>
+          <TouchableOpacity
+            style={styles.bubble}
+            onPress={() => setShowChat(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.bubbleIcon}>💬</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Modal
+          visible={showChat}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowChat(false)}
         >
-          <Text style={styles.bubbleIcon}>💬</Text>
-        </TouchableOpacity>
+          <SafeAreaView style={styles.chat}>
+            <ChatWidget
+              url={CHAT_URL}
+              config={{ title: "Support" }}
+              onClose={() => setShowChat(false)}
+              style={styles.chat}
+            />
+          </SafeAreaView>
+        </Modal>
       </View>
-
-      <Modal
-        visible={showChat}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowChat(false)}
-      >
-        <ChatWidget
-          ref={chatRef}
-          url={CHAT_URL}
-          config={{ title: "Support" }}
-          onClose={() => setShowChat(false)}
-          onPushSubscribe={handlePushSubscribe}
-          onPushUnsubscribe={handlePushUnsubscribe}
-          style={styles.chat}
-        />
-      </Modal>
-    </View>
+    </SafeAreaProvider>
   );
 }
 
@@ -77,9 +59,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
-  },
-  icon: {
-    fontSize: 48,
   },
   heading: {
     fontSize: 24,
@@ -113,8 +92,6 @@ const styles = StyleSheet.create({
   },
   chat: {
     flex: 1,
-    marginTop: Platform.OS === "ios" ? 44 : 0,
+    marginTop: 0,
   },
 });
-
-export default App;

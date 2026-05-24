@@ -1,22 +1,21 @@
-CHAT_URL ?= https://ab77-148-71-197-239.ngrok-free.app/chat-iframe
+CHAT_URL ?= https://40a1-148-71-197-239.ngrok-free.app/chat-iframe
 
-.PHONY: install ios android clean
+.PHONY: install prebuild android ios start clean
 
 install:
 	npm install
 
-ios: install
-	npx expo run:ios
+prebuild: install
+	npx expo prebuild
 
-android: install
-	npx expo run:android
+android: prebuild
+	EXPO_PUBLIC_CHAT_URL="$(CHAT_URL)" npx expo run:android
 
-start: install
+ios: prebuild
+	EXPO_PUBLIC_CHAT_URL="$(CHAT_URL)" npx expo run:ios
+
+start:
 	EXPO_PUBLIC_CHAT_URL="$(CHAT_URL)" npx expo start
 
 clean:
-	rm -rf node_modules ios android
-
-reset: clean
-	npm install
-	npx expo prebuild
+	rm -rf node_modules ios android .expo

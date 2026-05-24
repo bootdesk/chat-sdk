@@ -160,5 +160,6 @@ describe("useIframeBridge", () => {
     unmount();
 
     expect(removeEventListener).toHaveBeenCalledWith("message", expect.any(Function));
+    expect(removeEventListener).toHaveBeenCalledWith("chat-bridge", expect.any(Function));
   });
 });

@@ -16,6 +16,10 @@
     "./embed-chat": {
       "import": "./dist/embed-chat.js",
       "require": "./dist/embed-chat.cjs"
+    },
+    "./shim": {
+      "import": "./dist/shim.js",
+      "require": "./dist/shim.cjs"
     }
   },
   "files": [

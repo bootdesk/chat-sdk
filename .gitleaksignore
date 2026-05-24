@@ -1,3 +1,4 @@
+83971a4588f0f2c12c9655a93485120f357ef8ca:examples/hello-world-laravel/.env.example:generic-api-key:68
 cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-slack/tests/fixtures/slack-multi-workspace/team1.json:generic-api-key:7
 cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-slack/tests/fixtures/slack-multi-workspace/team2.json:generic-api-key:7
 cf7d2c20b574a57a4197d4d13b594b8c0cd9c3bf:packages/adapter-slack/tests/fixtures/slack-direct.json:generic-api-key:6

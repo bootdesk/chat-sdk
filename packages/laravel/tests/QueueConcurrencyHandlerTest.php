@@ -210,6 +210,27 @@ class QueueConcurrencyHandlerTest extends TestCase
         Bus::assertNothingDispatched();
     }
 
+    public function test_debounce_two_messages_dispatches_one_job(): void
+    {
+        Bus::fake();
+        $state = $this->app->make(StateAdapter::class);
+        $handler = new QueueConcurrencyHandler(
+            $state,
+            ['concurrency' => 'debounce', 'debounceMs' => 100],
+        );
+        $adapter = new TestAsyncAdapter;
+
+        $handler->process($adapter, 'async:ch1:th1', $this->makeMessage(id: 'first'), fn () => null);
+        $handler->process($adapter, 'async:ch1:th1', $this->makeMessage(id: 'second'), fn () => null);
+
+        Bus::assertDispatchedTimes(ProcessDebouncedMessageJob::class, 1);
+        $this->assertSame('second', $state->get('chat:debounce:async:ch1:th1:latest')?->id);
+        $skipped = $state->get('chat:debounce:async:ch1:th1:skipped');
+        $this->assertIsArray($skipped);
+        $this->assertCount(1, $skipped);
+        $this->assertSame('first', $skipped[0]->id);
+    }
+
     public function test_debounce_stores_latest_in_cache_on_first_message(): void
     {
         Bus::fake();

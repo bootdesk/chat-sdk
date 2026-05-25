@@ -127,7 +127,6 @@ class QueueConcurrencyHandler implements ConcurrencyHandler
 
         if ($lock instanceof Lock) {
             $this->state->set("{$debounceKey}:latest", $message, $ttl);
-            $this->state->releaseLock($lock);
 
             Bus::dispatch(tap(
                 new ProcessDebouncedMessageJob(

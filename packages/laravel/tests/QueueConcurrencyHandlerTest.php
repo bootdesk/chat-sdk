@@ -87,7 +87,7 @@ class QueueConcurrencyHandlerTest extends TestCase
         Bus::assertNothingDispatched();
     }
 
-    public function test_async_adapter_drop_does_not_process(): void
+    public function test_async_adapter_drop_dispatches_job(): void
     {
         Bus::fake();
         $handler = new QueueConcurrencyHandler(
@@ -96,14 +96,10 @@ class QueueConcurrencyHandlerTest extends TestCase
         );
         $adapter = new TestAsyncAdapter;
         $message = $this->makeMessage();
-        $called = false;
 
-        $handler->process($adapter, 'async:ch1:th1', $message, function () use (&$called) {
-            $called = true;
-        });
+        $handler->process($adapter, 'async:ch1:th1', $message, fn () => null);
 
-        $this->assertFalse($called);
-        Bus::assertNothingDispatched();
+        Bus::assertDispatched(ProcessMessageJob::class);
     }
 
     public function test_async_adapter_queue_dispatches_job(): void
@@ -190,6 +186,28 @@ class QueueConcurrencyHandlerTest extends TestCase
 
         $this->assertFalse($called);
         Bus::assertDispatched(ProcessMessageJob::class);
+    }
+
+    public function test_adaptive_drops_on_lock_contention_when_strategy_is_drop(): void
+    {
+        Bus::fake();
+        $state = $this->app->make(StateAdapter::class);
+        $handler = new QueueConcurrencyHandler(
+            $state,
+            ['concurrency' => 'drop'],
+        );
+        $adapter = new TestAdaptiveAdapter;
+        $message = $this->makeMessage();
+        $called = false;
+
+        $state->acquireLock('process:adaptive:ch1:th1', 30_000);
+
+        $handler->process($adapter, 'adaptive:ch1:th1', $message, function () use (&$called) {
+            $called = true;
+        });
+
+        $this->assertFalse($called);
+        Bus::assertNothingDispatched();
     }
 
     public function test_debounce_stores_latest_in_cache_on_first_message(): void
@@ -282,7 +300,7 @@ class QueueConcurrencyHandlerTest extends TestCase
         $this->assertTrue($called);
     }
 
-    public function test_default_strategy_is_drop_when_config_missing(): void
+    public function test_default_strategy_is_drop_but_dispatches_for_async(): void
     {
         Bus::fake();
         $handler = new QueueConcurrencyHandler(
@@ -291,13 +309,9 @@ class QueueConcurrencyHandlerTest extends TestCase
         );
         $adapter = new TestAsyncAdapter;
         $message = $this->makeMessage();
-        $called = false;
 
-        $handler->process($adapter, 'async:ch1:th1', $message, function () use (&$called) {
-            $called = true;
-        });
+        $handler->process($adapter, 'async:ch1:th1', $message, fn () => null);
 
-        $this->assertFalse($called);
-        Bus::assertNothingDispatched();
+        Bus::assertDispatched(ProcessMessageJob::class);
     }
 }

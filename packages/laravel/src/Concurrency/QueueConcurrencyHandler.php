@@ -45,8 +45,12 @@ class QueueConcurrencyHandler implements ConcurrencyHandler
         }
 
         // RequiresAsyncResponse: always defer, never process inline
+        // Drop strategy is for contention only — async adapters always process
         if ($adapter instanceof RequiresAsyncResponse) {
-            $this->dispatchAsync($strategy, $adapter, $threadId, $message, $debounceMs);
+            $this->dispatchAsync(
+                $strategy === Strategy::Drop ? Strategy::Queue : $strategy,
+                $adapter, $threadId, $message, $debounceMs,
+            );
 
             return;
         }

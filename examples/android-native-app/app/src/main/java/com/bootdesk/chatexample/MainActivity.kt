@@ -15,7 +15,7 @@ import com.bootdesk.chatwidget.BridgeConfig
 import com.bootdesk.chatwidget.ChatWidgetView
 import com.bootdesk.chatwidget.PushSubscriptionStatus
 
-private const val DEFAULT_CHAT_URL = "https://ab77-148-71-197-239.ngrok-free.app/chat-iframe"
+private const val DEFAULT_CHAT_URL = "https://example.com/chat-iframe"
 
 class MainActivity : AppCompatActivity() {
     private lateinit var root: FrameLayout

@@ -1,4 +1,4 @@
-CHAT_URL ?= https://ab77-148-71-197-239.ngrok-free.app/chat-iframe
+CHAT_URL ?= https://example.com/chat-iframe
 APK = app/build/outputs/apk/debug/app-debug.apk
 
 .PHONY: build install run clean

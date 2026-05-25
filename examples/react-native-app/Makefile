@@ -1,4 +1,4 @@
-CHAT_URL ?= https://40a1-148-71-197-239.ngrok-free.app/chat-iframe
+CHAT_URL ?= https://example.com/chat-iframe
 
 .PHONY: install prebuild android ios start clean
 

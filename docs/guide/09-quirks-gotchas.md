@@ -39,7 +39,7 @@ Additional options:
 ### Sync vs Async
 
 - **Core (`DefaultConcurrencyHandler`)**: All strategies run synchronously. `debounce` uses `usleep()` to wait — blocks the PHP process.
-- **Laravel (`QueueConcurrencyHandler`)**: `queue` and `concurrent` dispatch jobs. `debounce` stores messages in cache and dispatches a unique delayed `ProcessDebouncedMessageJob` that picks up the latest message when it runs.
+- **Laravel (`QueueConcurrencyHandler`)**: `queue` and `concurrent` dispatch jobs. `debounce` stores messages in cache (`:latest`, `:skipped`, `:last` timestamp) and dispatches a unique delayed `ProcessDebouncedMessageJob`. When the job fires, it checks `:last` — if still within the debounce window, it re-dispatches with the remaining delay (but does **not** restore `:last`, preventing infinite re-dispatch loops).
 
 Adapter markers determine behavior:
 - `RequiresSyncResponse` (WebAdapter, DiscordAdapter) — always processes inline regardless of strategy

@@ -107,7 +107,7 @@ The built-in handler for framework-agnostic use. Used when no custom `Concurrenc
 Replaces the default in Laravel. Uses jobs instead of sync processing:
 - **drop**: no job, message dropped
 - **queue**: `ProcessMessageJob::dispatch()`
-- **debounce**: cache latest message, dispatch unique delayed `ProcessDebouncedMessageJob`. Only one pending job per thread — subsequent updates replace the cached message before the job runs.
+- **debounce**: cache latest message (`:latest`, `:skipped`, `:last` timestamps), dispatch unique delayed `ProcessDebouncedMessageJob`. Only one pending job per thread — subsequent updates replace the cached message before the job runs. When the job fires, it checks the `:last` timestamp: if still within the debounce window, it re-dispatches with the remaining delay (but **does not restore `:last`**, preventing infinite re-dispatch loops). `:latest` and `:skipped` restoration is guarded to avoid overwriting data set by concurrent `dispatchDebounced()` calls.
 - **concurrent**: `ProcessMessageJob::dispatch()` (parallel workers)
 
 ## State System

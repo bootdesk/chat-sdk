@@ -293,7 +293,7 @@ The `ChatHandler` is registered in `config/chat.php`:
 
 ## Adapters
 
-The service provider auto-discovers which adapters to register based on your `config/chat.php`. It also binds `ConcurrencyHandler::class` to `QueueConcurrencyHandler`, which dispatches `ProcessMessageJob` (for `queue`/`concurrent`) or `ProcessDebouncedMessageJob` (for `debounce`) to the queue worker.
+The service provider auto-discovers which adapters to register based on your `config/chat.php`. It also binds `ConcurrencyHandler::class` to `QueueConcurrencyHandler`, which dispatches `ProcessMessageJob` (for `queue`/`concurrent`) or `ProcessDebouncedMessageJob` (for `debounce`) to the queue worker. The debounce job does not restore `:last` on re-dispatch — this prevents infinite re-dispatch loops when the window remains open.
 
 Override by rebinding `ConcurrencyHandler::class` in your service provider if you need custom concurrency behavior. Each adapter's constructor dependencies are resolved from the container:
 

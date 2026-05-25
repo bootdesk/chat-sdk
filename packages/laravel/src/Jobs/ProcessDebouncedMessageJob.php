@@ -57,8 +57,9 @@ class ProcessDebouncedMessageJob implements ShouldBeUniqueUntilProcessing, Shoul
 
             $ttl = $remainingMs + 5000;
             $chat->state->set("{$this->debounceKey}:latest", $message, $ttl);
-            $chat->state->set("{$this->debounceKey}:skipped", is_array($skipped) ? $skipped : [], $ttl);
-            $chat->state->set("{$this->debounceKey}:last", $lastTimestamp, $ttl);
+            if (is_array($skipped)) {
+                $chat->state->set("{$this->debounceKey}:skipped", $skipped, $ttl);
+            }
 
             Bus::dispatch(tap(
                 new self($this->adapterName, $this->threadId, $this->debounceKey, $this->debounceMs),

@@ -123,5 +123,44 @@ class ProcessDebouncedMessageJobTest extends TestCase
         Bus::assertDispatched(ProcessDebouncedMessageJob::class);
 
         $this->assertSame('re_dispatch_msg', $state->get("{$debounceKey}:latest")?->id);
+        $this->assertNull($state->get("{$debounceKey}:last")); // not restored — avoids re-dispatch loops
+    }
+
+    public function test_re_dispatch_chain_terminates_when_no_new_messages(): void
+    {
+        Bus::fake();
+        $chat = $this->app->make(Chat::class);
+        $state = $this->app->make(StateAdapter::class);
+        $chat->registerAdapter(self::ADAPTER_NAME, new TestSyncAdapter);
+        $debounceKey = 'chat:debounce:test:ch:th';
+
+        $message = new Message(
+            id: 'chain_msg',
+            threadId: 'test:ch:th',
+            author: new Author(id: 'U1', name: 'Test'),
+            text: 'hello',
+        );
+        $state->set("{$debounceKey}:latest", $message, 6000);
+        $state->set("{$debounceKey}:last", microtime(true), 6000); // recent — still in window
+
+        $called = false;
+        $chat->onNewMessage('/.*/', function () use (&$called) {
+            $called = true;
+        });
+
+        // First run: re-dispatches (window still open)
+        $job1 = new ProcessDebouncedMessageJob(self::ADAPTER_NAME, 'test:ch:th', $debounceKey, 100_000);
+        $job1->handle($chat);
+
+        $this->assertFalse($called);
+        $this->assertNull($state->get("{$debounceKey}:last")); // :last deleted, not restored
+
+        // Second run: simulates the re-dispatched job — window now closed since :last is null
+        $job2 = new ProcessDebouncedMessageJob(self::ADAPTER_NAME, 'test:ch:th', $debounceKey, 100_000);
+        $job2->handle($chat);
+
+        $this->assertTrue($called); // processed because window closed
+        $this->assertNull($state->get("{$debounceKey}:latest"));
+        $this->assertNull($state->get("{$debounceKey}:last"));
     }
 }

@@ -21,6 +21,7 @@ CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> forma
 - Optional adapter contracts: `HandlesActions`, `HandlesSlashCommands`, `HandlesReactions`, `HandlesModals`, `HandlesOptionsLoad`, `HandlesSlackEvents`, `SupportsModals`, `AdapterHasMessagingWindow`, `RequiresSyncResponse`, `RequiresAsyncResponse`
 - thread IDs are canonical: `"{adapter}:{platformChannelId}:{platformThreadId}"` (e.g., `slack:C123:1234567890.123456`)
 - concurrency: pluggable via `ConcurrencyHandler` interface. Core provides `DefaultConcurrencyHandler` (sync/blocking). Laravel provides `QueueConcurrencyHandler` (async via jobs). Strategies: `drop`, `queue`, `debounce`, `concurrent` (default: drop). Adapters declare sync/async preference via `RequiresSyncResponse`/`RequiresAsyncResponse` markers.
+  - **Debounce re-dispatch guard**: `ProcessDebouncedMessageJob::handle()` does NOT restore the `:last` cache key when re-dispatching — prevents infinite re-dispatch loops. `:latest` and `:skipped` restoration is guarded to avoid overwriting data set by concurrent `dispatchDebounced()` calls.
 - state is pluggable via `StateAdapter`; Laravel uses `CacheStateAdapter`
 - attachments: URL-based `Attachment` objects handled by all adapters; binary `FileUpload` objects handled natively by Slack/TG/Discord, converted via `FileUploadConverter` on others
 - multipart uploads use `php-http/multipart-stream-builder`

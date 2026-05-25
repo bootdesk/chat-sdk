@@ -87,7 +87,7 @@ class QueueConcurrencyHandlerTest extends TestCase
         Bus::assertNothingDispatched();
     }
 
-    public function test_async_adapter_drop_dispatches_job(): void
+    public function test_async_adapter_drop_dispatches_job_when_lock_available(): void
     {
         Bus::fake();
         $handler = new QueueConcurrencyHandler(
@@ -100,6 +100,24 @@ class QueueConcurrencyHandlerTest extends TestCase
         $handler->process($adapter, 'async:ch1:th1', $message, fn () => null);
 
         Bus::assertDispatched(ProcessMessageJob::class);
+    }
+
+    public function test_async_adapter_drop_skips_when_locked(): void
+    {
+        Bus::fake();
+        $state = $this->app->make(StateAdapter::class);
+        $handler = new QueueConcurrencyHandler(
+            $state,
+            ['concurrency' => 'drop'],
+        );
+        $adapter = new TestAsyncAdapter;
+        $message = $this->makeMessage();
+
+        $state->acquireLock('process:async:ch1:th1', 30_000);
+
+        $handler->process($adapter, 'async:ch1:th1', $message, fn () => null);
+
+        Bus::assertNothingDispatched();
     }
 
     public function test_async_adapter_queue_dispatches_job(): void

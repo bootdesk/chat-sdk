@@ -7,7 +7,7 @@ Laravel integration for the PHP Chat SDK. Namespace: `BootDesk\ChatSDK\Laravel`
 - `ChatFacade` — `Chat` facade
 - `Http/Controllers/WebhookController` — single `handle` method for all platform webhooks
 - `State/CacheStateAdapter` — StateAdapter impl backed by Laravel cache (file, redis, etc.)
-- `Concurrency/QueueConcurrencyHandler` — Laravel-specific `ConcurrencyHandler` that dispatches jobs for async processing
+- `Concurrency/QueueConcurrencyHandler` — Laravel-specific `ConcurrencyHandler` that dispatches jobs for async processing. `drop` strategy acquires a lock during the webhook: if acquired, dispatches `ProcessMessageJob` (lock released when job finishes); if not acquired, drops silently. Works uniformly across all adapter types (sync, async, unmarked).
 
 ## route example (routes/webhooks.php)
 ```php
@@ -85,7 +85,7 @@ $chat
 - `chat:make-adapter` — stub generator for new adapters
 
 ## jobs
-- `Jobs/ProcessMessageJob` — queueable message processing (dispatched by `QueueConcurrencyHandler` for `queue`/`concurrent` strategies)
+- `Jobs/ProcessMessageJob` — queueable message processing (dispatched by `QueueConcurrencyHandler` for `queue`/`concurrent` strategies, and by `drop` with lock acquired). Releases the `process:` lock after handling, enabling subsequent `drop`-strategy messages to be processed.
 - `Jobs/ProcessDebouncedMessageJob` — unique delayed job for `debounce` strategy; fetches latest cached message when run. Does NOT restore `:last` cache key on re-dispatch (prevents infinite loops). `:latest`/`:skipped` restoration guarded against concurrent webhook races.
 
 ## middleware

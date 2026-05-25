@@ -44,10 +44,11 @@ class QueueConcurrencyHandler implements ConcurrencyHandler
         }
 
         if ($adapter instanceof RequiresAsyncResponse) {
-            $this->dispatchAsync(
-                $strategy === Strategy::Drop ? Strategy::Queue : $strategy,
-                $adapter, $threadId, $message, $debounceMs,
-            );
+            if ($strategy === Strategy::Drop) {
+                $this->processDropAsync($lockKey, $adapter, $threadId, $message);
+            } else {
+                $this->dispatchAsync($strategy, $adapter, $threadId, $message, $debounceMs);
+            }
 
             return;
         }
@@ -83,6 +84,26 @@ class QueueConcurrencyHandler implements ConcurrencyHandler
         } finally {
             $this->state->releaseLock($lock);
         }
+    }
+
+    private function processDropAsync(
+        string $lockKey,
+        Adapter $adapter,
+        string $threadId,
+        Message $message,
+    ): void {
+        $lock = $this->state->acquireLock("process:{$lockKey}", 30_000);
+        if (! $lock instanceof Lock) {
+            return;
+        }
+
+        Bus::dispatch(new ProcessMessageJob(
+            adapterName: $adapter->getName(),
+            threadId: $threadId,
+            message: $message,
+            lockKey: "process:{$lockKey}",
+            lockToken: $lock->token,
+        ));
     }
 
     private function dispatchAsync(

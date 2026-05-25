@@ -278,7 +278,7 @@ Chat::thread('slack:C123')->post('Hello!');
 
 ## Queue Processing
 
-The package binds `QueueConcurrencyHandler` as the default `ConcurrencyHandler`. It automatically dispatches `ProcessMessageJob` for `queue`/`concurrent` strategies, and `ProcessDebouncedMessageJob` (unique delayed job) for `debounce`. The debounce job caches the latest message and a `:last` timestamp; on re-dispatch it does **not** restore `:last` — preventing infinite re-dispatch loops. `:latest` and `:skipped` restoration is guarded against overwriting concurrent webhook data. Messages are processed inline (within the HTTP request) for `drop` strategy or `RequiresSyncResponse` adapters.
+The package binds `QueueConcurrencyHandler` as the default `ConcurrencyHandler`. It dispatches jobs as follows: `drop` acquires a lock during the webhook (dispatches `ProcessMessageJob` if acquired, drops silently if held — lock released when job finishes); `queue` and `concurrent` dispatch `ProcessMessageJob`; `debounce` dispatches `ProcessDebouncedMessageJob` (unique delayed job). The debounce job caches the latest message and a `:last` timestamp; on re-dispatch it does **not** restore `:last` — preventing infinite re-dispatch loops. `:latest` and `:skipped` restoration is guarded against overwriting concurrent webhook data. `RequiresSyncResponse` adapters always process inline (within the HTTP request) regardless of strategy.
 
 Make sure your Laravel queue worker is running:
 

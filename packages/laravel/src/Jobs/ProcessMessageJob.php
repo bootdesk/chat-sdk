@@ -6,6 +6,7 @@ namespace BootDesk\ChatSDK\Laravel\Jobs;
 
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Lock;
 use BootDesk\ChatSDK\Core\Message;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,6 +21,8 @@ class ProcessMessageJob implements ShouldQueue
         private readonly Message $message,
         private readonly array $skippedMessages = [],
         private readonly int $totalSinceLastHandler = 1,
+        private readonly ?string $lockKey = null,
+        private readonly ?string $lockToken = null,
     ) {}
 
     public function handle(Chat $chat): void
@@ -27,15 +30,28 @@ class ProcessMessageJob implements ShouldQueue
         $adapter = $chat->resolveAdapter($this->adapterName);
 
         if (! $adapter instanceof Adapter) {
+            $this->releaseLock($chat);
+
             return;
         }
 
-        $chat->processMessageInJob(
-            $adapter,
-            $this->threadId,
-            $this->message,
-            $this->skippedMessages,
-            $this->totalSinceLastHandler,
-        );
+        try {
+            $chat->processMessageInJob(
+                $adapter,
+                $this->threadId,
+                $this->message,
+                $this->skippedMessages,
+                $this->totalSinceLastHandler,
+            );
+        } finally {
+            $this->releaseLock($chat);
+        }
+    }
+
+    private function releaseLock(Chat $chat): void
+    {
+        if ($this->lockKey !== null && $this->lockToken !== null) {
+            $chat->state->releaseLock(new Lock($this->lockKey, $this->lockToken, 0));
+        }
     }
 }

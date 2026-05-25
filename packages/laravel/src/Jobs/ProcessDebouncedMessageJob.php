@@ -8,9 +8,11 @@ use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Message;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Bus;
 
-class ProcessDebouncedMessageJob implements ShouldQueue
+class ProcessDebouncedMessageJob implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Queueable;
 
@@ -18,7 +20,13 @@ class ProcessDebouncedMessageJob implements ShouldQueue
         private readonly string $adapterName,
         private readonly string $threadId,
         private readonly string $debounceKey,
+        private readonly int $debounceMs,
     ) {}
+
+    public function uniqueId(): string
+    {
+        return $this->debounceKey;
+    }
 
     public function handle(Chat $chat): void
     {
@@ -30,12 +38,33 @@ class ProcessDebouncedMessageJob implements ShouldQueue
 
         $message = $chat->state->get("{$this->debounceKey}:latest");
         $skipped = $chat->state->get("{$this->debounceKey}:skipped");
-        $skipped = is_array($skipped) ? $skipped : [];
+        $lastTimestamp = $chat->state->get("{$this->debounceKey}:last");
 
         $chat->state->delete("{$this->debounceKey}:latest");
         $chat->state->delete("{$this->debounceKey}:skipped");
+        $chat->state->delete("{$this->debounceKey}:last");
 
         if (! $message instanceof Message) {
+            return;
+        }
+
+        $windowEnd = $lastTimestamp !== null
+            ? (float) $lastTimestamp + ($this->debounceMs / 1000)
+            : 0.0;
+
+        if (microtime(true) < $windowEnd) {
+            $remainingMs = (int) ceil(($windowEnd - microtime(true)) * 1000);
+
+            $ttl = $remainingMs + 5000;
+            $chat->state->set("{$this->debounceKey}:latest", $message, $ttl);
+            $chat->state->set("{$this->debounceKey}:skipped", is_array($skipped) ? $skipped : [], $ttl);
+            $chat->state->set("{$this->debounceKey}:last", $lastTimestamp, $ttl);
+
+            Bus::dispatch(tap(
+                new self($this->adapterName, $this->threadId, $this->debounceKey, $this->debounceMs),
+                fn (self $job) => $job->delay(now()->addMilliseconds(max(1, $remainingMs))),
+            ));
+
             return;
         }
 
@@ -43,8 +72,8 @@ class ProcessDebouncedMessageJob implements ShouldQueue
             adapter: $adapter,
             threadId: $this->threadId,
             message: $message,
-            skippedMessages: $skipped,
-            totalSinceLastHandler: count($skipped) + 1,
+            skippedMessages: is_array($skipped) ? $skipped : [],
+            totalSinceLastHandler: (is_array($skipped) ? count($skipped) : 0) + 1,
         );
     }
 }

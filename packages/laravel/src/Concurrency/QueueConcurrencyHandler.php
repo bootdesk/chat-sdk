@@ -37,15 +37,12 @@ class QueueConcurrencyHandler implements ConcurrencyHandler
             ? $adapter->getName().':'.$adapter->channelIdFromThreadId($threadId)
             : $threadId;
 
-        // RequiresSyncResponse: always process inline with lock, never defer
         if ($adapter instanceof RequiresSyncResponse) {
             $this->processSync($lockKey, $adapter, $threadId, $message, $processCallback);
 
             return;
         }
 
-        // RequiresAsyncResponse: always defer, never process inline
-        // Drop strategy is for contention only — async adapters always process
         if ($adapter instanceof RequiresAsyncResponse) {
             $this->dispatchAsync(
                 $strategy === Strategy::Drop ? Strategy::Queue : $strategy,
@@ -55,7 +52,6 @@ class QueueConcurrencyHandler implements ConcurrencyHandler
             return;
         }
 
-        // No marker (adaptive): try inline first, defer on contention
         $lock = $this->state->acquireLock("process:{$lockKey}", 30_000);
         if ($lock instanceof Lock) {
             try {
@@ -122,30 +118,25 @@ class QueueConcurrencyHandler implements ConcurrencyHandler
         $debounceKey = "chat:debounce:{$threadId}";
         $ttl = $debounceMs + 5000;
 
-        // Acquire debounce lock — first message in window starts the timer
-        $lock = $this->state->acquireLock("{$debounceKey}:lock", $ttl);
-
-        if ($lock instanceof Lock) {
-            $this->state->set("{$debounceKey}:latest", $message, $ttl);
-
-            Bus::dispatch(tap(
-                new ProcessDebouncedMessageJob(
-                    adapterName: $adapter->getName(),
-                    threadId: $threadId,
-                    debounceKey: $debounceKey,
-                ),
-                fn (ProcessDebouncedMessageJob $job) => $job->delay(now()->addMilliseconds($debounceMs)),
-            ));
-        } else {
-            // Subsequent message within the window — update latest, track skipped
-            $previous = $this->state->get("{$debounceKey}:latest");
-            if ($previous instanceof Message) {
-                $skipped = $this->state->get("{$debounceKey}:skipped");
-                $skipped = is_array($skipped) ? $skipped : [];
-                $skipped[] = $previous;
-                $this->state->set("{$debounceKey}:skipped", $skipped, $ttl);
-            }
-            $this->state->set("{$debounceKey}:latest", $message, $ttl);
+        $previous = $this->state->get("{$debounceKey}:latest");
+        if ($previous instanceof Message) {
+            $skipped = $this->state->get("{$debounceKey}:skipped");
+            $skipped = is_array($skipped) ? $skipped : [];
+            $skipped[] = $previous;
+            $this->state->set("{$debounceKey}:skipped", $skipped, $ttl);
         }
+
+        $this->state->set("{$debounceKey}:latest", $message, $ttl);
+        $this->state->set("{$debounceKey}:last", microtime(true), $ttl);
+
+        Bus::dispatch(tap(
+            new ProcessDebouncedMessageJob(
+                adapterName: $adapter->getName(),
+                threadId: $threadId,
+                debounceKey: $debounceKey,
+                debounceMs: $debounceMs,
+            ),
+            fn (ProcessDebouncedMessageJob $job) => $job->delay(now()->addMilliseconds($debounceMs)),
+        ));
     }
 }

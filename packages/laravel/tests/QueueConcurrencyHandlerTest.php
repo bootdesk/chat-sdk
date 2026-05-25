@@ -210,28 +210,7 @@ class QueueConcurrencyHandlerTest extends TestCase
         Bus::assertNothingDispatched();
     }
 
-    public function test_debounce_two_messages_dispatches_one_job(): void
-    {
-        Bus::fake();
-        $state = $this->app->make(StateAdapter::class);
-        $handler = new QueueConcurrencyHandler(
-            $state,
-            ['concurrency' => 'debounce', 'debounceMs' => 100],
-        );
-        $adapter = new TestAsyncAdapter;
-
-        $handler->process($adapter, 'async:ch1:th1', $this->makeMessage(id: 'first'), fn () => null);
-        $handler->process($adapter, 'async:ch1:th1', $this->makeMessage(id: 'second'), fn () => null);
-
-        Bus::assertDispatchedTimes(ProcessDebouncedMessageJob::class, 1);
-        $this->assertSame('second', $state->get('chat:debounce:async:ch1:th1:latest')?->id);
-        $skipped = $state->get('chat:debounce:async:ch1:th1:skipped');
-        $this->assertIsArray($skipped);
-        $this->assertCount(1, $skipped);
-        $this->assertSame('first', $skipped[0]->id);
-    }
-
-    public function test_debounce_stores_latest_in_cache_on_first_message(): void
+    public function test_debounce_stores_latest_and_dispatches(): void
     {
         Bus::fake();
         $state = $this->app->make(StateAdapter::class);
@@ -247,10 +226,11 @@ class QueueConcurrencyHandlerTest extends TestCase
         $stored = $state->get('chat:debounce:async:ch1:th1:latest');
         $this->assertInstanceOf(Message::class, $stored);
         $this->assertSame('first', $stored->id);
+        $this->assertNotNull($state->get('chat:debounce:async:ch1:th1:last'));
         Bus::assertDispatched(ProcessDebouncedMessageJob::class);
     }
 
-    public function test_debounce_skipped_on_lock_contention(): void
+    public function test_debounce_tracks_skipped_on_subsequent_messages(): void
     {
         Bus::fake();
         $state = $this->app->make(StateAdapter::class);
@@ -260,23 +240,16 @@ class QueueConcurrencyHandlerTest extends TestCase
         );
         $adapter = new TestAsyncAdapter;
 
-        $state->set('chat:debounce:async:ch1:th1:latest', $this->makeMessage(id: 'previous'), 6000);
+        $handler->process($adapter, 'async:ch1:th1', $this->makeMessage(id: 'first'), fn () => null);
+        $handler->process($adapter, 'async:ch1:th1', $this->makeMessage(id: 'second'), fn () => null);
 
-        $state->acquireLock('chat:debounce:async:ch1:th1:lock', 30_000);
-
-        $second = $this->makeMessage(id: 'second');
-        $handler->process($adapter, 'async:ch1:th1', $second, fn () => null);
-
-        Bus::assertNothingDispatched();
-
-        $latest = $state->get('chat:debounce:async:ch1:th1:latest');
-        $this->assertInstanceOf(Message::class, $latest);
-        $this->assertSame('second', $latest->id);
+        $this->assertSame('second', $state->get('chat:debounce:async:ch1:th1:latest')?->id);
+        $this->assertNotNull($state->get('chat:debounce:async:ch1:th1:last'));
 
         $skipped = $state->get('chat:debounce:async:ch1:th1:skipped');
         $this->assertIsArray($skipped);
         $this->assertCount(1, $skipped);
-        $this->assertSame('previous', $skipped[0]->id);
+        $this->assertSame('first', $skipped[0]->id);
     }
 
     public function test_channel_scope_uses_channel_id_for_lock(): void

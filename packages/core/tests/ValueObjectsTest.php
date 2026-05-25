@@ -28,6 +28,10 @@ use BootDesk\ChatSDK\Core\Support\NullFileUploadConverter;
 use BootDesk\ChatSDK\Core\Thread;
 use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Core\UserInfo;
+use League\CommonMark\Environment\Environment;
+use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
+use League\CommonMark\Node\Block\Document;
+use League\CommonMark\Parser\MarkdownParser;
 use PHPUnit\Framework\TestCase;
 
 class ValueObjectsTest extends TestCase
@@ -56,6 +60,30 @@ class ValueObjectsTest extends TestCase
         $this->assertTrue($msg->isMention);
         $this->assertFalse($msg->isDM);
         $this->assertSame('{"event":"message"}', $msg->raw);
+    }
+
+    public function test_message_with_formatted_ast_serializes_and_unserializes(): void
+    {
+        $env = new Environment;
+        $env->addExtension(new CommonMarkCoreExtension);
+        $parser = new MarkdownParser($env);
+        $doc = $parser->parse('Hello **world**!');
+
+        $msg = new Message(
+            id: 'm1',
+            threadId: 'slack:C1:1234',
+            author: new Author(id: 'U1'),
+            text: 'Hello **world**!',
+            formatted: $doc,
+        );
+
+        $restored = unserialize(serialize($msg));
+
+        $this->assertInstanceOf(Document::class, $restored->formatted);
+        $this->assertSame('Hello **world**!', $restored->text);
+        $this->assertSame('m1', $restored->id);
+        // Walk the AST to confirm node graph is intact
+        $this->assertSame('world', $restored->formatted->firstChild()?->firstChild()?->next()?->firstChild()?->getLiteral());
     }
 
     public function test_sent_message(): void

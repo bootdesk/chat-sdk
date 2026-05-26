@@ -5,7 +5,8 @@
   "workspaces": [
     "packages/js-web-adapter-core",
     "packages/js-web-adapter-react",
-    "packages/chat-widget-bridge"
+    "packages/chat-widget-bridge",
+    "native/chat-widget-react-native"
   ],
   "scripts": {
     "docs:guides": "node scripts/build-guides.mjs",
@@ -18,5 +19,8 @@
   },
   "dependencies": {
     "marked-gfm-heading-id": "^4.1.4"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "*"
   }
 }

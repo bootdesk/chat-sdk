@@ -98,13 +98,20 @@ export function ChatWidget({
   const {
     config: iframeConfig,
     isInIframe,
+    isInWebView,
     notifyMessage,
     notifyViewportConfig,
     onNotificationClicked,
+    pushState: bridgePushState,
+    requestPushSubscribe,
+    requestPushUnsubscribe,
   } = useBridge();
 
+  const hasBridgePush = (isInIframe || isInWebView) && bridgePushState !== null;
+  const inBridge = isInIframe || isInWebView;
+
   const effectiveLocale =
-    localeProp ?? (isInIframe ? iframeConfig?.locale : undefined) ?? useLocale().locale;
+    localeProp ?? (inBridge ? iframeConfig?.locale : undefined) ?? useLocale().locale;
   const merged = mergeLocale(effectiveLocale);
   const dir = merged.direction;
 
@@ -112,7 +119,7 @@ export function ChatWidget({
     client.setLocaleHeader(effectiveLocale);
   }, [client, effectiveLocale]);
 
-  const autoEmbedded = isInIframe && embedded !== false;
+  const autoEmbedded = inBridge && embedded !== false;
   const effectiveEmbedded = embedded === true || autoEmbedded;
   const effectiveMode = effectiveEmbedded ? "embedded" : initialMode;
 
@@ -192,7 +199,7 @@ export function ChatWidget({
   }, [initialMode, isSmallScreen]);
 
   useEffect(() => {
-    if (isInIframe) {
+    if (inBridge) {
       notifyViewportConfig("interactive-widget=resizes-content");
       return () => notifyViewportConfig("");
     }
@@ -212,7 +219,7 @@ export function ChatWidget({
         meta.setAttribute("content", original);
       };
     }
-  }, [isOpen, displayMode, isSmallScreen, isInIframe, notifyViewportConfig]);
+  }, [isOpen, displayMode, isSmallScreen, inBridge, notifyViewportConfig]);
 
   const { messages, sendMessage, loading, isLoadingHistory, reloadMessages } = useMessages(
     client,
@@ -220,8 +227,9 @@ export function ChatWidget({
   );
   const { isSomeoneTyping } = useTyping(client);
 
+  const webPushEnabled = !!pushConfig && !hasBridgePush;
   const push = usePushNotifications({
-    enabled: !!pushConfig,
+    enabled: webPushEnabled,
     getVapidPublicKey: pushConfig?.getVapidPublicKey ?? (() => Promise.resolve("")),
     onSubscribe: pushConfig?.onSubscribe ?? (async () => {}),
     onUnsubscribe: pushConfig?.onUnsubscribe ?? (async () => {}),
@@ -232,12 +240,25 @@ export function ChatWidget({
   });
 
   const handlePushToggle = useCallback(() => {
-    if (push.isSubscribed) push.unsubscribe();
-    else push.subscribe();
-  }, [push.isSubscribed, push.subscribe, push.unsubscribe]);
+    if (hasBridgePush) {
+      if (bridgePushState === "subscribed") requestPushUnsubscribe();
+      else requestPushSubscribe();
+    } else {
+      if (push.isSubscribed) push.unsubscribe();
+      else push.subscribe();
+    }
+  }, [
+    hasBridgePush,
+    bridgePushState,
+    requestPushSubscribe,
+    requestPushUnsubscribe,
+    push.isSubscribed,
+    push.subscribe,
+    push.unsubscribe,
+  ]);
 
   useEffect(() => {
-    if (!isInIframe || !iframeConfig) return;
+    if (!inBridge || !iframeConfig) return;
     if (iframeConfig.theme?.cssVariables) {
       const root = document.documentElement;
       for (const [key, value] of Object.entries(iframeConfig.theme.cssVariables)) {
@@ -248,18 +269,18 @@ export function ChatWidget({
     if (mode === "light" || mode === "dark" || mode === "auto") {
       setTheme(mode);
     }
-  }, [isInIframe, iframeConfig]);
+  }, [inBridge, iframeConfig]);
 
   useEffect(() => {
-    if (!isInIframe) return;
+    if (!inBridge) return;
     onNotificationClicked(() => {
       reloadMessages();
     });
-  }, [isInIframe, onNotificationClicked, reloadMessages]);
+  }, [inBridge, onNotificationClicked, reloadMessages]);
 
-  const effectiveTitle = (isInIframe && iframeConfig?.title) || title;
+  const effectiveTitle = (inBridge && iframeConfig?.title) || title;
   const effectivePlaceholder =
-    (isInIframe && iframeConfig?.placeholder) || placeholder || merged.chatWidget.placeholder;
+    (inBridge && iframeConfig?.placeholder) || placeholder || merged.chatWidget.placeholder;
 
   const currentUserId = "getCurrentUserId" in client ? client.getCurrentUserId() : "";
 
@@ -269,11 +290,11 @@ export function ChatWidget({
       attachments: Array<{ url: string; name: string; mimeType: string; size: number }> = [],
     ) => {
       await sendMessage(text, attachments);
-      if (isInIframe) {
+      if (inBridge) {
         notifyMessage(text);
       }
     },
-    [sendMessage, isInIframe, notifyMessage],
+    [sendMessage, inBridge, notifyMessage],
   );
 
   const handleActionClick = useCallback(
@@ -302,14 +323,21 @@ export function ChatWidget({
   const close = useCallback(() => {
     setIsOpen(false);
     setDisplayMode("floating");
-    onClose?.();
-  }, [onClose]);
-
-  const embeddedClose = useCallback(() => {
-    if (isInIframe) {
+    if (isInWebView) {
+      (window as any).__chatBridge?.send?.({ type: "chat-close" });
+    } else if (isInIframe) {
       window.parent.postMessage({ type: "chat-close" }, "*");
     }
-  }, [isInIframe]);
+    onClose?.();
+  }, [onClose, isInIframe, isInWebView]);
+
+  const embeddedClose = useCallback(() => {
+    if (isInWebView) {
+      (window as any).__chatBridge?.send?.({ type: "chat-close" });
+    } else if (isInIframe) {
+      window.parent.postMessage({ type: "chat-close" }, "*");
+    }
+  }, [isInIframe, isInWebView]);
 
   const panelContent = (
     <>
@@ -317,7 +345,7 @@ export function ChatWidget({
         title={effectiveTitle}
         onClose={
           effectiveEmbedded
-            ? isInIframe
+            ? inBridge
               ? embeddedClose
               : undefined
             : displayMode === "floating"
@@ -339,8 +367,8 @@ export function ChatWidget({
         className={className?.header}
         theme={theme}
         onThemeChange={handleThemeChange}
-        pushStatus={pushConfig ? push.status : undefined}
-        onPushToggle={pushConfig ? handlePushToggle : undefined}
+        pushStatus={hasBridgePush ? bridgePushState : pushConfig ? push.status : undefined}
+        onPushToggle={hasBridgePush || pushConfig ? handlePushToggle : undefined}
       />
 
       {isPreEntry && preEntry ? (
@@ -358,15 +386,15 @@ export function ChatWidget({
 
           {isSomeoneTyping && <TypingIndicator />}
 
-          {pushConfig ? (
+          {!hasBridgePush && pushConfig ? (
             <PushPermissionPrompt
               getVapidPublicKey={pushConfig.getVapidPublicKey}
               onSubscribe={pushConfig.onSubscribe}
               onUnsubscribe={pushConfig.onUnsubscribe}
             />
-          ) : (
+          ) : !hasBridgePush ? (
             renderPushPrompt?.()
-          )}
+          ) : null}
 
           <InputArea
             onSend={handleSend}

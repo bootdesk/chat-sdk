@@ -16,6 +16,7 @@ use BootDesk\ChatSDK\Core\Channel;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\FileUpload;
 use BootDesk\ChatSDK\Core\MemberJoinedChannelEvent;
+use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\MessageContext;
 use BootDesk\ChatSDK\Core\MessageDeliveredEvent;
 use BootDesk\ChatSDK\Core\MessageFailedEvent;
@@ -56,6 +57,16 @@ class ChatHandlers implements ChatHandler
             $reply = $ctx->message->isDM
                 ? 'Hey there! I\'m a bot. Send `/help` to see what I can do.'
                 : 'Hey there! Mention me or send `/help` to see what I can do.';
+
+            if ($ctx->skippedMessages) {
+                $reply .= ' (Has Skipped messages: '.implode(
+                    ', ',
+                    \array_map(
+                        fn (Message $message) => $message->text,
+                        $ctx->skippedMessages
+                    )
+                );
+            }
 
             $ctx->thread->post($reply);
         });

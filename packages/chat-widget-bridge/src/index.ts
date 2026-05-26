@@ -1,2 +1,10 @@
 export { useIframeBridge } from "./useIframeBridge";
-export type { BridgeConfig, IframeBridgeHook, BridgeMessage } from "./types";
+export { WEBVIEW_SHIM, buildShimUrl } from "./shim";
+export type {
+  BridgeConfig,
+  IframeBridgeHook,
+  BridgeMessage,
+  BridgePushStatus,
+  BridgeMessageType,
+  ThemeMode,
+} from "./types";

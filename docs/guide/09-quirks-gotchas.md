@@ -10,7 +10,7 @@ Platform-specific limitations, common pitfalls, and important behaviors.
 
 ## Concurrency Config
 
-The `concurrency` config option controls how simultaneous messages from the same thread are handled:
+The `concurrency` config option controls how simultaneous messages from the same thread are handled. The implementation is pluggable via `ConcurrencyHandler`:
 
 | Strategy         | Behavior                                       |
 | ---------------- | ---------------------------------------------- |
@@ -30,10 +30,21 @@ Additional options:
 'concurrency' => 'debounce',
 'debounceMs' => 1500,       // Wait time before processing (ms)
 'maxConcurrent' => 5,       // Max concurrent threads (when strategy=concurrent)
+'maxQueueSize' => 10,       // Max enqueued messages (when strategy=queue)
 'lock_scope' => 'thread',   // 'thread' or 'channel' (for WhatsApp/Telegram)
 ```
 
 **`lock_scope: channel`** is required for WhatsApp/Telegram where one phone number = one conversation.
+
+### Sync vs Async
+
+- **Core (`DefaultConcurrencyHandler`)**: All strategies run synchronously. `debounce` uses `usleep()` to wait — blocks the PHP process.
+- **Laravel (`QueueConcurrencyHandler`)**: `drop` acquires a lock during the webhook — if acquired, dispatches `ProcessMessageJob` (lock released when job finishes); if contention, drops silently. `queue` and `concurrent` dispatch jobs. `debounce` stores messages in cache (`:latest`, `:skipped`, `:last` timestamp) and dispatches a unique delayed `ProcessDebouncedMessageJob`. When the job fires, it checks `:last` — if still within the debounce window, it re-dispatches with the remaining delay (but does **not** restore `:last`, preventing infinite re-dispatch loops).
+
+Adapter markers determine behavior:
+- `RequiresSyncResponse` (WebAdapter, DiscordAdapter) — always processes inline regardless of strategy
+- `RequiresAsyncResponse` (Slack, Telegram, Meta) — always defers to async
+- No marker — tries inline on no contention, strategy on contention
 
 ## Linear Agent Sessions
 

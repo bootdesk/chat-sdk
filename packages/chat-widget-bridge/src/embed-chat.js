@@ -123,9 +123,16 @@
       try {
         var stored = localStorage.getItem("chat-theme");
         if (stored === "light" || stored === "dark" || stored === "auto") savedTheme = stored;
-      } catch { /* unavailable */ }
+      } catch {
+        /* unavailable */
+      }
       state.iframe.contentWindow.postMessage(
-        { type: "chat-config", title: opts.title, placeholder: opts.placeholder, theme: { mode: savedTheme } },
+        {
+          type: "chat-config",
+          title: opts.title,
+          placeholder: opts.placeholder,
+          theme: { mode: savedTheme },
+        },
         "*",
       );
     });
@@ -181,8 +188,10 @@
     if (!state.initialized) return;
     if (state.button && state.button.parentNode) state.button.parentNode.removeChild(state.button);
     if (state.iframe && state.iframe.parentNode) state.iframe.parentNode.removeChild(state.iframe);
-    if (state.overlay && state.overlay.parentNode) state.overlay.parentNode.removeChild(state.overlay);
-    if (state.styleEl && state.styleEl.parentNode) state.styleEl.parentNode.removeChild(state.styleEl);
+    if (state.overlay && state.overlay.parentNode)
+      state.overlay.parentNode.removeChild(state.overlay);
+    if (state.styleEl && state.styleEl.parentNode)
+      state.styleEl.parentNode.removeChild(state.styleEl);
     window.removeEventListener("message", handleMessage);
     state.initialized = false;
   }
@@ -206,7 +215,7 @@
 
     var style = document.createElement("style");
     style.textContent =
-      '@media (max-width: 799px) { [data-embed-chat-iframe] { width: 100dvw !important; height: 100dvh !important; bottom: 0 !important; right: 0 !important; max-width: none !important; max-height: none !important; border-radius: 0 !important; } [data-embed-chat-overlay] { display: none !important; } }';
+      "@media (max-width: 799px) { [data-embed-chat-iframe] { width: 100dvw !important; height: 100dvh !important; bottom: 0 !important; right: 0 !important; max-width: none !important; max-height: none !important; border-radius: 0 !important; } [data-embed-chat-overlay] { display: none !important; } }";
     document.head.appendChild(style);
     state.styleEl = style;
 
@@ -219,7 +228,9 @@
 
   function initialize(opts) {
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", function () { _initialize(opts); });
+      document.addEventListener("DOMContentLoaded", function () {
+        _initialize(opts);
+      });
     } else {
       _initialize(opts);
     }

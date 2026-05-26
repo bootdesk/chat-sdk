@@ -7,6 +7,8 @@ composer.lock
 .claude/*local.json
 docs/_build
 .phpdoc
+yarn.lock
+*/package-lock.json
 
 # npm workspace
 node_modules/
@@ -14,3 +16,13 @@ node_modules/
 # JS package build output
 packages/js-web-adapter-core/dist/
 packages/js-web-adapter-react/dist/
+
+# Native SDKs
+native/chat-widget-android/**/build/
+native/chat-widget-android/.gradle/
+native/chat-widget-ios/.build/
+native/chat-widget-ios/DerivedData/
+
+# iOS examples
+examples/ios-native-app/.build/
+examples/ios-native-app/DerivedData/

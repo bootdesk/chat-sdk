@@ -18,16 +18,17 @@ php artisan vendor:publish --tag=chat-config
 
 This creates `config/chat.php` with these options:
 
-| Option         | Default    | Description                                           |
-| -------------- | ---------- | ----------------------------------------------------- |
-| `user_name`    | `'Bot'`    | Bot display name                                      |
-| `adapters`     | `[]`       | Per-adapter credentials                               |
-| `state.store`  | `'file'`   | Cache store for state                                 |
-| `state.prefix` | `'chat:'`  | Key prefix for state                                  |
-| `handlers`     | `[]`       | Handler classes to register                           |
-| `concurrency`  | `'drop'`   | Concurrency strategy (drop/queue/debounce/concurrent) |
-| `lock_scope`   | `'thread'` | Lock scope for concurrency ('thread' or 'channel')    |
-| `transcripts`  | `null`     | Transcript config (requires identity resolver)        |
+| Option         | Default    | Description                                              |
+| -------------- | ---------- | -------------------------------------------------------- |
+| `user_name`    | `'Bot'`    | Bot display name                                         |
+| `adapters`     | `[]`       | Per-adapter credentials                                  |
+| `state.store`  | `'file'`   | Cache store for state                                    |
+| `state.prefix` | `'chat:'`  | Key prefix for state                                     |
+| `handlers`     | `[]`       | Handler classes to register                              |
+| `concurrency`  | `'drop'`   | Concurrency strategy (drop/queue/debounce/concurrent)    |
+| `lock_scope`   | `'thread'` | Lock scope for concurrency ('thread' or 'channel')       |
+| `transcripts`  | `null`     | Transcript config (requires identity resolver)           |
+| —              | —          | `ConcurrencyHandler` can be overridden via container DI  |
 
 ```php
 return [
@@ -292,7 +293,9 @@ The `ChatHandler` is registered in `config/chat.php`:
 
 ## Adapters
 
-The service provider auto-discovers which adapters to register based on your `config/chat.php`. Each adapter's constructor dependencies are resolved from the container:
+The service provider auto-discovers which adapters to register based on your `config/chat.php`. It also binds `ConcurrencyHandler::class` to `QueueConcurrencyHandler`, which dispatches jobs according to the strategy: `drop` acquires a lock during the webhook (dispatches `ProcessMessageJob` if acquired, drops silently if contention — lock released when job finishes); `queue` and `concurrent` dispatch `ProcessMessageJob`; `debounce` dispatches `ProcessDebouncedMessageJob`. The debounce job does not restore `:last` on re-dispatch — this prevents infinite re-dispatch loops when the window remains open.
+
+Override by rebinding `ConcurrencyHandler::class` in your service provider if you need custom concurrency behavior. Each adapter's constructor dependencies are resolved from the container:
 
 ```php
 'github' => [

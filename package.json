@@ -19,5 +19,8 @@
   },
   "dependencies": {
     "marked-gfm-heading-id": "^4.1.4"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "*"
   }
 }

@@ -180,7 +180,13 @@ describe("WebChatClient", () => {
     const client = createClient();
     const handle = (client as any).handleStreamingChunk.bind(client);
 
-    handle({ messageId: "msg-s", threadId: "t", chunk: "Hi", isFinal: true, timestamp: Date.now() });
+    handle({
+      messageId: "msg-s",
+      threadId: "t",
+      chunk: "Hi",
+      isFinal: true,
+      timestamp: Date.now(),
+    });
 
     expect(client.getMessages()).toHaveLength(1);
 
@@ -289,7 +295,11 @@ describe("WebChatClient", () => {
   it("onMessageEdited typed listener receives events", () => {
     const client = createClient();
     (client as any).handleMessagePosted({
-      messageId: "msg-edit", threadId: "t", text: "Orig", author: { id: "bot" }, timestamp: 1,
+      messageId: "msg-edit",
+      threadId: "t",
+      text: "Orig",
+      author: { id: "bot" },
+      timestamp: 1,
     });
 
     const events: any[] = [];
@@ -303,7 +313,11 @@ describe("WebChatClient", () => {
   it("onMessageDeleted typed listener receives events", () => {
     const client = createClient();
     (client as any).handleMessagePosted({
-      messageId: "msg-del", threadId: "t", text: "Bye", author: { id: "bot" }, timestamp: 1,
+      messageId: "msg-del",
+      threadId: "t",
+      text: "Bye",
+      author: { id: "bot" },
+      timestamp: 1,
     });
 
     const events: any[] = [];
@@ -317,13 +331,21 @@ describe("WebChatClient", () => {
   it("onReactionAdded typed listener receives events", () => {
     const client = createClient();
     (client as any).handleMessagePosted({
-      messageId: "msg-reaction", threadId: "t", text: "Hi", author: { id: "bot" }, timestamp: 1,
+      messageId: "msg-reaction",
+      threadId: "t",
+      text: "Hi",
+      author: { id: "bot" },
+      timestamp: 1,
     });
 
     const events: any[] = [];
     client.onReactionAdded((e) => events.push(e));
 
-    (client as any).handleReactionAdded({ messageId: "msg-reaction", emoji: "👍", user: { id: "user-2" } });
+    (client as any).handleReactionAdded({
+      messageId: "msg-reaction",
+      emoji: "👍",
+      user: { id: "user-2" },
+    });
     expect(events).toHaveLength(1);
     expect(events[0].emoji).toBe("👍");
   });
@@ -331,14 +353,26 @@ describe("WebChatClient", () => {
   it("onReactionRemoved typed listener receives events", () => {
     const client = createClient();
     (client as any).handleMessagePosted({
-      messageId: "msg-unreact", threadId: "t", text: "Hi", author: { id: "bot" }, timestamp: 1,
+      messageId: "msg-unreact",
+      threadId: "t",
+      text: "Hi",
+      author: { id: "bot" },
+      timestamp: 1,
     });
 
     const events: any[] = [];
     client.onReactionRemoved((e) => events.push(e));
 
-    (client as any).handleReactionAdded({ messageId: "msg-unreact", emoji: "👍", user: { id: "user-2" } });
-    (client as any).handleReactionRemoved({ messageId: "msg-unreact", emoji: "👍", user: { id: "user-2" } });
+    (client as any).handleReactionAdded({
+      messageId: "msg-unreact",
+      emoji: "👍",
+      user: { id: "user-2" },
+    });
+    (client as any).handleReactionRemoved({
+      messageId: "msg-unreact",
+      emoji: "👍",
+      user: { id: "user-2" },
+    });
     expect(events).toHaveLength(1);
     expect(events[0].emoji).toBe("👍");
   });
@@ -367,9 +401,7 @@ describe("WebChatClient", () => {
 
   it("skips state seeding when skipStateSeed is true", async () => {
     mockFetch({
-      messages: [
-        { id: "m1", text: "Hi", author: { id: "bot" }, timestamp: 1 },
-      ],
+      messages: [{ id: "m1", text: "Hi", author: { id: "bot" }, timestamp: 1 }],
       hasMore: false,
     });
 
@@ -461,7 +493,9 @@ describe("WebChatClient", () => {
 
   it("editMessage throws when feature disabled", async () => {
     const client = createClient();
-    await expect(client.editMessage("msg-1", "new text")).rejects.toThrow("Edit messages not enabled");
+    await expect(client.editMessage("msg-1", "new text")).rejects.toThrow(
+      "Edit messages not enabled",
+    );
   });
 
   it("editMessage delegates to HttpClient when feature enabled", async () => {
@@ -494,13 +528,17 @@ describe("WebChatClient", () => {
 
   it("onMessagePosted typed listener receives events", async () => {
     mockFetch({
-      id: "r1", role: "assistant", text: "",
-      events: [{
-        type: "message.posted",
-        threadId: "web:user-1:conv-1",
-        timestamp: 1716000000000,
-        data: { messageId: "msg-typed", text: "Typed", author: { id: "bot", name: "Bot" } },
-      }],
+      id: "r1",
+      role: "assistant",
+      text: "",
+      events: [
+        {
+          type: "message.posted",
+          threadId: "web:user-1:conv-1",
+          timestamp: 1716000000000,
+          data: { messageId: "msg-typed", text: "Typed", author: { id: "bot", name: "Bot" } },
+        },
+      ],
     });
 
     const client = createClient();
@@ -519,7 +557,11 @@ describe("WebChatClient", () => {
     client.onStreamingChunk((e) => chunks.push(e));
 
     (client as any).handleStreamingChunk({
-      messageId: "msg-s1", threadId: "t", chunk: "Hel", isFinal: false, timestamp: Date.now(),
+      messageId: "msg-s1",
+      threadId: "t",
+      chunk: "Hel",
+      isFinal: false,
+      timestamp: Date.now(),
     });
 
     expect(chunks).toHaveLength(1);
@@ -540,7 +582,14 @@ describe("WebChatClient", () => {
   it("sendMessage with attachments", async () => {
     const fn = mockFetch({ id: "r1", role: "assistant", text: "Got it", events: [] });
     const client = createClient({ conversationId: "conv-test" });
-    await client.sendMessage("Check this", [{ url: "https://example.com/file.pdf", name: "doc.pdf", mimeType: "application/pdf", size: 1024 }]);
+    await client.sendMessage("Check this", [
+      {
+        url: "https://example.com/file.pdf",
+        name: "doc.pdf",
+        mimeType: "application/pdf",
+        size: 1024,
+      },
+    ]);
 
     const body = JSON.parse(fn.mock.calls[0][1].body);
     expect(body.messages[0].text).toBe("Check this");
@@ -575,7 +624,11 @@ describe("WebChatClient", () => {
     const client = createClient({
       features: { reactions: true, editMessages: true, deleteMessages: true },
     });
-    expect(client.getFeatures()).toEqual({ reactions: true, editMessages: true, deleteMessages: true });
+    expect(client.getFeatures()).toEqual({
+      reactions: true,
+      editMessages: true,
+      deleteMessages: true,
+    });
   });
 
   describe("with broadcast client", () => {

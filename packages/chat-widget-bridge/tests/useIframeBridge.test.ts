@@ -36,12 +36,10 @@ describe("useIframeBridge", () => {
 
   it("receives config via postMessage", () => {
     const listeners: Record<string, (event: any) => void> = {};
-    vi.spyOn(window, "addEventListener").mockImplementation(
-      (type: string, listener: any) => {
-        listeners[type] = listener;
-        return vi.fn();
-      },
-    );
+    vi.spyOn(window, "addEventListener").mockImplementation((type: string, listener: any) => {
+      listeners[type] = listener;
+      return vi.fn();
+    });
     vi.spyOn(window, "removeEventListener").mockReturnValue();
 
     const parent = {} as any;
@@ -69,12 +67,10 @@ describe("useIframeBridge", () => {
 
   it("updates config on subsequent messages", () => {
     const listeners: Record<string, (event: any) => void> = {};
-    vi.spyOn(window, "addEventListener").mockImplementation(
-      (type: string, listener: any) => {
-        listeners[type] = listener;
-        return vi.fn();
-      },
-    );
+    vi.spyOn(window, "addEventListener").mockImplementation((type: string, listener: any) => {
+      listeners[type] = listener;
+      return vi.fn();
+    });
     vi.spyOn(window, "removeEventListener").mockReturnValue();
 
     const parent = {} as any;
@@ -95,12 +91,10 @@ describe("useIframeBridge", () => {
 
   it("calls notification callback when notification-clicked message arrives", () => {
     const listeners: Record<string, (event: any) => void> = {};
-    vi.spyOn(window, "addEventListener").mockImplementation(
-      (type: string, listener: any) => {
-        listeners[type] = listener;
-        return vi.fn();
-      },
-    );
+    vi.spyOn(window, "addEventListener").mockImplementation((type: string, listener: any) => {
+      listeners[type] = listener;
+      return vi.fn();
+    });
     vi.spyOn(window, "removeEventListener").mockReturnValue();
 
     const parent = {} as any;
@@ -131,10 +125,7 @@ describe("useIframeBridge", () => {
       result.current.notifyMessage("Hello!");
     });
 
-    expect(postMessage).toHaveBeenCalledWith(
-      { type: "chat-message", text: "Hello!" },
-      "*",
-    );
+    expect(postMessage).toHaveBeenCalledWith({ type: "chat-message", text: "Hello!" }, "*");
   });
 
   it("does not call postMessage when not in iframe", () => {

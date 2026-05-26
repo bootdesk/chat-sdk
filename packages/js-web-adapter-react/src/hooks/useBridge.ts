@@ -19,10 +19,12 @@ function getBridge(): any {
 
 function hasNativeBridge(): boolean {
   if (typeof window === "undefined") return false;
-  return !!getBridge()
-    || !!(window as any).webkit?.messageHandlers?.chatBridge
-    || !!(window as any).ReactNativeWebView
-    || !!(window as any).AndroidBridge;
+  return (
+    !!getBridge() ||
+    !!(window as any).webkit?.messageHandlers?.chatBridge ||
+    !!(window as any).ReactNativeWebView ||
+    !!(window as any).AndroidBridge
+  );
 }
 
 function bridgeSend(msg: Record<string, unknown>): void {

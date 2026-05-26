@@ -38,10 +38,7 @@ describe("HttpClient", () => {
     const fn = mockFetch({ data: 1 });
     await client.get("https://other.com/data");
 
-    expect(fn).toHaveBeenCalledWith(
-      "https://other.com/data",
-      expect.anything(),
-    );
+    expect(fn).toHaveBeenCalledWith("https://other.com/data", expect.anything());
   });
 
   it("sends POST with JSON body", async () => {
@@ -114,9 +111,7 @@ describe("HttpClient", () => {
       text: "Hi",
       events: [],
     });
-    const result = await client.sendMessage([
-      { id: "msg-1", role: "user", text: "Hello" },
-    ]);
+    const result = await client.sendMessage([{ id: "msg-1", role: "user", text: "Hello" }]);
 
     expect(result.text).toBe("Hi");
     expect(fn).toHaveBeenCalledWith(

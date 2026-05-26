@@ -1,13 +1,22 @@
 export type BridgePushStatus =
-  | "unsupported" | "default" | "subscribed"
-  | "denied" | "subscribing" | "error";
+  | "unsupported"
+  | "default"
+  | "subscribed"
+  | "denied"
+  | "subscribing"
+  | "error";
 
 export type BridgeMessageType =
-  | "chat-ready" | "chat-config" | "chat-message"
-  | "chat-notification-clicked" | "chat-close"
-  | "chat-viewport-config" | "chat-viewport-insets"
+  | "chat-ready"
+  | "chat-config"
+  | "chat-message"
+  | "chat-notification-clicked"
+  | "chat-close"
+  | "chat-viewport-config"
+  | "chat-viewport-insets"
   | "chat-push-state"
-  | "chat-push-subscribe" | "chat-push-unsubscribe"
+  | "chat-push-subscribe"
+  | "chat-push-unsubscribe"
   | "chat-error";
 
 export type ThemeMode = "auto" | "light" | "dark";

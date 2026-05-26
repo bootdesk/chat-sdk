@@ -59,9 +59,7 @@ describe("PusherBroadcastClient", () => {
   });
 
   it("throws when config given but pusher-js not found", () => {
-    expect(
-      () => new PusherBroadcastClient({ key: "test-key" }),
-    ).toThrow("pusher-js not found");
+    expect(() => new PusherBroadcastClient({ key: "test-key" })).toThrow("pusher-js not found");
   });
 
   it("connects when state is not connected", () => {
@@ -114,9 +112,7 @@ describe("PusherBroadcastClient", () => {
     });
 
     privateClient.subscribe("thread-1", {});
-    expect(mockPusher.pusher.subscribe).toHaveBeenCalledWith(
-      `private-chat.thread-1`,
-    );
+    expect(mockPusher.pusher.subscribe).toHaveBeenCalledWith(`private-chat.thread-1`);
   });
 
   it("uses presence- prefix for presence user channels", () => {
@@ -125,9 +121,7 @@ describe("PusherBroadcastClient", () => {
     });
 
     presenceClient.subscribeToUser("thread-1", "user-1", {});
-    expect(mockPusher.pusher.subscribe).toHaveBeenCalledWith(
-      `presence-chat.thread-1.user-1`,
-    );
+    expect(mockPusher.pusher.subscribe).toHaveBeenCalledWith(`presence-chat.thread-1.user-1`);
   });
 
   it("isConnected returns connection state", () => {

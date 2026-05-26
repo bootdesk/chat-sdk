@@ -217,6 +217,22 @@ class ValueObjectsTest extends TestCase
         $this->assertNull($event->originId);
     }
 
+    public function test_message_cost_event_null_price(): void
+    {
+        $event = new MessageCostEvent(
+            messageIds: ['mid1'],
+            threadId: 'whatsapp:phone123:16505551234',
+            userId: '16505551234',
+            raw: ['pricing' => ['category' => 'marketing']],
+        );
+
+        $this->assertSame(['mid1'], $event->messageIds);
+        $this->assertSame('whatsapp:phone123:16505551234', $event->threadId);
+        $this->assertSame('16505551234', $event->userId);
+        $this->assertNull($event->price);
+        $this->assertSame('marketing', $event->raw['pricing']['category']);
+    }
+
     public function test_lock(): void
     {
         $lock = new Lock(key: 'process:t1', token: 'abc123', ttlMs: 30000);

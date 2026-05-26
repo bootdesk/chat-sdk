@@ -748,6 +748,25 @@ class ChatTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
+    public function test_process_message_cost_null_price(): void
+    {
+        $received = null;
+        $this->chat->onMessageCost(function (MessageCostEvent $event) use (&$received) {
+            $received = $event;
+        });
+
+        $this->chat->processMessageCost(
+            threadId: 'whatsapp:phone123:16505551234',
+            messageIds: ['wamid.sent'],
+            userId: '16505551234',
+            raw: ['pricing' => ['category' => 'marketing']],
+        );
+
+        $this->assertNotNull($received);
+        $this->assertNull($received?->price);
+        $this->assertSame('marketing', $received?->raw['pricing']['category']);
+    }
+
     public function test_message_context_state_and_metadata(): void
     {
         $called = false;

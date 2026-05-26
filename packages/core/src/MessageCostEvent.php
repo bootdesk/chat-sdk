@@ -13,7 +13,7 @@ class MessageCostEvent
         public readonly array $messageIds,
         public readonly string $threadId,
         public readonly string $userId,
-        public readonly Money $price,
+        public readonly ?Money $price = null,
         public readonly mixed $raw = null,
         public readonly ?string $originId = null,
     ) {}

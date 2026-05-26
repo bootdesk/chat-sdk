@@ -139,6 +139,8 @@ Both `Message` (incoming) and `SentMessage` (outgoing) carry an optional `?Money
 
 The `HandlesMessageCosts` contract allows adapters to extract cost data from webhooks independently of message or status parsing. It is **non-terminal** in the webhook pipeline: when cost is found, a `MessageCostEvent` is dispatched and the flow continues to other handlers (actions, statuses, messages) — so the same webhook can carry both cost and delivery status.
 
+`price` is nullable — platforms like WhatsApp provide pricing metadata (category, `billable`, `pricing_model`) without monetary amounts, so `price` is `null` in those cases. Batched adapters (WhatsApp, Messenger, Instagram) emit cost events via the batched pipeline using `WebhookEvent::TYPE_MESSAGE_COST` alongside their status events.
+
 ## Messaging Window
 
 Platforms like WhatsApp enforce a **24-hour messaging window**. After 24h of inactivity, you can only send template messages. The SDK supports this via `AdapterHasMessagingWindow`:

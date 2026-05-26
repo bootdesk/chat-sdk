@@ -804,7 +804,7 @@ class Chat
         string $threadId,
         array $messageIds,
         string $userId,
-        Money $price,
+        ?Money $price = null,
         mixed $raw = null,
         ?string $originId = null,
     ): void {
@@ -1254,6 +1254,14 @@ class Chat
                 triggerId: $event->payload['triggerId'] ?? null,
             ),
             WebhookEvent::TYPE_STATUS => $this->dispatchStatusEvent($event),
+            WebhookEvent::TYPE_MESSAGE_COST => $this->processMessageCost(
+                threadId: $event->threadId,
+                messageIds: $event->payload['messageIds'],
+                userId: $event->payload['userId'],
+                price: $event->payload['price'] ?? null,
+                raw: $event->payload['raw'] ?? null,
+                originId: $event->originId,
+            ),
         };
     }
 

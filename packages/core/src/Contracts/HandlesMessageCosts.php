@@ -10,7 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 interface HandlesMessageCosts
 {
     /**
-     * @return array{messageIds: string[], threadId: string, userId: string, price: Money, raw: mixed, originId: ?string}|null
+     * @return array{messageIds: string[], threadId: string, userId: string, price: ?Money, raw: mixed, originId: ?string}|null
      */
     public function parseMessageCost(ServerRequestInterface $request): ?array;
 }

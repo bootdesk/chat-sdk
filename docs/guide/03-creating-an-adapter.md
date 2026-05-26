@@ -77,6 +77,7 @@ Add capabilities by implementing optional contracts:
 | `HandlesReactions`          | Parse emoji reactions                       |
 | `HandlesModals`             | Parse modal submissions                     |
 | `HandlesStatuses`           | Parse delivery/read receipts                |
+| `HandlesMessageCosts`       | Parse per-message cost from webhooks        |
 | `HandlesOptionsLoad`        | Parse external select queries               |
 | `SupportsEditMessages`      | Support editing sent messages               |
 | `SupportsDeleteMessages`    | Support deleting sent messages              |

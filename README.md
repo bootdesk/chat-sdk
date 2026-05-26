@@ -96,7 +96,8 @@ Route::post('/chat/webhook/telegram', [WebhookController::class, 'telegram']);
 - **Slash commands** -- Register and handle custom slash commands
 - **Reactions** -- Add, remove, and react to emoji on messages
 - **File uploads** -- Send and receive files, images, and attachments
-- **Middleware** -- Intercept inbound/outbound messages and webhooks
+- **Middleware** -- Intercept inbound, outbound, and sent messages; transform webhooks; swap adapters per-event in batched webhooks
+- **Cost tracking** -- Per-message pricing via `Money\Money` on both incoming and outgoing messages
 - **Concurrency control** -- Built-in locking with configurable strategies (drop, queue, serial)
 - **Multi-tenant** -- Isolated state and configuration per tenant
 - **Templates** -- Platform-specific message templates (WhatsApp, Messenger) -- see individual adapter READMEs for details

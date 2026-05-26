@@ -524,18 +524,29 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesBatchedWebhook
                 ],
             ]);
 
+            $additionalMessages = [];
+
             // Append text as a follow-up if present
             if ($text !== '') {
-                $this->graphApiCall('me/messages', [
+                $textResponse = $this->graphApiCall('me/messages', [
                     ...$basePayload,
                     'message' => ['text' => $this->truncate($text)],
                 ]);
+
+                $additionalMessages[] = new SentMessage(
+                    id: $textResponse['message_id'] ?? '',
+                    threadId: $threadId,
+                    timestamp: (string) time(),
+                    raw: $textResponse,
+                );
             }
 
             return new SentMessage(
                 id: $response['message_id'] ?? '',
                 threadId: $threadId,
                 timestamp: (string) time(),
+                additionalMessages: $additionalMessages,
+                raw: $response,
             );
         }
 
@@ -578,6 +589,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesBatchedWebhook
             id: $response['message_id'] ?? '',
             threadId: $threadId,
             timestamp: (string) time(),
+            raw: $response,
         );
     }
 

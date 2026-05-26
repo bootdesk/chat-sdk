@@ -1,6 +1,6 @@
 # Middleware
 
-The SDK has three middleware pipelines for intercepting and transforming messages at different stages.
+The SDK has five middleware pipelines for intercepting and transforming messages at different stages.
 
 ## Pipelines
 
@@ -9,6 +9,8 @@ The SDK has three middleware pipelines for intercepting and transforming message
 | `WebhookMiddleware`   | `WebhookMiddleware`   | Intercept raw webhooks before any processing     |
 | `ReceivingMiddleware` | `ReceivingMiddleware` | Transform incoming messages before handlers fire |
 | `SendingMiddleware`   | `SendingMiddleware`   | Transform outgoing messages before they're sent  |
+| `SentMiddleware`      | `SentMiddleware`      | Act after a message has been sent                |
+| `WebhookEventMiddleware` | `WebhookEventMiddleware` | Swap adapter per-event in batched webhooks   |
 
 ## Webhook Middleware
 
@@ -105,6 +107,52 @@ $chat->addSendingMiddleware(new EnforceMessagingWindow(
 **Without templateFallback:** Messages are silently dropped. **With templateFallback:** Original message is replaced with the fallback text.
 
 Requires adapter to implement `AdapterHasMessagingWindow` (WhatsApp does). See [Architecture](02-architecture.md) for contract details and [Laravel guide](06-laravel.md) for setup.
+
+## Sent Middleware
+
+Act after a message has been successfully sent to the platform. Unlike `SendingMiddleware` (which can block the send), `SentMiddleware` uses a **forward pipeline** — the message is already sent, so the next handler always receives a `SentMessage`.
+
+```php
+use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Contracts\SentMiddleware;
+use BootDesk\ChatSDK\Core\PostableMessage;
+use BootDesk\ChatSDK\Core\SentMessage;
+
+class LogSentMessage implements SentMiddleware
+{
+    public function handle(
+        string $threadId,
+        PostableMessage $message,
+        SentMessage $result,
+        Adapter $adapter,
+        string $operation,
+        callable $next
+    ): SentMessage {
+        Log::info('chat.sent', [
+            'adapter' => $adapter->getName(),
+            'operation' => $operation,
+            'message_id' => $result->id,
+        ]);
+
+        return $next($threadId, $message, $result, $adapter, $operation);
+    }
+}
+```
+
+Register it:
+
+```php
+$chat->addSentMiddleware(new LogSentMessage());
+```
+
+Sent middleware runs after `Thread::post()`, `Thread::edit()`, and `Thread::postEphemeral()`.
+
+### Additional Messages & Raw Response
+
+`SentMessage` carries two fields for multi-message scenarios:
+
+- `additionalMessages` (`SentMessage[]`) — populated by adapters that make multiple platform API calls per `postMessage()`. For example, when Messenger or Instagram sends an attachment plus a follow-up text, the follow-up result appears here.
+- `raw` (`mixed`) — the full decoded API response(s) from the platform.
 
 ## Middleware Order
 

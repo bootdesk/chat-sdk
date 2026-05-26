@@ -40,7 +40,11 @@ Examples:
 
 ### Message
 
-Immutable incoming message value object. Contains `id`, `threadId`, `author`, `text`, `attachments`, `isMention`, `isDM`.
+Immutable incoming message value object. Contains `id`, `threadId`, `author`, `text`, `attachments`, `isMention`, `isDM`, and an optional `price` (`?Money\Money`) for platforms that report per-message cost.
+
+### SentMessage
+
+Result of posting an outbound message. Contains `id`, `threadId`, `timestamp`, `additionalMessages` (for multi-call sends like RCS text+attachment), `raw` (full API response), and an optional `price` (`?Money\Money`).
 
 ### PostableMessage
 
@@ -121,11 +125,19 @@ Used for: conversation state, deduplication, modal context, rate limiting, locks
 
 ## Middleware
 
-Three middleware pipelines:
+Five middleware pipelines:
 
 - `WebhookMiddleware` — Intercept incoming webhooks
 - `ReceivingMiddleware` — Transform incoming messages
 - `SendingMiddleware` — Transform outgoing messages
+- `SentMiddleware` — Act after a message has been sent (forward pipeline, not nullable)
+- `WebhookEventMiddleware` — Swap adapter per-event in batched webhooks
+
+## Cost Tracking
+
+Both `Message` (incoming) and `SentMessage` (outgoing) carry an optional `?Money\Money $price` field. Platforms that report per-message cost (e.g., Telnyx with SMS/MMS/RCS billing) populate this field in `parseWebhook()` / `postMessage()`.
+
+The `HandlesMessageCosts` contract allows adapters to extract cost data from webhooks independently of message or status parsing. It is **non-terminal** in the webhook pipeline: when cost is found, a `MessageCostEvent` is dispatched and the flow continues to other handlers (actions, statuses, messages) — so the same webhook can carry both cost and delivery status.
 
 ## Messaging Window
 

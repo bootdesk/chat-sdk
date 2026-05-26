@@ -7,22 +7,25 @@ namespace BootDesk\ChatSDK\Core\Middleware;
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\ReceivingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
+use BootDesk\ChatSDK\Core\Contracts\SentMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\WebhookEventMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\WebhookMiddleware;
 use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\PostableMessage;
+use BootDesk\ChatSDK\Core\SentMessage;
 use BootDesk\ChatSDK\Core\WebhookEvent;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 final class MiddlewareDispatcher
 {
-    /** @var array{webhook: array, receiving: array, sending: array, webhook_event: array} */
+    /** @var array{webhook: WebhookMiddleware[], receiving: ReceivingMiddleware[], sending: SendingMiddleware[], webhook_event: WebhookEventMiddleware[], sent: SentMiddleware[]} */
     private array $middlewares = [
         'webhook' => [],
         'receiving' => [],
         'sending' => [],
         'webhook_event' => [],
+        'sent' => [],
     ];
 
     public function addWebhook(WebhookMiddleware $middleware): void
@@ -45,8 +48,14 @@ final class MiddlewareDispatcher
         $this->middlewares['webhook_event'][] = $middleware;
     }
 
+    public function addSent(SentMiddleware $middleware): void
+    {
+        $this->middlewares['sent'][] = $middleware;
+    }
+
     /**
-     * @param  'webhook'|'receiving'|'sending'|'webhook_event'  $type
+     * @param  'webhook'|'receiving'|'sending'|'webhook_event'|'sent'  $type
+     * @return WebhookMiddleware[]|ReceivingMiddleware[]|SendingMiddleware[]|WebhookEventMiddleware[]|SentMiddleware[]
      */
     public function getMiddlewares(string $type): array
     {
@@ -100,7 +109,15 @@ final class MiddlewareDispatcher
     }
 
     /**
-     * @param  'webhook'|'receiving'|'sending'  $type
+     * @param  callable(string, PostableMessage, SentMessage, Adapter, string): SentMessage  $handler
+     */
+    public function processSent(string $threadId, PostableMessage $message, SentMessage $result, Adapter $adapter, string $operation, callable $handler): SentMessage
+    {
+        return $this->process('sent', [$threadId, $message, $result, $adapter, $operation], $handler);
+    }
+
+    /**
+     * @param  'webhook'|'receiving'|'sending'|'sent'  $type
      */
     private function process(string $type, mixed $context, callable $handler): mixed
     {
@@ -113,6 +130,9 @@ final class MiddlewareDispatcher
         return $this->buildPipeline($middlewares, $context, $handler);
     }
 
+    /**
+     * @param  array<object>  $middlewares
+     */
     private function buildPipeline(array $middlewares, mixed $context, callable $handler): mixed
     {
         $pipeline = $handler;
@@ -125,6 +145,9 @@ final class MiddlewareDispatcher
         return is_array($context) ? $pipeline(...$context) : $pipeline($context);
     }
 
+    /**
+     * @param  array<mixed>  $args
+     */
     private function callMiddleware(object $m, array $args, callable $next): mixed
     {
         return call_user_func_array(

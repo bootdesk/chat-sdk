@@ -13,6 +13,7 @@ use BootDesk\ChatSDK\Core\FetchResult;
 use BootDesk\ChatSDK\Core\FileUpload;
 use BootDesk\ChatSDK\Core\Lock;
 use BootDesk\ChatSDK\Core\Message;
+use BootDesk\ChatSDK\Core\MessageCostEvent;
 use BootDesk\ChatSDK\Core\MessageDeliveredEvent;
 use BootDesk\ChatSDK\Core\MessageReadEvent;
 use BootDesk\ChatSDK\Core\Modals\ExternalSelect;
@@ -32,6 +33,8 @@ use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Node\Block\Document;
 use League\CommonMark\Parser\MarkdownParser;
+use Money\Currency;
+use Money\Money;
 use PHPUnit\Framework\TestCase;
 
 class ValueObjectsTest extends TestCase
@@ -91,6 +94,127 @@ class ValueObjectsTest extends TestCase
         $sent = new SentMessage(id: 's1', threadId: 't1', timestamp: '1234567890');
         $this->assertSame('s1', $sent->id);
         $this->assertSame('1234567890', $sent->timestamp);
+        $this->assertSame([], $sent->additionalMessages);
+        $this->assertNull($sent->raw);
+    }
+
+    public function test_sent_message_with_additional_messages(): void
+    {
+        $additional = [
+            new SentMessage(id: 's2', threadId: 't1', timestamp: '1234567891'),
+            new SentMessage(id: 's3', threadId: 't1', timestamp: '1234567892'),
+        ];
+
+        $sent = new SentMessage(
+            id: 's1',
+            threadId: 't1',
+            timestamp: '1234567890',
+            additionalMessages: $additional,
+        );
+
+        $this->assertSame('s1', $sent->id);
+        $this->assertCount(2, $sent->additionalMessages);
+        $this->assertSame('s2', $sent->additionalMessages[0]->id);
+        $this->assertSame('s3', $sent->additionalMessages[1]->id);
+        $this->assertNull($sent->raw);
+    }
+
+    public function test_sent_message_with_raw(): void
+    {
+        $raw = ['message_id' => 'mid.123', 'recipient_id' => 'U999'];
+
+        $sent = new SentMessage(
+            id: 's1',
+            threadId: 't1',
+            raw: $raw,
+        );
+
+        $this->assertSame('s1', $sent->id);
+        $this->assertSame($raw, $sent->raw);
+        $this->assertSame([], $sent->additionalMessages);
+    }
+
+    public function test_sent_message_with_raw_and_additional(): void
+    {
+        $raw = ['data' => ['id' => 'api-001']];
+        $additional = [new SentMessage(id: 's2', threadId: 't1')];
+
+        $sent = new SentMessage(
+            id: 's1',
+            threadId: 't1',
+            additionalMessages: $additional,
+            raw: $raw,
+        );
+
+        $this->assertSame($raw, $sent->raw);
+        $this->assertCount(1, $sent->additionalMessages);
+        $this->assertSame('s2', $sent->additionalMessages[0]->id);
+    }
+
+    public function test_sent_message_price_defaults_to_null(): void
+    {
+        $sent = new SentMessage(id: 's1', threadId: 't1');
+
+        $this->assertNull($sent->price);
+    }
+
+    public function test_sent_message_with_price(): void
+    {
+        $price = new Money(2999, new Currency('USD'));
+
+        $sent = new SentMessage(
+            id: 's1',
+            threadId: 't1',
+            price: $price,
+        );
+
+        $this->assertSame($price, $sent->price);
+        $this->assertSame('2999', $sent->price?->getAmount());
+        $this->assertSame('USD', $sent->price?->getCurrency()->getCode());
+    }
+
+    public function test_sent_message_with_price_and_other_fields(): void
+    {
+        $price = new Money(1500, new Currency('EUR'));
+        $raw = ['transaction_id' => 'tx_123'];
+        $additional = [new SentMessage(id: 's2', threadId: 't1')];
+
+        $sent = new SentMessage(
+            id: 's1',
+            threadId: 't1',
+            timestamp: '1234567890',
+            additionalMessages: $additional,
+            raw: $raw,
+            price: $price,
+        );
+
+        $this->assertSame($price, $sent->price);
+        $this->assertSame('1500', $sent->price->getAmount());
+        $this->assertSame('EUR', $sent->price->getCurrency()->getCode());
+        $this->assertSame($raw, $sent->raw);
+        $this->assertCount(1, $sent->additionalMessages);
+    }
+
+    public function test_message_cost_event(): void
+    {
+        $price = new Money(5, new Currency('USD'));
+        $event = new MessageCostEvent(
+            messageIds: ['mid1', 'mid2'],
+            threadId: 'telnyx:+15551234567:+15559876543',
+            userId: '+15559876543',
+            price: $price,
+            raw: ['some' => 'data'],
+            originId: null,
+        );
+
+        $this->assertSame(['mid1', 'mid2'], $event->messageIds);
+        $this->assertSame('telnyx:+15551234567:+15559876543', $event->threadId);
+        $this->assertSame('+15559876543', $event->userId);
+        $this->assertSame($price, $event->price);
+        $this->assertSame('5', $event->price->getAmount());
+        $this->assertSame('USD', $event->price->getCurrency()->getCode());
+        $this->assertSame(['some' => 'data'], $event->raw);
+        $this->assertNull($event->originId);
     }
 
     public function test_lock(): void

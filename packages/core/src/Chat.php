@@ -9,6 +9,7 @@ use BootDesk\ChatSDK\Core\Contracts\BroadcastAdapter;
 use BootDesk\ChatSDK\Core\Contracts\ConcurrencyHandler;
 use BootDesk\ChatSDK\Core\Contracts\HandlesActions;
 use BootDesk\ChatSDK\Core\Contracts\HandlesBatchedWebhooks;
+use BootDesk\ChatSDK\Core\Contracts\HandlesMessageCosts;
 use BootDesk\ChatSDK\Core\Contracts\HandlesModals;
 use BootDesk\ChatSDK\Core\Contracts\HandlesOptionsLoad;
 use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
@@ -17,6 +18,7 @@ use BootDesk\ChatSDK\Core\Contracts\HandlesSlashCommands;
 use BootDesk\ChatSDK\Core\Contracts\HandlesStatuses;
 use BootDesk\ChatSDK\Core\Contracts\ReceivingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
+use BootDesk\ChatSDK\Core\Contracts\SentMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
 use BootDesk\ChatSDK\Core\Contracts\WebhookEventMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\WebhookMiddleware;
@@ -28,6 +30,7 @@ use BootDesk\ChatSDK\Core\Events\MentionEvent;
 use BootDesk\ChatSDK\Core\Events\SubscribedEvent;
 use BootDesk\ChatSDK\Core\Exceptions\ResourceNotFoundException;
 use BootDesk\ChatSDK\Core\Middleware\MiddlewareDispatcher;
+use Money\Money;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -62,8 +65,13 @@ class Chat
     /** @var array<string, callable> */
     private array $messageHandlers = [];
 
-    private ?ConcurrencyHandler $concurrencyHandler = null;
+    private ConcurrencyHandler $concurrencyHandler;
 
+    /**
+     * @param  array<string, Adapter>  $adapters
+     * @param  array<string, mixed>  $config
+     * @param  array{logger?: mixed, conversation_factory?: mixed}|null  $transcripts
+     */
     public function __construct(
         public readonly StateAdapter $state,
         array $adapters = [],
@@ -178,6 +186,9 @@ class Chat
         return $this;
     }
 
+    /**
+     * @param  string|array<string>|null  $filter
+     */
     public function listen(
         string $eventClass,
         callable $listener,
@@ -235,7 +246,11 @@ class Chat
         return $this->listen(SubscribedEvent::class, $handler);
     }
 
-    /** @deprecated Use listen(ReactionEvent::class, $handler, $emoji) instead */
+    /**
+     * @param  string|array<string>|callable  $emoji
+     *
+     * @deprecated Use listen(ReactionEvent::class, $handler, $emoji) instead
+     */
     public function onReaction(string|array|callable $emoji, ?callable $handler = null): self
     {
         if (is_callable($emoji)) {
@@ -254,7 +269,11 @@ class Chat
         return $this->listen(ReactionEvent::class, $handler, $filter);
     }
 
-    /** @deprecated Use listen(ActionEvent::class, $handler, $actionId) instead */
+    /**
+     * @param  string|array<string>|callable  $actionId
+     *
+     * @deprecated Use listen(ActionEvent::class, $handler, $actionId) instead
+     */
     public function onAction(string|array|callable $actionId, ?callable $handler = null): self
     {
         if (is_callable($actionId)) {
@@ -273,7 +292,11 @@ class Chat
         return $this->listen(ActionEvent::class, $handler, $filter);
     }
 
-    /** @deprecated Use listen(ModalSubmitEvent::class, $handler, $callbackId) instead */
+    /**
+     * @param  string|array<string>|callable  $callbackId
+     *
+     * @deprecated Use listen(ModalSubmitEvent::class, $handler, $callbackId) instead
+     */
     public function onModalSubmit(string|array|callable $callbackId, ?callable $handler = null): self
     {
         if (is_callable($callbackId)) {
@@ -292,7 +315,11 @@ class Chat
         return $this->listen(ModalSubmitEvent::class, $handler, $filter);
     }
 
-    /** @deprecated Use listen(ModalCloseEvent::class, $handler, $callbackId) instead */
+    /**
+     * @param  string|array<string>|callable  $callbackId
+     *
+     * @deprecated Use listen(ModalCloseEvent::class, $handler, $callbackId) instead
+     */
     public function onModalClose(string|array|callable $callbackId, ?callable $handler = null): self
     {
         if (is_callable($callbackId)) {
@@ -311,7 +338,11 @@ class Chat
         return $this->listen(ModalCloseEvent::class, $handler, $filter);
     }
 
-    /** @deprecated Use listen(SlashCommandEvent::class, $handler, $command) instead */
+    /**
+     * @param  string|array<string>|callable  $command
+     *
+     * @deprecated Use listen(SlashCommandEvent::class, $handler, $command) instead
+     */
     public function onSlashCommand(string|array|callable $command, ?callable $handler = null): self
     {
         if (is_callable($command)) {
@@ -330,7 +361,11 @@ class Chat
         return $this->listen(SlashCommandEvent::class, $handler, $filter);
     }
 
-    /** @deprecated Use listen(OptionsLoadEvent::class, $handler, $actionId) instead */
+    /**
+     * @param  string|array<string>|callable  $actionId
+     *
+     * @deprecated Use listen(OptionsLoadEvent::class, $handler, $actionId) instead
+     */
     public function onOptionsLoad(string|array|callable $actionId, ?callable $handler = null): self
     {
         if (is_callable($actionId)) {
@@ -391,11 +426,23 @@ class Chat
         return $this->listen(MessageFailedEvent::class, $handler);
     }
 
+    /** @deprecated Use listen(MessageCostEvent::class, $handler) instead */
+    public function onMessageCost(callable $handler): self
+    {
+        return $this->listen(MessageCostEvent::class, $handler);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function storeModalContext(string $adapterName, string $contextId, array $data, int $ttlMs = 86400000): void
     {
         $this->state->storeModalContext($adapterName, $contextId, $data, $ttlMs);
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getAndDeleteModalContext(string $adapterName, string $contextId): ?array
     {
         return $this->state->getAndDeleteModalContext($adapterName, $contextId);
@@ -475,6 +522,9 @@ class Chat
         $this->dispatch($event);
     }
 
+    /**
+     * @param  array<string, mixed>  $values
+     */
     public function processModalSubmit(
         Adapter $adapter,
         string $callbackId,
@@ -587,6 +637,9 @@ class Chat
         $this->dispatch($event);
     }
 
+    /**
+     * @return array<int, array{label: string, value: string}>|null
+     */
     public function processOptionsLoad(
         Adapter $adapter,
         string $actionId,
@@ -684,6 +737,9 @@ class Chat
         $this->dispatch($event);
     }
 
+    /**
+     * @param  array<string>  $messageIds
+     */
     public function processMessageDelivered(
         string $threadId,
         array $messageIds,
@@ -720,6 +776,9 @@ class Chat
         $this->dispatch($event);
     }
 
+    /**
+     * @param  array<string>  $messageIds
+     */
     public function processMessageFailed(
         string $threadId,
         array $messageIds,
@@ -731,6 +790,29 @@ class Chat
             messageIds: $messageIds,
             threadId: $threadId,
             userId: $userId,
+            raw: $raw,
+            originId: $originId,
+        );
+
+        $this->dispatch($event);
+    }
+
+    /**
+     * @param  array<string>  $messageIds
+     */
+    public function processMessageCost(
+        string $threadId,
+        array $messageIds,
+        string $userId,
+        Money $price,
+        mixed $raw = null,
+        ?string $originId = null,
+    ): void {
+        $event = new MessageCostEvent(
+            messageIds: $messageIds,
+            threadId: $threadId,
+            userId: $userId,
+            price: $price,
             raw: $raw,
             originId: $originId,
         );
@@ -762,6 +844,9 @@ class Chat
         );
     }
 
+    /**
+     * @param  array<string>  $skippedMessages
+     */
     public function processMessageInJob(
         Adapter $adapter,
         string $threadId,
@@ -772,6 +857,9 @@ class Chat
         $this->dispatchIncomingMessage($adapter, $threadId, $message, $skippedMessages, $totalSinceLastHandler);
     }
 
+    /**
+     * @param  array<string>  $skippedMessages
+     */
     private function dispatchIncomingMessage(Adapter $adapter, string $threadId, Message $message, array $skippedMessages, int $totalSinceLastHandler): void
     {
         // Conversation intercept
@@ -1061,6 +1149,21 @@ class Chat
                     }
                 }
 
+                // Check for message costs (non-terminal — continue to other checks)
+                if ($adapter instanceof HandlesMessageCosts) {
+                    $costData = $adapter->parseMessageCost($request);
+                    if ($costData !== null) {
+                        $this->processMessageCost(
+                            threadId: $costData['threadId'],
+                            messageIds: $costData['messageIds'],
+                            userId: $costData['userId'],
+                            price: $costData['price'],
+                            raw: $costData['raw'] ?? null,
+                            originId: $costData['originId'] ?? null,
+                        );
+                    }
+                }
+
                 // Check for message statuses (delivered/read)
                 if ($adapter instanceof HandlesStatuses) {
                     $statusData = $adapter->parseStatus($request);
@@ -1280,13 +1383,20 @@ class Chat
         return $this;
     }
 
+    public function addSentMiddleware(SentMiddleware $middleware): self
+    {
+        $this->middleware->addSent($middleware);
+
+        return $this;
+    }
+
     public function getMiddleware(): MiddlewareDispatcher
     {
         return $this->middleware;
     }
 
     /**
-     * @return SendingMiddleware[]
+     * @return array<SendingMiddleware>
      *
      * @deprecated Use getMiddleware()->getMiddlewares('sending') instead
      */
@@ -1309,6 +1419,9 @@ class Chat
         return $this->dispatcher->dispatch($event);
     }
 
+    /**
+     * @return array<int, array{label: string, value: string}>|null
+     */
     private function dispatchOptionsLoadHandlers(OptionsLoadEvent $event): ?array
     {
         /**

@@ -247,7 +247,15 @@ export function ChatWidget({
       if (push.isSubscribed) push.unsubscribe();
       else push.subscribe();
     }
-  }, [hasBridgePush, bridgePushState, requestPushSubscribe, requestPushUnsubscribe, push.isSubscribed, push.subscribe, push.unsubscribe]);
+  }, [
+    hasBridgePush,
+    bridgePushState,
+    requestPushSubscribe,
+    requestPushUnsubscribe,
+    push.isSubscribed,
+    push.subscribe,
+    push.unsubscribe,
+  ]);
 
   useEffect(() => {
     if (!inBridge || !iframeConfig) return;

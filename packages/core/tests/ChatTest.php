@@ -35,6 +35,7 @@ use BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;
 use BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
 use BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapterResolver;
 use BootDesk\ChatSDK\Core\Tests\Helpers\MockBatchedAdapter;
+use BootDesk\ChatSDK\Core\Tests\Helpers\TestHeardMiddleware;
 use BootDesk\ChatSDK\Core\Tests\Helpers\TestReceivingMiddleware;
 use BootDesk\ChatSDK\Core\Tests\Helpers\TestSendingMiddleware;
 use BootDesk\ChatSDK\Core\Tests\Helpers\TestSentMiddleware;
@@ -2172,5 +2173,39 @@ class ChatTest extends TestCase
 
         $thread->unsubscribe();
         $this->assertFalse($thread->isSubscribed());
+    }
+
+    public function test_heard_middleware_fires_on_pattern_match(): void
+    {
+        $middleware = new TestHeardMiddleware;
+        $this->chat->addHeardMiddleware($middleware);
+
+        $received = false;
+        $this->chat->onNewMessage('/hello/', function (MessageContext $ctx) use (&$received) {
+            $received = true;
+        });
+
+        $message = \BootDesk\ChatSDK\Core\Tests\Helpers\createTestMessage(text: 'hello world');
+        $this->chat->processMessage($this->adapter, $message->threadId, $message);
+
+        $this->assertSame('/hello/', $middleware->lastPattern);
+        $this->assertTrue($received);
+    }
+
+    public function test_heard_middleware_can_stop_handler(): void
+    {
+        $middleware = new TestHeardMiddleware(stop: true);
+        $this->chat->addHeardMiddleware($middleware);
+
+        $received = false;
+        $this->chat->onNewMessage('/hello/', function (MessageContext $ctx) use (&$received) {
+            $received = true;
+        });
+
+        $message = \BootDesk\ChatSDK\Core\Tests\Helpers\createTestMessage(text: 'hello world');
+        $this->chat->processMessage($this->adapter, $message->threadId, $message);
+
+        $this->assertSame('/hello/', $middleware->lastPattern);
+        $this->assertFalse($received);
     }
 }

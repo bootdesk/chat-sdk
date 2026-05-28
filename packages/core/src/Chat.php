@@ -16,6 +16,7 @@ use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
 use BootDesk\ChatSDK\Core\Contracts\HandlesSlackEvents;
 use BootDesk\ChatSDK\Core\Contracts\HandlesSlashCommands;
 use BootDesk\ChatSDK\Core\Contracts\HandlesStatuses;
+use BootDesk\ChatSDK\Core\Contracts\HeardMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\ReceivingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\SentMiddleware;
@@ -908,6 +909,10 @@ class Chat
         // Pattern match
         foreach ($this->messageHandlers as $pattern => $handler) {
             if (preg_match($pattern, $message->text)) {
+                $context = $this->runHeardMiddleware($context, $pattern, $adapter);
+                if (! $context instanceof MessageContext) {
+                    continue;
+                }
                 $handler($context);
                 if ($context->isSkipped()) {
                     return;
@@ -1398,6 +1403,13 @@ class Chat
         return $this;
     }
 
+    public function addHeardMiddleware(HeardMiddleware $middleware): self
+    {
+        $this->middleware->addHeard($middleware);
+
+        return $this;
+    }
+
     public function getMiddleware(): MiddlewareDispatcher
     {
         return $this->middleware;
@@ -1419,6 +1431,16 @@ class Chat
             message: $message,
             adapter: $adapter,
             handler: fn (?Message $msg): ?Message => $msg
+        );
+    }
+
+    private function runHeardMiddleware(MessageContext $context, string $pattern, Adapter $adapter): ?MessageContext
+    {
+        return $this->middleware->processHeard(
+            context: $context,
+            pattern: $pattern,
+            adapter: $adapter,
+            handler: fn (?MessageContext $c): ?MessageContext => $c
         );
     }
 

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace BootDesk\ChatSDK\Core\Middleware;
 
 use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Contracts\HeardMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\ReceivingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\SendingMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\SentMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\WebhookEventMiddleware;
 use BootDesk\ChatSDK\Core\Contracts\WebhookMiddleware;
 use BootDesk\ChatSDK\Core\Message;
+use BootDesk\ChatSDK\Core\MessageContext;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\SentMessage;
 use BootDesk\ChatSDK\Core\WebhookEvent;
@@ -19,13 +21,14 @@ use Psr\Http\Message\ServerRequestInterface;
 
 final class MiddlewareDispatcher
 {
-    /** @var array{webhook: WebhookMiddleware[], receiving: ReceivingMiddleware[], sending: SendingMiddleware[], webhook_event: WebhookEventMiddleware[], sent: SentMiddleware[]} */
+    /** @var array{webhook: WebhookMiddleware[], receiving: ReceivingMiddleware[], sending: SendingMiddleware[], webhook_event: WebhookEventMiddleware[], sent: SentMiddleware[], heard: HeardMiddleware[]} */
     private array $middlewares = [
         'webhook' => [],
         'receiving' => [],
         'sending' => [],
         'webhook_event' => [],
         'sent' => [],
+        'heard' => [],
     ];
 
     public function addWebhook(WebhookMiddleware $middleware): void
@@ -53,9 +56,14 @@ final class MiddlewareDispatcher
         $this->middlewares['sent'][] = $middleware;
     }
 
+    public function addHeard(HeardMiddleware $middleware): void
+    {
+        $this->middlewares['heard'][] = $middleware;
+    }
+
     /**
-     * @param  'webhook'|'receiving'|'sending'|'webhook_event'|'sent'  $type
-     * @return WebhookMiddleware[]|ReceivingMiddleware[]|SendingMiddleware[]|WebhookEventMiddleware[]|SentMiddleware[]
+     * @param  'webhook'|'receiving'|'sending'|'webhook_event'|'sent'|'heard'  $type
+     * @return WebhookMiddleware[]|ReceivingMiddleware[]|SendingMiddleware[]|WebhookEventMiddleware[]|SentMiddleware[]|HeardMiddleware[]
      */
     public function getMiddlewares(string $type): array
     {
@@ -117,7 +125,17 @@ final class MiddlewareDispatcher
     }
 
     /**
-     * @param  'webhook'|'receiving'|'sending'|'sent'  $type
+     * @param  callable(?MessageContext, string, Adapter): ?MessageContext  $handler
+     */
+    public function processHeard(MessageContext $context, string $pattern, Adapter $adapter, callable $handler): ?MessageContext
+    {
+        $result = $this->process('heard', [$context, $pattern, $adapter], $handler);
+
+        return $result instanceof MessageContext ? $result : null;
+    }
+
+    /**
+     * @param  'webhook'|'receiving'|'sending'|'sent'|'heard'  $type
      */
     private function process(string $type, mixed $context, callable $handler): mixed
     {

@@ -1,16 +1,17 @@
 # Middleware
 
-The SDK has five middleware pipelines for intercepting and transforming messages at different stages.
+The SDK has six middleware pipelines for intercepting and transforming messages at different stages.
 
 ## Pipelines
 
-| Pipeline              | Interface             | Purpose                                          |
-| --------------------- | --------------------- | ------------------------------------------------ |
-| `WebhookMiddleware`   | `WebhookMiddleware`   | Intercept raw webhooks before any processing     |
-| `ReceivingMiddleware` | `ReceivingMiddleware` | Transform incoming messages before handlers fire |
-| `SendingMiddleware`   | `SendingMiddleware`   | Transform outgoing messages before they're sent  |
-| `SentMiddleware`      | `SentMiddleware`      | Act after a message has been sent                |
-| `WebhookEventMiddleware` | `WebhookEventMiddleware` | Swap adapter per-event in batched webhooks   |
+| Pipeline                | Interface               | Purpose                                                      |
+| ----------------------- | ----------------------- | ------------------------------------------------------------- |
+| `WebhookMiddleware`     | `WebhookMiddleware`     | Intercept raw webhooks before any processing                 |
+| `ReceivingMiddleware`   | `ReceivingMiddleware`   | Transform incoming messages before handlers fire             |
+| `HeardMiddleware`       | `HeardMiddleware`       | Fire after a pattern matches, before the handler runs        |
+| `SendingMiddleware`     | `SendingMiddleware`     | Transform outgoing messages before they're sent              |
+| `SentMiddleware`        | `SentMiddleware`        | Act after a message has been sent                            |
+| `WebhookEventMiddleware` | `WebhookEventMiddleware` | Swap adapter per-event in batched webhooks                 |
 
 ## Webhook Middleware
 
@@ -62,6 +63,49 @@ Records the last message timestamp per user for platforms with 24h messaging win
 
 ```php
 $chat->addReceivingMiddleware(new TrackMessagingWindow($state));
+```
+
+## Heard Middleware
+
+Fires after a pattern matches but before the handler runs. Useful for logging, filtering, or modifying matched messages per pattern:
+
+```php
+use BootDesk\ChatSDK\Core\Contracts\Adapter;
+use BootDesk\ChatSDK\Core\Contracts\HeardMiddleware;
+use BootDesk\ChatSDK\Core\MessageContext;
+
+class LogMatchedMessages implements HeardMiddleware
+{
+    public function handle(MessageContext $context, string $pattern, Adapter $adapter, callable $next): ?MessageContext
+    {
+        Log::info('chat.heard', [
+            'adapter' => $adapter->getName(),
+            'pattern' => $pattern,
+            'text' => $context->message->text,
+        ]);
+
+        return $next($context, $pattern, $adapter);
+    }
+}
+```
+
+Register it:
+
+```php
+$chat->addHeardMiddleware(new LogMatchedMessages());
+```
+
+Return `null` to skip that handler and continue checking other patterns:
+
+```php
+public function handle(MessageContext $context, string $pattern, Adapter $adapter, callable $next): ?MessageContext
+{
+    if (str_contains($context->message->text, 'stop')) {
+        return null; // skip this handler
+    }
+
+    return $next($context, $pattern, $adapter);
+}
 ```
 
 ## Sending Middleware
@@ -163,4 +207,16 @@ $chat
     ->addReceivingMiddleware($first)
     ->addReceivingMiddleware($second);
 // $first runs before $second
+```
+
+## Pipeline Execution Order
+
+```
+Inbound:
+  Webhook → verifyWebhook() → parseWebhook()
+    → ReceivingMiddleware[0] → ReceivingMiddleware[1] → ... → dispatch()
+      → ConversationManager::intercept()
+      → onDirectMessage / onSubscribedMessage / onNewMention
+      → Pattern match
+        → HeardMiddleware[0] → HeardMiddleware[1] → ... → handler
 ```

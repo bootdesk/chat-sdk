@@ -315,12 +315,13 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class TenantAdapterResolver implements AdapterResolver
 {
-    public function resolve(string $name, ?ServerRequestInterface $request = null): ?Adapter
+    public function resolve(string $name, ?ServerRequestInterface $request): ?Adapter
     {
-        // When $request is null (e.g. queued job), fall back to another strategy
-        $token = $request !== null
-            ? $request->getHeaderLine('X-Tenant-Token')
-            : $this->resolveTenantFromQueue();
+        // $request is available in both sync and queued contexts.
+        // QueueConcurrencyHandler serializes the original webhook request
+        // into a RequestContext value object; the job reconstructs the
+        // PSR-7 request before calling resolveAdapter().
+        $token = $request->getHeaderLine('X-Tenant-Token');
 
         return match ($name) {
             'slack' => app()->make(SlackAdapter::class, [
@@ -328,12 +329,6 @@ class TenantAdapterResolver implements AdapterResolver
             ]),
             default => null, // falls back to config/chat.php
         };
-    }
-
-    private function resolveTenantFromQueue(): string
-    {
-        // e.g. read from serialized job context, database, or cache
-        return 'default_tenant_token';
     }
 }
 ```

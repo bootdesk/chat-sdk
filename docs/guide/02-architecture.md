@@ -114,6 +114,10 @@ Replaces the default in Laravel. Uses jobs instead of sync processing:
 - **debounce**: cache latest message (`:latest`, `:skipped`, `:last` timestamps), dispatch unique delayed `ProcessDebouncedMessageJob`. Only one pending job per thread — subsequent updates replace the cached message before the job runs. When the job fires, it checks the `:last` timestamp: if still within the debounce window, it re-dispatches with the remaining delay (but **does not restore `:last`**, preventing infinite re-dispatch loops). `:latest` and `:skipped` restoration is guarded to avoid overwriting data set by concurrent `dispatchDebounced()` calls.
 - **concurrent**: `ProcessMessageJob::dispatch()` (parallel workers)
 
+#### Request serialization for job context
+
+When `QueueConcurrencyHandler::process()` receives a PSR-7 request, it serializes it into a `RequestContext` value object (method, URI, headers, body, query params, parsed body, server params, cookies, version) and passes it to every dispatched job. Both `ProcessMessageJob` and `ProcessDebouncedMessageJob` reconstruct the PSR-7 request via `RequestContext::toPsrRequest()` and pass it to `Chat::resolveAdapter()`. This ensures `AdapterResolver::resolve($name, $request)` receives the original request even in queued context — enabling tenant-aware adapter resolution without duplicating logic in webhook middleware.
+
 ## State System
 
 Pluggable via `StateAdapter`:

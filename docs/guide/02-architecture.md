@@ -116,7 +116,7 @@ Replaces the default in Laravel. Uses jobs instead of sync processing:
 
 #### Request serialization for job context
 
-When `QueueConcurrencyHandler::process()` receives a PSR-7 request, it serializes it into a `RequestContext` value object (method, URI, headers, body, query params, parsed body, server params, cookies, version) and passes it to every dispatched job. Both `ProcessMessageJob` and `ProcessDebouncedMessageJob` reconstruct the PSR-7 request via `RequestContext::toPsrRequest()` and pass it to `Chat::resolveAdapter()`. This ensures `AdapterResolver::resolve($name, $request)` receives the original request even in queued context — enabling tenant-aware adapter resolution without duplicating logic in webhook middleware.
+When `QueueConcurrencyHandler::process()` receives a PSR-7 request, it serializes it into a `RequestContext` value object (method, URI, headers, body, query params, parsed body, server params, cookies, version, **requestAttributes**) and passes it to every dispatched job. Both `ProcessMessageJob` and `ProcessDebouncedMessageJob` reconstruct the PSR-7 request via `RequestContext::toPsrRequest()` and pass it to `Chat::resolveAdapter()`. This ensures `AdapterResolver::resolve($name, $request)` receives the original request even in queued context — enabling tenant-aware adapter resolution without duplicating logic in webhook middleware. The `requestAttributes` field captures PSR-7 `getAttributes()` — extend `WebhookController` to inject tenant/context attributes that survive into jobs.
 
 ## State System
 

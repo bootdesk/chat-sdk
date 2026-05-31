@@ -18,17 +18,18 @@ php artisan vendor:publish --tag=chat-config
 
 This creates `config/chat.php` with these options:
 
-| Option         | Default    | Description                                              |
-| -------------- | ---------- | -------------------------------------------------------- |
-| `user_name`    | `'Bot'`    | Bot display name                                         |
-| `adapters`     | `[]`       | Per-adapter credentials                                  |
-| `state.store`  | `'file'`   | Cache store for state                                    |
-| `state.prefix` | `'chat:'`  | Key prefix for state                                     |
-| `handlers`     | `[]`       | Handler classes to register                              |
-| `concurrency`  | `'drop'`   | Concurrency strategy (drop/queue/debounce/concurrent)    |
-| `lock_scope`   | `'thread'` | Lock scope for concurrency ('thread' or 'channel')       |
-| `transcripts`  | `null`     | Transcript config (requires identity resolver)           |
-| —              | —          | `ConcurrencyHandler` can be overridden via container DI  |
+| Option             | Default    | Description                                              |
+| ------------------ | ---------- | -------------------------------------------------------- |
+| `user_name`        | `'Bot'`    | Bot display name                                         |
+| `adapters`         | `[]`       | Per-adapter credentials                                  |
+| `state.store`      | `'file'`   | Cache store for state                                    |
+| `state.prefix`     | `'chat:'`  | Key prefix for state                                     |
+| `handlers`         | `[]`       | Global handler classes (always registered)               |
+| `handler_groups`   | `[]`       | Adapter-scoped handler groups (e.g. `slack => [...]`)    |
+| `concurrency`      | `'drop'`   | Concurrency strategy (drop/queue/debounce/concurrent)    |
+| `lock_scope`       | `'thread'` | Lock scope for concurrency ('thread' or 'channel')       |
+| `transcripts`      | `null`     | Transcript config (requires identity resolver)           |
+| —                  | —          | `ConcurrencyHandler` can be overridden via container DI  |
 
 ```php
 return [
@@ -137,29 +138,28 @@ Each adapter is auto-discovered at runtime via `class_exists()`. Only configured
 
 ## Usage
 
-### The `Chat` Facade
+### ChatFactory
+
+Inject `ChatFactory` to compose Chat instances scoped to the correct handlers:
 
 ```php
-use Chat;
+use BootDesk\ChatSDK\Laravel\ChatFactory;
 
-Chat::onNewMessage(function (Message $message, Thread $thread) {
-    $thread->post("Echo: {$message->text}");
-});
+class MessageController
+{
+    public function __construct(
+        private ChatFactory $chatFactory,
+    ) {}
 
-Chat::onSlashCommand(function (SlashCommandEvent $event) {
-    $event->thread->post("You ran: {$event->command}");
-});
+    public function send()
+    {
+        $chat = $this->chatFactory->default(); // global handlers only
+        $chat->thread('slack:C123')->post('Hello!');
+    }
+}
 ```
 
-### The `chat` Helper
-
-```php
-$chat = chat();  // Returns the Chat singleton
-
-chat()->onNewMessage(function ($message, $thread) {
-    // ...
-});
-```
+For webhook processing, the `WebhookController` automatically calls `forGroup($adapter)` — which merges global handlers with the adapter-specific group.
 
 ### Webhook Route
 
@@ -173,11 +173,12 @@ Route::match(['get', 'post'], '/chats/{adapter}', [WebhookController::class, 'ha
 
 It accepts both `GET` (for platform verification challenges like Telnyx) and `POST` (for actual webhooks). The `{adapter}` parameter matches the adapter name (`slack`, `telegram`, `telnyx`, etc.).
 
-Under the hood, the controller does the PSR-7 conversion for you:
+Under the hood, the controller creates a fresh Chat instance via `ChatFactory::forGroup($adapter)` — registering only the global handlers and the adapter-matching group — then does the PSR-7 conversion:
 
 ```php
+$chat = $this->chatFactory->forGroup($adapter);
 $psrRequest = $psrHttpFactory->createRequest($request);
-$psrResponse = $this->chat->handleWebhook($adapter, $psrRequest);
+$psrResponse = $chat->handleWebhook($adapter, $psrRequest);
 
 return (new HttpFoundationFactory)->createResponse($psrResponse);
 ```
@@ -211,7 +212,7 @@ class ChatHandlers implements ChatHandler
 }
 ```
 
-Then register it in `config/chat.php`:
+Register it in `config/chat.php` as a global handler (fires for every adapter):
 
 ```php
 'handlers' => [
@@ -219,7 +220,20 @@ Then register it in `config/chat.php`:
 ],
 ```
 
-You can have multiple handlers — each receives the `Chat` instance in `register()` and can set up its own listeners.
+Or scope it to a specific adapter group:
+
+```php
+'handler_groups' => [
+    'slack' => [
+        \App\Chat\SlackHandlers::class,
+    ],
+    'telegram' => [
+        \App\Chat\TelegramHandlers::class,
+    ],
+],
+```
+
+When a webhook arrives for `slack`, both `handlers` (global) and `slack` group are registered. `telegram` handlers are skipped. You can have multiple handlers per group — each receives the `Chat` instance in `register()`.
 
 ### Middleware
 

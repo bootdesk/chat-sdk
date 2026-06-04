@@ -575,7 +575,7 @@ class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatc
         // Attachments take priority
         if ($message->attachments !== []) {
             $att = $message->attachments[0];
-            $text = $message->getTextContent();
+            $text = $this->formatConverter->renderPostable($message);
             $params = [
                 'messaging_product' => 'whatsapp',
                 'type' => match ($att->type) {

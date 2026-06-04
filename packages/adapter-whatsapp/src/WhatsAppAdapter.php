@@ -348,6 +348,11 @@ class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatc
                         continue;
                     }
 
+                    // Skip interactive messages (button_reply/list_reply) — handled as actions via batched path
+                    if (($msg['type'] ?? '') === 'interactive') {
+                        continue;
+                    }
+
                     return $this->parseInboundMessage($msg, $contacts[0] ?? null, $phoneNumberId, $body, $originId);
                 }
             }
@@ -413,8 +418,36 @@ class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatc
 
                         $rawText = $msg['text']['body'] ?? '';
 
-                        // Check if this is a slash command
-                        if ($rawText !== '' && $rawText[0] === '/') {
+                        // Check if this is an interactive button/list reply (action)
+                        $msgType = $msg['type'] ?? '';
+                        if ($msgType === 'interactive') {
+                            $interactiveType = $msg['interactive']['type'] ?? '';
+                            if ($interactiveType === 'button_reply' || $interactiveType === 'list_reply') {
+                                $replyData = $msg['interactive'][$interactiveType] ?? [];
+                                $callbackId = $replyData['id'] ?? '';
+                                $decoded = WhatsAppCards::decodeCallbackData($callbackId);
+
+                                $author = $this->createAuthor($msg['from'], $contacts[0] ?? null);
+
+                                $events[] = new WebhookEvent(
+                                    type: WebhookEvent::TYPE_ACTION,
+                                    threadId: $threadId,
+                                    payload: [
+                                        'author' => $author,
+                                        'actionId' => $decoded['actionId'],
+                                        'value' => $decoded['value'],
+                                        'messageId' => $msg['context']['id'] ?? $msg['id'] ?? '',
+                                        'userId' => $msg['from'],
+                                        'isBot' => false,
+                                        'isMe' => false,
+                                        'triggerId' => null,
+                                        'raw' => $payload,
+                                        'callbackQueryId' => null,
+                                    ],
+                                    originId: $originId,
+                                );
+                            }
+                        } elseif ($rawText !== '' && $rawText[0] === '/') {
                             $parts = explode(' ', $rawText, 2);
                             $command = $parts[0];
                             $text = $parts[1] ?? '';

@@ -197,8 +197,9 @@ class WhatsAppAdapterTest extends TestCase
                         'messages' => [[
                             'from' => '999',
                             'id' => 'wamid.reply1',
+                            'context' => ['id' => 'wamid.context123'],
                             'type' => 'interactive',
-                            'interactive' => ['type' => 'button_reply', 'button_reply' => ['id' => 'chat:yes', 'title' => 'Yes']],
+                            'interactive' => ['type' => 'button_reply', 'button_reply' => ['id' => 'chat:{"a":"order_confirm"}', 'title' => 'Yes']],
                             'timestamp' => '1700000000',
                         ]],
                     ],
@@ -211,8 +212,14 @@ class WhatsAppAdapterTest extends TestCase
             ->withHeader('x-hub-signature-256', $signature)
             ->withBody($this->factory->createStream($body));
 
-        $message = $this->adapter->parseWebhook($request);
-        $this->assertSame('Yes', $message->text);
+        $events = $this->adapter->parseBatchedWebhook($request);
+
+        $this->assertCount(1, $events);
+        $this->assertSame('action', $events[0]->type);
+        $this->assertSame('order_confirm', $events[0]->payload['actionId']);
+        $this->assertNull($events[0]->payload['value']);
+        $this->assertSame('wamid.context123', $events[0]->payload['messageId']);
+        $this->assertSame('whatsapp:phone123:999', $events[0]->threadId);
     }
 
     public function test_post_message(): void

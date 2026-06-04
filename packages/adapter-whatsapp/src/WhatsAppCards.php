@@ -2,6 +2,7 @@
 
 namespace BootDesk\ChatSDK\WhatsApp;
 
+use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Cards\Divider;
 use BootDesk\ChatSDK\Core\Cards\Image;
@@ -69,11 +70,6 @@ class WhatsAppCards
     {
         $lines = [];
 
-        if ($card->getImageUrl() !== null) {
-            $lines[] = $card->getImageUrl();
-            $lines[] = '';
-        }
-
         if ($card->getHeader() !== null) {
             $lines[] = '*'.$card->getHeader().'*';
         }
@@ -86,11 +82,11 @@ class WhatsAppCards
             } elseif ($child instanceof Image) {
                 $lines[] = $child->alt !== '' ? "{$child->alt}: {$child->url}" : $child->url;
             } elseif ($child instanceof Link) {
-                $lines[] = "[{$child->label}]({$child->url})";
+                $lines[] = "{$child->label}: {$child->url}";
             } elseif ($child instanceof Table) {
                 $lines[] = self::renderTableAsText($child);
             } elseif ($child instanceof LinkButton) {
-                $lines[] = "[{$child->label}]({$child->url})";
+                $lines[] = "{$child->label}: {$child->url}";
             }
         }
 
@@ -104,14 +100,37 @@ class WhatsAppCards
             }
         }
 
-        $allButtons = array_merge($card->getButtons(), $card->getLinkButtons());
+        $allButtons = $card->getButtons();
         if ($lines !== [] && $allButtons !== []) {
             $lines[] = '';
-            $buttonTexts = array_map(fn ($b): string => "[{$b->label}]", $allButtons);
-            $lines[] = implode(' | ', $buttonTexts);
+            $lines[] = '---';
+            $buttonTexts = array_map(fn (Button $b): string => "[ {$b->label} ]", $allButtons);
+            $lines[] = implode('  ', $buttonTexts);
         }
 
         return implode("\n", $lines);
+    }
+
+    public static function toMediaMessage(Card $card): ?array
+    {
+        if ($card->getImageUrl() === null) {
+            return null;
+        }
+
+        $msg = [
+            'type' => 'image',
+            'image' => ['link' => $card->getImageUrl()],
+        ];
+
+        $caption = '';
+        if ($card->getHeader() !== null) {
+            $caption .= $card->getHeader();
+        }
+        if ($caption !== '') {
+            $msg['image']['caption'] = $caption;
+        }
+
+        return $msg;
     }
 
     public static function encodeCallbackData(string $actionId, ?string $value = null): string
@@ -161,7 +180,7 @@ class WhatsAppCards
             } elseif ($child instanceof Table) {
                 $parts[] = self::renderTableAsText($child);
             } elseif ($child instanceof LinkButton) {
-                $parts[] = "[{$child->label}]({$child->url})";
+                $parts[] = "{$child->label}: {$child->url}";
             }
         }
 

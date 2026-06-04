@@ -51,7 +51,7 @@ class WhatsAppCards
             ];
         }
 
-        $body = self::buildBodyText($card);
+        $body = self::buildBodyText($card, excludeInteractive: true);
 
         $interactive = [
             'type' => 'button',
@@ -66,11 +66,11 @@ class WhatsAppCards
         return $interactive;
     }
 
-    public static function cardToText(Card $card): string
+    public static function cardToText(Card $card, bool $includeHeader = true, bool $excludeInteractive = false): string
     {
         $lines = [];
 
-        if ($card->getHeader() !== null) {
+        if ($includeHeader && $card->getHeader() !== null) {
             $lines[] = '*'.$card->getHeader().'*';
         }
 
@@ -86,7 +86,9 @@ class WhatsAppCards
             } elseif ($child instanceof Table) {
                 $lines[] = self::renderTableAsText($child);
             } elseif ($child instanceof LinkButton) {
-                $lines[] = "{$child->label}: {$child->url}";
+                if (! $excludeInteractive) {
+                    $lines[] = "{$child->label}: {$child->url}";
+                }
             }
         }
 
@@ -100,12 +102,14 @@ class WhatsAppCards
             }
         }
 
-        $allButtons = $card->getButtons();
-        if ($lines !== [] && $allButtons !== []) {
-            $lines[] = '';
-            $lines[] = '---';
-            $buttonTexts = array_map(fn (Button $b): string => "[ {$b->label} ]", $allButtons);
-            $lines[] = implode('  ', $buttonTexts);
+        if (! $excludeInteractive) {
+            $allButtons = $card->getButtons();
+            if ($lines !== [] && $allButtons !== []) {
+                $lines[] = '';
+                $lines[] = '---';
+                $buttonTexts = array_map(fn (Button $b): string => "[ {$b->label} ]", $allButtons);
+                $lines[] = implode('  ', $buttonTexts);
+            }
         }
 
         return implode("\n", $lines);
@@ -166,7 +170,7 @@ class WhatsAppCards
         return ['actionId' => $data, 'value' => $data];
     }
 
-    private static function buildBodyText(Card $card): string
+    private static function buildBodyText(Card $card, bool $excludeInteractive = false): string
     {
         $parts = [];
 
@@ -180,7 +184,9 @@ class WhatsAppCards
             } elseif ($child instanceof Table) {
                 $parts[] = self::renderTableAsText($child);
             } elseif ($child instanceof LinkButton) {
-                $parts[] = "{$child->label}: {$child->url}";
+                if (! $excludeInteractive) {
+                    $parts[] = "{$child->label}: {$child->url}";
+                }
             }
         }
 

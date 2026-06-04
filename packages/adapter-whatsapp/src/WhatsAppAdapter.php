@@ -633,6 +633,15 @@ class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatc
         // 1. Send image as separate media message
         $mediaParams = WhatsAppCards::toMediaMessage($card);
         if ($mediaParams !== null) {
+            // Use bolded header as caption only — body follows as separate message
+            $caption = '';
+            if ($card->getHeader() !== null) {
+                $caption = '*'.$card->getHeader().'*';
+            }
+            if ($caption !== '') {
+                $mediaParams['image']['caption'] = $caption;
+            }
+
             $mediaParams = $this->addRecipientParam([
                 'messaging_product' => 'whatsapp',
                 ...$mediaParams,
@@ -651,7 +660,7 @@ class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatc
         $linkButtons = $card->getLinkButtons();
 
         if ($buttons !== [] && count($buttons) <= 3) {
-            // Reply buttons via interactive message
+            // Reply buttons via interactive message (header+buttons excluded from body)
             $interactive = WhatsAppCards::toInteractiveMessage($card);
             $params = $this->addRecipientParam([
                 'messaging_product' => 'whatsapp',
@@ -659,7 +668,7 @@ class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatc
                 'interactive' => $interactive,
             ], $recipient);
         } elseif ($buttons === [] && count($linkButtons) === 1) {
-            // Single link button → CTA URL interactive
+            // Single link button → CTA URL interactive (body excludes header + interactive)
             $cta = self::buildCtaUrlInteractive($card);
             $params = $this->addRecipientParam([
                 'messaging_product' => 'whatsapp',
@@ -667,8 +676,8 @@ class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatc
                 'interactive' => $cta,
             ], $recipient);
         } else {
-            // Fallback to text
-            $text = WhatsAppCards::cardToText($card);
+            // Fallback to text (body excludes header, includes links/buttons as inline text)
+            $text = WhatsAppCards::cardToText($card, includeHeader: false);
             $params = $this->addRecipientParam([
                 'messaging_product' => 'whatsapp',
                 'type' => 'text',
@@ -700,7 +709,7 @@ class WhatsAppAdapter implements Adapter, AdapterHasMessagingWindow, HandlesBatc
         $linkButtons = $card->getLinkButtons();
         $lb = $linkButtons[0];
 
-        $body = WhatsAppCards::cardToText($card);
+        $body = WhatsAppCards::cardToText($card, includeHeader: false, excludeInteractive: true);
 
         return [
             'type' => 'cta_url',

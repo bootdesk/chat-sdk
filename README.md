@@ -20,54 +20,70 @@ Includes a [BotMan](http://botman.io) compatibility shim (`bootdesk/botman-compa
 composer require bootdesk/chat-sdk
 ```
 
-## Quick Start
-
-**1. Configure adapters** in `config/chat.php`:
-
-```php
-return [
-    'default' => 'slack',
-
-    'adapters' => [
-        'slack' => [
-            'driver' => 'slack',
-            'token' => env('SLACK_BOT_TOKEN'),
-            'signing_secret' => env('SLACK_SIGNING_SECRET'),
-        ],
-        'telegram' => [
-            'driver' => 'telegram',
-            'token' => env('TELEGRAM_BOT_TOKEN'),
-        ],
-    ],
-];
-```
-
-**2. Register handlers** in a service provider:
+## Quick Start (Core, Framework-Agnostic)
 
 ```php
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Support\MemoryStateAdapter;
 use BootDesk\ChatSDK\Core\MessageContext;
 
-public function boot(): void
+$chat = new Chat(
+    state: new MemoryStateAdapter,
+    adapters: [$slackAdapter, $telegramAdapter],
+);
+
+$chat->onNewMessage('/^hello$/i', function (MessageContext $ctx) {
+    $ctx->thread->post('Hey there!');
+});
+
+// Handle incoming webhook
+$response = $chat->handleWebhook('slack', $request);
+```
+
+## Quick Start (Laravel)
+
+**1. Publish config**:
+```bash
+php artisan vendor:publish --tag=chat-config
+```
+
+**2. Configure adapters** in `config/chat.php`:
+```php
+'adapters' => [
+    'slack' => [
+        'bot_token' => env('SLACK_BOT_TOKEN'),
+        'signing_secret' => env('SLACK_SIGNING_SECRET'),
+    ],
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+    ],
+],
+```
+
+**3. Register handlers**:
+```php
+// app/Chat/ChatHandlers.php
+use BootDesk\ChatSDK\Laravel\Contracts\ChatHandler;
+use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\MessageContext;
+
+class ChatHandlers implements ChatHandler
 {
-    $chat = $this->app->make(Chat::class);
-
-    $chat->onNewMessage('/^hello$/i', function (MessageContext $ctx) {
-        $ctx->thread->post('Hey there!');
-    });
-
-    $chat->onDirectMessage(function (MessageContext $ctx) {
-        $ctx->thread->post('You DMd me!');
-    });
+    public function register(Chat $chat): void
+    {
+        $chat->onNewMessage('/^hello$/i', function (MessageContext $ctx) {
+            $ctx->thread->post('Hey there!');
+        });
+    }
 }
 ```
 
-**3. Set up webhook routes**:
-
+**4. Set up webhook route**:
 ```php
-// routes/web.php
-Route::post('/chat/webhook/slack', [WebhookController::class, 'slack']);
-Route::post('/chat/webhook/telegram', [WebhookController::class, 'telegram']);
+// routes/api.php
+use BootDesk\ChatSDK\Laravel\Http\Controllers\WebhookController;
+
+Route::match(['get', 'post'], '/api/webhooks/{adapter}', WebhookController::class);
 ```
 
 ## Packages (monorepo structure)

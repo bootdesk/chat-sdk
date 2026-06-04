@@ -2,7 +2,6 @@
 
 Platform-specific limitations, common pitfalls, and important behaviors.
 
-> **Note:** Adapter-specific guides (10-18) are symlinks to package READMEs in `packages/*/README.md`. Edit those files directly to update adapter docs.
 
 ## Ephemeral Messages
 

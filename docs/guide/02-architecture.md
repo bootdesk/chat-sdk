@@ -129,10 +129,11 @@ Used for: conversation state, deduplication, modal context, rate limiting, locks
 
 ## Middleware
 
-Five middleware pipelines:
+Six middleware pipelines:
 
 - `WebhookMiddleware` — Intercept incoming webhooks
 - `ReceivingMiddleware` — Transform incoming messages
+- `HeardMiddleware` — Fire after pattern matches, before handler runs
 - `SendingMiddleware` — Transform outgoing messages
 - `SentMiddleware` — Act after a message has been sent (forward pipeline, not nullable)
 - `WebhookEventMiddleware` — Swap adapter per-event in batched webhooks

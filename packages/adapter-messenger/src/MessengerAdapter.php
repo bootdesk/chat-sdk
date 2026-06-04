@@ -561,7 +561,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesBatchedWebhook
 
             $response = $this->graphApiCall('me/messages', [
                 ...$basePayload,
-                'message' => $result['attachment'],
+                'message' => ['attachment' => $result['attachment']],
             ]);
         } elseif ($message->isCard()) {
             $cardResult = MessengerCards::toMessengerPayload($message->content);
@@ -569,7 +569,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesBatchedWebhook
             if ($cardResult['type'] === 'template') {
                 $response = $this->graphApiCall('me/messages', [
                     ...$basePayload,
-                    'message' => $cardResult['attachment'],
+                    'message' => ['attachment' => $cardResult['attachment']],
                 ]);
             } else {
                 $response = $this->graphApiCall('me/messages', [

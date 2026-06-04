@@ -571,7 +571,7 @@ class InstagramAdapter implements Adapter, HandlesActions, HandlesBatchedWebhook
 
         // Attachments take priority
         if ($message->attachments !== []) {
-            $text = $message->getTextContent();
+            $text = $this->formatConverter->renderPostable($message);
 
             // Sticker (like_heart)
             if ($message->attachments[0]->type === 'sticker' || $message->attachments[0]->type === 'like_heart') {

@@ -508,7 +508,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesBatchedWebhook
         // Attachments take priority
         if ($message->attachments !== []) {
             $att = $message->attachments[0];
-            $text = $message->getTextContent();
+            $text = $this->formatConverter->renderPostable($message);
 
             $attachmentData = match ($att->type) {
                 'image' => ['type' => 'image', 'payload' => ['url' => $att->url]],

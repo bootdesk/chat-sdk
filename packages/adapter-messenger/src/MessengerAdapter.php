@@ -47,7 +47,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesBatchedWebhook
     public function __construct(
         protected readonly string $pageAccessToken,
         protected readonly ClientInterface $httpClient,
-        string $appSecret,
+        protected readonly string $appSecret,
         string $verifyToken,
         protected readonly string $apiVersion = 'v25.0',
         protected readonly string $apiUrl = 'https://graph.facebook.com',
@@ -664,7 +664,7 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesBatchedWebhook
 
     public function getAuthorInfo(Author $author): Author
     {
-        $response = $this->graphApiCall($author->id, [], 'GET', ['fields' => 'locale,timezone,profile_pic']);
+        $response = $this->graphApiCall($author->id, [], 'GET', ['fields' => 'first_name,last_name,locale,timezone,profile_pic']);
 
         $localizations = [];
         $profilePicture = $author->profilePicture;
@@ -801,7 +801,8 @@ class MessengerAdapter implements Adapter, HandlesActions, HandlesBatchedWebhook
     protected function graphApiCall(string $endpoint, array $params, string $method = 'POST', array $queryParams = []): array
     {
         $factory = $this->psrFactory ?? new Psr17Factory;
-        $url = "{$this->apiUrl}/{$this->apiVersion}/{$endpoint}?access_token={$this->pageAccessToken}";
+        $proof = hash_hmac('sha256', $this->pageAccessToken, $this->appSecret);
+        $url = "{$this->apiUrl}/{$this->apiVersion}/{$endpoint}?access_token={$this->pageAccessToken}&appsecret_proof={$proof}";
 
         if ($queryParams !== []) {
             $url .= '&'.http_build_query($queryParams);

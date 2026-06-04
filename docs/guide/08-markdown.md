@@ -27,8 +27,9 @@ Every adapter has a dedicated `FormatConverter` that implements `BootDesk\ChatSD
 | Discord   | `DiscordFormatConverter`   | Discord markdown         |
 | GitHub    | `GitHubFormatConverter`    | GitHub Flavored Markdown |
 | Linear    | `LinearFormatConverter`    | Linear rich text         |
-| WhatsApp  | `WhatsAppFormatConverter`  | Plain text               |
-| Messenger | `MessengerFormatConverter` | Plain text               |
+| Messenger | `MessengerFormatConverter` | `*bold*`, `_italic_`, `~strike~`, `` `code` `` |
+| Instagram | `InstagramFormatConverter` | `*bold*`, `_italic_`, `~strike~`, `` `code` `` |
+| WhatsApp  | `WhatsAppFormatConverter`  | `*bold*`, `_italic_`, `~strike~`, `` `code` ``, lists `*`/`1.`, `> quotes` |
 | Telnyx    | `TelnyxFormatConverter`    | Plain text               |
 | Web       | `WebFormatConverter`       | HTML                     |
 
@@ -56,19 +57,23 @@ interface FormatConverter
 
 ## Supported Markdown Features
 
-| Feature       | Markdown        | Slack           | Telegram        | Discord         | GitHub          | Linear          | Plain text   |
-| ------------- | --------------- | --------------- | --------------- | --------------- | --------------- | --------------- | ------------ |
-| Bold          | `**text**`      | `*text*`        | `**text**`      | `**text**`      | `**text**`      | `**text**`      | `text`       |
-| Italic        | `_text_`        | `_text_`        | `__text__`      | `_text_`        | `_text_`        | `_text_`        | `text`       |
-| Strikethrough | `~~text~~`      | `~text~`        | `~text~`        | `~~text~~`      | `~~text~~`      | `~~text~~`      | `text`       |
-| Inline Code   | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``    | `code`       |
-| Code Block    | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | `...`        |
-| Links         | `[text](url)`   | `<url\|text>`   | `[text](url)`   | `[text](url)`   | `[text](url)`   | `[text](url)`   | `text (url)` |
-| Lists         | `- item`        | `• item`        | `- item`        | `- item`        | `- item`        | `- item`        | `• item`     |
+| Feature       | Markdown        | Slack           | Telegram        | Discord         | GitHub          | Linear          | Messenger/Instagram | WhatsApp       | Plain text   |
+| ------------- | --------------- | --------------- | --------------- | --------------- | --------------- | --------------- | ------------------- | -------------- | ------------ |
+| Bold          | `**text**`      | `*text*`        | `**text**`      | `**text**`      | `**text**`      | `**text**`      | `*text*`            | `*text*`       | `text`       |
+| Italic        | `_text_`        | `_text_`        | `__text__`      | `_text_`        | `_text_`        | `_text_`        | `_text_`            | `_text_`       | `text`       |
+| Strikethrough | `~~text~~`      | `~text~`        | `~text~`        | `~~text~~`      | `~~text~~`      | `~~text~~`      | `~text~`            | `~text~`       | `text`       |
+| Inline Code   | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``        | `` `code` ``   | `code`       |
+| Code Block    | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` `     | ` ``` ... ``` `| `...`        |
+| Links         | `[text](url)`   | `<url\|text>`   | `[text](url)`   | `[text](url)`   | `[text](url)`   | `[text](url)`   | `text` (no links)   | `text` (no links)| `text (url)` |
+| Lists         | `- item`        | `• item`        | `- item`        | `- item`        | `- item`        | `- item`        | `* item / 1. item`  | `* item / 1. item`| `• item`     |
 
 ## Plain Text Adapters
 
-WhatsApp, Messenger, and Telnyx strip all markdown formatting and send plain text. Incoming markdown from these platforms is minimal (they don't support rich text input).
+Telnyx strips all markdown formatting and sends plain text.
+
+Messenger, Instagram, and WhatsApp convert standard markdown to their native single-character formatting (`*bold*`, `_italic_`, `~strikethrough~`, `` `code` ``) via their `FormatConverter` implementations. WhatsApp additionally supports lists (`*`/`-`, `1.`) and quotes (`>`).
+
+Incoming text from these platforms uses the same single-character syntax, which is converted back to standard markdown via `toAst()` before reaching your handlers.
 
 ## Sending Markdown
 

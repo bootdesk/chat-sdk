@@ -154,6 +154,27 @@ WhatsAppTemplate::create('order', 'en')
     ->bodyParam('Jessica', 'first_name');
 ```
 
+## Meta Platforms Text Formatting
+
+Messenger, Instagram, and WhatsApp use single-character formatting syntax instead of standard markdown:
+
+| Format | Syntax | Example |
+|---|---|---|
+| Bold | `*text*` | `*hello*` → **hello** |
+| Italic | `_text_` | `_hello_` → *hello* |
+| Strikethrough | `~text~` | `~hello~` → ~~hello~~ |
+| Monospace | `` `text` `` | `` `hello` `` → `hello` |
+| Code Block | ``` ```text``` ``` | ``` ```echo hi``` ``` → code block |
+| Bullet List (WhatsApp) | `* item` / `- item` | `* one` → • one |
+| Numbered List (WhatsApp) | `1. item` | `1. one` → 1. one |
+| Quote (WhatsApp) | `> text` | `> hello` → blockquote |
+
+The SDK's `FormatConverter` handles conversion automatically:
+- **Outgoing** (via `renderPostable()`): standard markdown (`**bold**`, `~~strike~~`) → platform format (`*bold*`, `~strike~`)
+- **Incoming** (via `toAst()`): platform format → standard markdown before CommonMark parsing
+
+Lists and tables are rendered as pipe/prefix text on Messenger and Instagram (no native list support). WhatsApp supports native lists and quotes.
+
 ## Streaming
 
 All adapters support the `stream()` method for incremental text output (e.g., for LLM responses). This is **not yet fully documented** — use `post()` for now.

@@ -41,7 +41,9 @@ describe("PusherBroadcastClient", () => {
   });
 
   it("accepts config and creates Pusher internally", () => {
-    const PusherMock = vi.fn().mockImplementation(() => createMockPusher().pusher);
+    const PusherMock = vi.fn().mockImplementation(function () {
+      return createMockPusher().pusher;
+    });
     (globalThis as any).Pusher = PusherMock;
 
     const cfgClient = new PusherBroadcastClient({

@@ -22,7 +22,6 @@ This creates `config/chat.php` with these options:
 | ------------------ | ---------- | -------------------------------------------------------- |
 | `user_name`        | `'Bot'`    | Bot display name                                         |
 | `adapters`         | `[]`       | Per-adapter credentials                                  |
-| `state.store`      | `'file'`   | Cache store for state                                    |
 | `state.prefix`     | `'chat:'`  | Key prefix for state                                     |
 | `handlers`         | `[]`       | Global handler classes (always registered)               |
 | `handler_groups`   | `[]`       | Adapter-scoped handler groups (e.g. `slack => [...]`)    |
@@ -474,7 +473,7 @@ $adapter = new WebAdapter(
 );
 ```
 
-The broadcaster is automatically connected/disconnected via `Chat::initialize()` and `Chat::shutdown()`.
+`LaravelBroadcastAdapter` uses the `Broadcast` facade directly — no connection state to manage.
 
 ### Broadcast Events
 

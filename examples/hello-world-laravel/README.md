@@ -87,7 +87,7 @@ SDK configuration:
 | Section       | Description                                                                  |
 | ------------- | ---------------------------------------------------------------------------- |
 | `adapters`    | Platform credentials (read from `env()`)                                     |
-| `state.store` | Cache store for state persistence                                            |
+| `state.prefix` | Cache key prefix for state persistence                                      |
 | `handlers`    | Classes to auto-register (`ChatHandlers`, `ChatMiddlewareHandler`)           |
 | `concurrency` | Strategy for concurrent messages (`drop`, `queue`, `debounce`, `concurrent`) |
 | `lock_scope`  | Lock granularity (`thread` or `channel`)                                     |

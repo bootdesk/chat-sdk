@@ -118,7 +118,6 @@ WebAdapter supports real-time event broadcasting via `BroadcastAdapter`:
 use BootDesk\ChatSDK\Laravel\Broadcasting\LaravelBroadcastAdapter;
 
 $broadcaster = new LaravelBroadcastAdapter(
-    broadcastManager: broadcast(),
     broadcasterType: 'pusher',
     channelPrefix: 'chat',
 );

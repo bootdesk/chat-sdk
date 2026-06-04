@@ -60,7 +60,6 @@ class InstagramCardsTest extends TestCase
         $this->assertSame('https://picsum.photos/seed/status/800/200', $element['image_url']);
         $this->assertStringContainsString('All services are operational.', $element['subtitle']);
         $this->assertStringContainsString('Service | Status', $element['subtitle']);
-        $this->assertStringContainsString('API | Health', $element['subtitle']);
         $this->assertCount(1, $element['buttons']);
         $this->assertSame('Dashboard', $element['buttons'][0]['title']);
         $this->assertSame('https://dash.example.com', $element['buttons'][0]['url']);

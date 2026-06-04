@@ -242,22 +242,6 @@ class WhatsAppCards
 
     private static function renderTableAsText(Table $table): string
     {
-        $lines = [];
-        $lines[] = '| '.implode(' | ', $table->headers).' |';
-        $separators = [];
-        foreach (array_keys($table->headers) as $i) {
-            $align = $table->align[$i] ?? null;
-            $separators[] = match ($align?->value) {
-                'center' => ':---:',
-                'right' => '---:',
-                default => '---',
-            };
-        }
-        $lines[] = '| '.implode(' | ', $separators).' |';
-        foreach ($table->rows as $row) {
-            $lines[] = '| '.implode(' | ', $row).' |';
-        }
-
-        return "```\n".implode("\n", $lines)."\n```";
+        return "```\n".Table::renderAsText($table)."\n```";
     }
 }

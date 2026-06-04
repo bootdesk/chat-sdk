@@ -258,6 +258,6 @@ class WhatsAppCards
             $lines[] = '| '.implode(' | ', $row).' |';
         }
 
-        return implode("\n", $lines);
+        return "```\n".implode("\n", $lines)."\n```";
     }
 }

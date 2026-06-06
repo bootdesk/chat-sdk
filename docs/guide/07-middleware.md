@@ -220,3 +220,67 @@ Inbound:
       → Pattern match
         → HeardMiddleware[0] → HeardMiddleware[1] → ... → handler
 ```
+
+## State Access in Middleware
+
+Middlewares often need to store or retrieve data (e.g. rate limits, user preferences, conversation state). Inject `StateAdapter` through the constructor:
+
+```php
+use BootDesk\ChatSDK\Core\Contracts\ReceivingMiddleware;
+use BootDesk\ChatSDK\Core\Contracts\StateAdapter;
+use BootDesk\ChatSDK\Core\Message;
+
+class UserLanguageMiddleware implements ReceivingMiddleware
+{
+    public function __construct(
+        private StateAdapter $state,
+    ) {}
+
+    public function handle(Message $message, Adapter $adapter, callable $next): ?Message
+    {
+        $lang = $this->state->get("lang:{$message->author->id}") ?? 'en';
+        $message->extras['lang'] = $lang;
+
+        return $next($message, $adapter);
+    }
+}
+```
+
+Register with the `StateAdapter` instance:
+
+```php
+// Core — pass the instance directly
+$chat->addReceivingMiddleware(new UserLanguageMiddleware($state));
+```
+
+### Laravel
+
+In Laravel the container auto-resolves `StateAdapter` — no manual wiring needed:
+
+```php
+use App\Chat\Middleware\UserLanguageMiddleware;
+
+$chat->addReceivingMiddleware(app(UserLanguageMiddleware::class));
+// or resolve via constructor injection in a service provider
+```
+
+The container binding maps `StateAdapter::class` → `CacheStateAdapter` (registered by `ChatServiceProvider`). Middlewares with `StateAdapter` in their constructor are resolved automatically.
+
+### Message & SentMessage extras
+
+`Message` and `SentMessage` each have a mutable `extras` array (`array<string, mixed>`) for passing data between middlewares:
+
+```php
+// Receiving middleware stores data
+$message->extras['lang'] = 'pt-BR';
+$message->extras['risk_score'] = 0.95;
+
+// Later middleware or handler reads it
+public function handle(MessageContext $context, string $pattern, Adapter $adapter, callable $next): ?MessageContext
+{
+    $lang = $context->message->extras['lang'] ?? 'en';
+    // ...
+}
+```
+
+The same pattern works with `SentMiddleware` and `$result->extras`.

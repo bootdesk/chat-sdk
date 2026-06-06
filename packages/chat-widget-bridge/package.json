@@ -1,6 +1,6 @@
 {
   "name": "@bootdesk/chat-widget-bridge",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Iframe bridge for BootDesk Chat SDK - enables embedding the chat widget in an iframe with cross-frame communication via postMessage",
   "repository": "https://github.com/bootdesk/chat-sdk",
   "type": "module",

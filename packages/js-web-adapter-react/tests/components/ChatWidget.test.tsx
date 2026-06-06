@@ -36,6 +36,7 @@ function createMockClient(overrides: Record<string, unknown> = {}) {
     connect: vi.fn(),
     disconnect: vi.fn(),
     setLocaleHeader: vi.fn(),
+    setTimezoneHeader: vi.fn(),
     ...overrides,
   };
 }

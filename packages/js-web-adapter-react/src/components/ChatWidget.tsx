@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { WebChatClient } from "@bootdesk/js-web-adapter-core";
 
 import { useBridge, useMessages, useTyping, usePushNotifications } from "../hooks";
 import { LocaleProvider, mergeLocale, useLocale } from "../i18n";
@@ -9,66 +8,8 @@ import { MessageList } from "./MessageList";
 import { InputArea } from "./InputArea";
 import { TypingIndicator } from "./TypingIndicator";
 import { PushPermissionPrompt } from "./PushPermissionPrompt";
-import type { PushConfig } from "@bootdesk/js-web-adapter-core";
-
-type DisplayMode = "floating" | "fullscreen" | "embedded";
-export type ThemeMode = "light" | "dark" | "auto";
-
 import type { ReconfigureConfig } from "@bootdesk/js-web-adapter-core";
-
-export interface PreEntryHelpers {
-  start: (config?: ReconfigureConfig) => void;
-}
-export interface PreEntryConfig {
-  render: (helpers: PreEntryHelpers) => React.ReactNode;
-}
-
-export interface ChatWidgetProps {
-  client: WebChatClient;
-  locale?: string;
-  initialMode?: DisplayMode;
-  theme?: ThemeMode;
-  onThemeChange?: (theme: ThemeMode) => void;
-  position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
-  className?: {
-    container?: string;
-    header?: string;
-    messageList?: string;
-    inputArea?: string;
-  };
-  showClose?: boolean;
-  showFullscreenToggle?: boolean;
-  title?: string;
-  placeholder?: string;
-  onOpen?: () => void;
-  onClose?: () => void;
-  embedded?: boolean;
-  floatingButton?: {
-    icon?: React.ReactNode;
-    openIcon?: React.ReactNode;
-    badgeCount?: number;
-    size?: number;
-    backgroundColor?: string;
-    ariaLabel?: string;
-    className?: string;
-  };
-  enableAttachments?: boolean;
-  uploadConfig?: import("../types/AttachmentUpload").UploadConfig;
-  accept?: string;
-  maxFileSize?: number;
-  renderPushPrompt?: () => React.ReactNode;
-  pushConfig?: {
-    getVapidPublicKey: () => Promise<string>;
-    onSubscribe: PushConfig["onSubscribe"];
-    onUnsubscribe: PushConfig["onUnsubscribe"];
-    serviceWorkerUrl?: string;
-    serviceWorkerScope?: string;
-    serviceWorkerType?: "classic" | "module";
-    notificationOptions?: PushConfig["notificationOptions"];
-  };
-  preEntry?: PreEntryConfig;
-  onChatStart?: (config?: ReconfigureConfig) => void;
-}
+import type { ChatWidgetProps, DisplayMode, ThemeMode } from "../types/components";
 
 export function ChatWidget({
   client,
@@ -117,6 +58,7 @@ export function ChatWidget({
 
   useEffect(() => {
     client.setLocaleHeader(effectiveLocale);
+    client.setTimezoneHeader(Intl.DateTimeFormat().resolvedOptions().timeZone);
   }, [client, effectiveLocale]);
 
   const autoEmbedded = inBridge && embedded !== false;

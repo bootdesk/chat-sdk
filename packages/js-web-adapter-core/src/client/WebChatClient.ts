@@ -125,6 +125,11 @@ export class WebChatClient {
 
   setLocaleHeader(locale: string): void {
     this.httpClient.setHeader("X-Locale", locale);
+    this.httpClient.setHeader("X-Language", locale.split("-")[0] ?? locale);
+  }
+
+  setTimezoneHeader(timezone: string): void {
+    this.httpClient.setHeader("X-Timezone", timezone);
   }
 
   async connect(): Promise<void> {

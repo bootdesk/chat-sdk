@@ -13,6 +13,7 @@ Multi-platform chat bot SDK for PHP. Build once, deploy everywhere.
 - [Middleware](07-middleware.md) — Webhook, receiving, and sending middleware pipelines
 - [Markdown](08-markdown.md) — CommonMark pipeline and platform formatting
 - [Quirks & Gotchas](09-quirks-gotchas.md) — Platform limitations, common pitfalls, important behaviors
+- [Telegram](13-telegram.md) — Telegram adapter, custom keyboards, reply-to, file uploads
 
 ## JavaScript Packages
 

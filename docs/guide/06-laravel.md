@@ -158,7 +158,11 @@ class MessageController
 }
 ```
 
-For webhook processing, the `WebhookController` automatically calls `forGroup($adapter)` — which merges global handlers with the adapter-specific group.
+For webhook processing, the `WebhookController` automatically calls `forGroup($adapter)` — which merges global handlers with the adapter-specific group. Use `forGroups([...])` to merge handlers from multiple groups:
+
+```php
+$chat = $this->chatFactory->forGroups(['slack', 'internal-support']); // global + both groups
+```
 
 ### Webhook Route
 
@@ -172,15 +176,39 @@ Route::match(['get', 'post'], '/chats/{adapter}', [WebhookController::class, 'ha
 
 It accepts both `GET` (for platform verification challenges like Telnyx) and `POST` (for actual webhooks). The `{adapter}` parameter matches the adapter name (`slack`, `telegram`, `telnyx`, etc.).
 
-Under the hood, the controller creates a fresh Chat instance via `ChatFactory::forGroup($adapter)` — registering only the global handlers and the adapter-matching group — then does the PSR-7 conversion:
+Under the hood, the `handle()` method is split into 6 overridable steps:
+
+| Method | Purpose | Default |
+|--------|---------|---------|
+| `createPsrRequest($request)` | Illuminate → PSR-7 conversion | `PsrHttpFactory` bridge |
+| `resolveGroups($adapter, $request, $psrRequest)` | Determine handler groups | `[$adapter]` |
+| `withGroupsAttribute($psrRequest, $groups)` | Store groups as request attribute | `withAttribute('chat_groups', $groups)` |
+| `createChat($groups, $psrRequest)` | Build Chat for groups | `$chatFactory->forGroups($groups, $psrRequest)` |
+| `handleWebhook($adapter, $chat, $psrRequest)` | Delegates to Chat | `$chat->handleWebhook(...)` |
+| `createResponse($psrResponse)` | PSR-7 → Symfony Response | `HttpFoundationFactory` bridge |
+
+Override `resolveGroups` to route different channels to different handler groups:
 
 ```php
-$chat = $this->chatFactory->forGroup($adapter);
-$psrRequest = $psrHttpFactory->createRequest($request);
-$psrResponse = $chat->handleWebhook($adapter, $psrRequest);
+use Illuminate\Http\Request;
+use Psr\Http\Message\ServerRequestInterface;
 
-return (new HttpFoundationFactory)->createResponse($psrResponse);
+class ChannelAwareController extends WebhookController
+{
+    protected function resolveGroups(string $adapter, Request $request, ServerRequestInterface $psrRequest): array
+    {
+        $channel = $request->input('channel_id');
+
+        return match ($channel) {
+            'C001' => ['slack', 'internal-support'],
+            'C002' => ['slack', 'customer-support'],
+            default => [$adapter],
+        };
+    }
+}
 ```
+
+Groups are stored as the `chat_groups` PSR-7 request attribute — they survive serialization into async queue jobs via `RequestContext`, so both sync and async webhook processing uses the same groups.
 
 ### Chat Handlers
 
@@ -233,6 +261,32 @@ Or scope it to a specific adapter group:
 ```
 
 When a webhook arrives for `slack`, both `handlers` (global) and `slack` group are registered. `telegram` handlers are skipped. You can have multiple handlers per group — each receives the `Chat` instance in `register()`.
+
+### Chat Handlers with Request Access
+
+When a handler needs to inspect the incoming webhook request during registration (e.g., to read a tenant header), implement `ChatHandlerWithRequest` instead of `ChatHandler`:
+
+```php
+namespace App\Chat;
+
+use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Laravel\Contracts\ChatHandlerWithRequest;
+use Psr\Http\Message\ServerRequestInterface;
+
+class TenantHandler implements ChatHandlerWithRequest
+{
+    public function register(Chat $chat, ?ServerRequestInterface $request = null): void
+    {
+        $tenant = $request?->getHeaderLine('X-Tenant') ?? 'default';
+
+        $chat->onNewMessage('/help/', function (MessageContext $ctx) use ($tenant) {
+            $ctx->thread->post("{$tenant} support: how can I help?");
+        });
+    }
+}
+```
+
+The factory auto-detects which interface the handler implements — existing `ChatHandler` implementations continue working unchanged. The request flows from the `WebhookController` through `ChatFactory::forGroups($groups, $request)` into `ChatHandlerWithRequest::register()`.
 
 ### Middleware
 

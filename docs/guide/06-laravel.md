@@ -27,7 +27,7 @@ This creates `config/chat.php` with these options:
 | `handler_groups`   | `[]`       | Adapter-scoped handler groups (e.g. `slack => [...]`)    |
 | `concurrency`      | `'drop'`   | Concurrency strategy (drop/queue/debounce/concurrent)    |
 | `lock_scope`       | `'thread'` | Lock scope for concurrency ('thread' or 'channel')       |
-| `transcripts`      | `null`     | Transcript config (requires identity resolver)           |
+| `transcripts`      | `null`     | Transcript config (requires IdentityResolver::class)     |
 | —                  | —          | `ConcurrencyHandler` can be overridden via container DI  |
 
 ```php
@@ -375,6 +375,52 @@ use BootDesk\ChatSDK\Core\Contracts\FileUploadConverter;
 
 $this->app->bind(FileUploadConverter::class, function () {
     return new PublicFilesystemToAttachment;
+});
+```
+
+## Transcripts
+
+Per-user message history with automatic recording of incoming and outgoing messages. Requires an `IdentityResolver` bound to the container.
+
+### Setup
+
+Bind resolver and set config:
+
+```php
+// AppServiceProvider::register()
+use BootDesk\ChatSDK\Core\Contracts\IdentityResolver;
+use BootDesk\ChatSDK\Core\Author;
+
+$this->app->bind(IdentityResolver::class, fn () => new class implements IdentityResolver {
+    public function resolve(Author $author): ?string {
+        return $author->id;
+    }
+});
+```
+
+```php
+// config/chat.php
+'transcripts' => ['max_messages' => 100, 'ttl_ms' => 2592000000],
+```
+
+### Override implementation
+
+`TranscriptsApi::class` is bound to `DefaultTranscriptsApi` by default. Rebinding overrides:
+
+```php
+$this->app->bind(TranscriptsApi::class, function ($app) {
+    return new MyCustomTranscriptsApi(
+        $app->make(StateAdapter::class),
+    );
+});
+```
+
+### Reading transcripts in handlers
+
+```php
+$chat->onNewMessage('/help/', function (MessageContext $ctx) {
+    $history = $ctx->transcripts->list('user:'.$ctx->message->author->id);
+    // Each entry: id, text, authorId, threadId, timestamp, direction (incoming|outgoing)
 });
 ```
 

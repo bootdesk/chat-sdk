@@ -11,6 +11,7 @@ class KeyboardButton
         public readonly ?bool $requestContact = null,
         public readonly ?bool $requestLocation = null,
         public readonly ?KeyboardButtonPollType $requestPoll = null,
+        public readonly ?WebAppInfo $webApp = null,
     ) {}
 
     public function toArray(): array
@@ -27,6 +28,10 @@ class KeyboardButton
 
         if ($this->requestPoll instanceof KeyboardButtonPollType) {
             $result['request_poll'] = ['type' => $this->requestPoll->type];
+        }
+
+        if ($this->webApp instanceof WebAppInfo) {
+            $result['web_app'] = $this->webApp->toArray();
         }
 
         return $result;

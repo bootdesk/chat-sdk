@@ -10,6 +10,7 @@ class InlineKeyboardButton
         public readonly string $text,
         public readonly ?string $callbackData = null,
         public readonly ?string $url = null,
+        public readonly ?WebAppInfo $webApp = null,
     ) {}
 
     public function toArray(): array
@@ -22,6 +23,10 @@ class InlineKeyboardButton
 
         if ($this->url !== null) {
             $result['url'] = $this->url;
+        }
+
+        if ($this->webApp instanceof WebAppInfo) {
+            $result['web_app'] = $this->webApp->toArray();
         }
 
         return $result;

@@ -169,6 +169,20 @@ $adapter->postMessage('telegram:12345', new PostableMessage(
 ));
 ```
 
+### Web App Button
+
+Open a Telegram Web App from a button:
+
+```php
+use BootDesk\ChatSDK\Telegram\Keyboard\WebAppInfo;
+
+// Inline keyboard
+new InlineKeyboardButton('Open App', webApp: new WebAppInfo('https://example.com/app'));
+
+// Reply keyboard
+new KeyboardButton('Open App', webApp: new WebAppInfo('https://example.com/app'));
+```
+
 ### Force Reply
 
 ```php
@@ -234,8 +248,9 @@ All keyboard value objects implement `ReplyMarkup` interface.
 
 | Value object              | Fields |
 |---------------------------|--------|
-| `KeyboardButton`          | `text`, `requestContact` (`?bool`), `requestLocation` (`?bool`), `requestPoll` (`?KeyboardButtonPollType`) |
-| `InlineKeyboardButton`    | `text`, `callbackData` (`?string`), `url` (`?string`) |
+| `KeyboardButton`          | `text`, `requestContact` (`?bool`), `requestLocation` (`?bool`), `requestPoll` (`?KeyboardButtonPollType`), `webApp` (`?WebAppInfo`) |
+| `InlineKeyboardButton`    | `text`, `callbackData` (`?string`), `url` (`?string`), `webApp` (`?WebAppInfo`) |
+| `WebAppInfo`              | `url` (`string`) |
 | `ReplyKeyboardMarkup`     | `keyboard` (`KeyboardButton[][]`), `resizeKeyboard`, `oneTimeKeyboard`, `inputFieldPlaceholder`, `selective` |
 | `InlineKeyboardMarkup`    | `inlineKeyboard` (`InlineKeyboardButton[][]`) |
 | `ForceReply`              | `inputFieldPlaceholder`, `selective` |

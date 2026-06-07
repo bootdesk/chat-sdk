@@ -50,8 +50,9 @@ All implement `ReplyMarkup` interface with `toArray(): array`. Pass through `$me
 
 | Class | Fields |
 |-------|--------|
-| `KeyboardButton` | `text`, `requestContact`, `requestLocation`, `requestPoll` (KeyboardButtonPollType) |
-| `InlineKeyboardButton` | `text`, `callbackData`, `url` |
+| `KeyboardButton` | `text`, `requestContact`, `requestLocation`, `requestPoll` (KeyboardButtonPollType), `webApp` (WebAppInfo) |
+| `InlineKeyboardButton` | `text`, `callbackData`, `url`, `webApp` (WebAppInfo) |
+| `WebAppInfo` | `url` |
 | `ReplyKeyboardMarkup` | `keyboard: KeyboardButton[][]`, `resizeKeyboard`, `oneTimeKeyboard`, `inputFieldPlaceholder`, `selective` |
 | `InlineKeyboardMarkup` | `inlineKeyboard: InlineKeyboardButton[][]` |
 | `ForceReply` | `inputFieldPlaceholder`, `selective` |

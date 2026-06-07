@@ -94,8 +94,9 @@ $thread->post(new PostableMessage(
 | `InlineKeyboardMarkup`          | Inline keyboard (standalone) |
 | `ForceReply`                    | Force reply             |
 | `ReplyKeyboardRemove`           | Remove custom keyboard  |
-| `KeyboardButton`               | text / request_location / request_contact / request_poll |
-| `InlineKeyboardButton`         | text / callback_data / url |
+| `KeyboardButton`               | text / request_location / request_contact / request_poll / web_app |
+| `InlineKeyboardButton`         | text / callback_data / url / web_app |
+| `WebAppInfo`                   | url |
 
 Metadata `reply_markup` takes precedence over the card-generated inline keyboard. Raw arrays also accepted for power users.
 

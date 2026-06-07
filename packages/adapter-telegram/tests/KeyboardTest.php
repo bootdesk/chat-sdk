@@ -9,6 +9,7 @@ use BootDesk\ChatSDK\Telegram\Keyboard\KeyboardButton;
 use BootDesk\ChatSDK\Telegram\Keyboard\KeyboardButtonPollType;
 use BootDesk\ChatSDK\Telegram\Keyboard\ReplyKeyboardMarkup;
 use BootDesk\ChatSDK\Telegram\Keyboard\ReplyKeyboardRemove;
+use BootDesk\ChatSDK\Telegram\Keyboard\WebAppInfo;
 use PHPUnit\Framework\TestCase;
 
 class KeyboardTest extends TestCase
@@ -146,5 +147,29 @@ class KeyboardTest extends TestCase
     {
         $markup = new ReplyKeyboardRemove(selective: true);
         $this->assertSame(['remove_keyboard' => true, 'selective' => true], $markup->toArray());
+    }
+
+    public function test_web_app_info(): void
+    {
+        $app = new WebAppInfo('https://example.com/app');
+        $this->assertSame(['url' => 'https://example.com/app'], $app->toArray());
+    }
+
+    public function test_inline_keyboard_button_with_web_app(): void
+    {
+        $btn = new InlineKeyboardButton('Open App', webApp: new WebAppInfo('https://example.com/app'));
+        $this->assertSame(
+            ['text' => 'Open App', 'web_app' => ['url' => 'https://example.com/app']],
+            $btn->toArray(),
+        );
+    }
+
+    public function test_keyboard_button_with_web_app(): void
+    {
+        $btn = new KeyboardButton('Open App', webApp: new WebAppInfo('https://example.com/app'));
+        $this->assertSame(
+            ['text' => 'Open App', 'web_app' => ['url' => 'https://example.com/app']],
+            $btn->toArray(),
+        );
     }
 }

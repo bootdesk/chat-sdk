@@ -125,7 +125,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Cross-platform per-user message persistence. Requires an
-    | identity resolver bound to 'chat.identity' in a service provider.
+    | IdentityResolver bound to the container (IdentityResolver::class).
     |
     */
     'transcripts' => null,

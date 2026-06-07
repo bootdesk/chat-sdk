@@ -45,7 +45,7 @@ jobs:
         if: inputs.action == 'release'
         run: |
           VERSION="${{ inputs.version }}"
-          CARET="^$VERSION"
+          CARET="$VERSION"
           for file in packages/*/composer.json; do
             jq --arg ver "$VERSION" --arg req "$CARET" '
               .version = $ver |
@@ -62,7 +62,7 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           for file in packages/js-web-adapter-*/package.json packages/chat-widget-*/package.json; do
-            jq --arg ver "$VERSION" --arg req "^$VERSION" '
+            jq --arg ver "$VERSION" --arg req "$VERSION" '
               .version = $ver |
               .peerDependencies |= with_entries(
                 if .key | startswith("@bootdesk/") then

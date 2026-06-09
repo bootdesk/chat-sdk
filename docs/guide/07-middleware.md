@@ -200,14 +200,19 @@ Sent middleware runs after `Thread::post()`, `Thread::edit()`, and `Thread::post
 
 ## Middleware Order
 
-Middleware runs in the order they were added:
+Middleware runs in the order they were added, but you can control execution order with the optional `$priority` parameter. **Higher priority values execute earlier** in the chain:
 
 ```php
 $chat
-    ->addReceivingMiddleware($first)
-    ->addReceivingMiddleware($second);
-// $first runs before $second
+    ->addReceivingMiddleware($auditLog, priority: 100)  // runs first
+    ->addReceivingMiddleware($transform, priority: 50)   // runs second
+    ->addReceivingMiddleware($default, priority: 0)      // runs third
+    ->addReceivingMiddleware($fallback, priority: -100);  // runs last
 ```
+
+All six middleware types support the `priority` parameter: `addWebhookMiddleware`, `addReceivingMiddleware`, `addSendingMiddleware`, `addSentMiddleware`, `addHeardMiddleware`, `addWebhookEventMiddleware`.
+
+When no priority is given (or priorities are equal), middlewares run in the order they were added (insertion order is stable). The built-in `TranscriptSentMiddleware` is registered at priority `-100`, so user-registered sent middleware runs before it by default.
 
 ## Pipeline Execution Order
 

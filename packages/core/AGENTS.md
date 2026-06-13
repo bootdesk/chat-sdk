@@ -67,6 +67,19 @@ Framework-agnostic PHP Chat SDK core. Namespace: `BootDesk\ChatSDK\Core`
 - `Support/Arr` / `Support/Str` — polyfill helpers
 - `Support/NullFileUploadConverter` — default `FileUploadConverter` that throws `AdapterException`
 
+## emoji
+- `data/emoji.json` — 94-entry emoji map with slack/gchat/github formats per normalized name
+- `Support/EmojiValue` — singleton immutable value object with `get(string): self`, `__toString()`, `toJson()`
+- `Support/EmojiResolver` — platform↔normalized conversion; loads from emoji.json at runtime
+  - `fromSlack()`, `toSlack()`, `fromGChat()`, `toGChat()`, `fromTeams()`, `toDiscord()`, `fromGithub()`, `toGithub()`
+  - `matches(rawEmoji, normalized): bool` — check equivalence across formats
+  - `extend(array $customMap): void` — add/override mappings
+  - `static convertPlaceholders(text, platform, ?resolver): string` — replace `{{emoji:name}}` with platform format
+  - `static default(): self` — singleton loaded from emoji.json
+- Adapters auto-normalize `emoji` field in `ReactionEvent`; `rawEmoji` preserves original
+- Adapters auto-convert `{{emoji:...}}` placeholders in outgoing message text via `convertPlaceholders()`
+- Slack/Discord/Telegram/Messenger/WhatsApp/Instagram all accept optional `?EmojiResolver $emojiResolver = null` constructor param
+
 ## attachments
 - `Attachment` — URL-based media value object (type, url, name, mimeType, size, fetchData, fetchMetadata)
 - `FileUpload` — binary file upload value object (data, filename, mimeType); supports resource or string data

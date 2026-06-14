@@ -42,6 +42,9 @@
         <testsuite name="Telnyx">
             <directory>packages/adapter-telnyx/tests</directory>
         </testsuite>
+        <testsuite name="Twilio">
+            <directory>packages/adapter-twilio/tests</directory>
+        </testsuite>
         <testsuite name="BotmanCompat">
             <directory>packages/botman-compat/tests</directory>
         </testsuite>
@@ -60,6 +63,7 @@
             <directory>packages/adapter-github/src</directory>
             <directory>packages/adapter-linear/src</directory>
             <directory>packages/adapter-telnyx/src</directory>
+            <directory>packages/adapter-twilio/src</directory>
             <directory>packages/botman-compat/src</directory>
         </include>
     </source>

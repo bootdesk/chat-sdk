@@ -139,6 +139,27 @@ $thread->post(new PostableMessage(
 
 This sends `"attachment": {"type": "like_heart"}` to Instagram's API.
 
+## Attachment Rehydration
+
+Some platforms (Slack, Telegram, WhatsApp, Twilio) don't expose publicly accessible download URLs. Their attachments carry platform-specific IDs (`file_id`, `media_id`) or authenticated URLs (`url_private`). The SDK supports lazy binary download via `Attachment::read()`, but `fetchData` callables don't survive serialization.
+
+Adapters implementing `MustRehydrateAttachments` restore `fetchData` after queue deserialization:
+
+```
+Webhook → parseWebhook() → Attachment(fetchData: [$adapter, 'fetchMedia'])
+  → queue serialization → __serialize() strips fetchData
+  → queue deserialization → __unserialize() sets fetchData = null
+  → Chat::dispatchIncomingMessage() checks instanceof MustRehydrateAttachments
+  → rehydrateAttachment() restores fetchData via withFetchOptions()
+  → user code calls read() → downloads binary
+```
+
+Use `withFetchOptions()` to swap `fetchData` without rebuilding the full Attachment:
+
+```php
+return $attachment->withFetchOptions(fetchData: [$this, 'fetchMedia'], fetchMetadata: ['file_id' => $fileId]);
+```
+
 ## WhatsApp Template Names
 
 Templates using `{{first_name}}` require calling `->named()`:

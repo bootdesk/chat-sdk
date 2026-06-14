@@ -38,6 +38,14 @@ Examples:
 - `telegram:-456:789`
 - `discord:987:654`
 
+### Attachment
+
+Media value object with `type`, `url`, `name`, `mimeType`, `size`, `width`, `height`, optional `fetchData` callable, and optional `fetchMetadata` array.
+
+- `read(): ?StreamInterface` — lazily downloads binary via `fetchData` if set
+- `withFetchOptions(callable $fetchData, ?array $fetchMetadata = null): self` — immutable clone that swaps `fetchData`/`fetchMetadata` while preserving all other fields
+- `__serialize` strips `fetchData` (not serializable); `__unserialize` sets it to `null`. Adapters implementing `MustRehydrateAttachments` restore it via `rehydrateAttachment()`
+
 ### Message
 
 Immutable incoming message value object. Contains `id`, `threadId`, `author`, `text`, `attachments`, `isMention`, `isDM`, and an optional `price` (`?Money\Money`) for platforms that report per-message cost.

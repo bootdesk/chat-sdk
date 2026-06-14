@@ -26,6 +26,7 @@ Framework-agnostic PHP Chat SDK core. Namespace: `BootDesk\ChatSDK\Core`
 - `SupportsEditMessages` / `SupportsDeleteMessages` — marker contracts for adapters that support editing/deleting messages (use `instanceof` instead of catching exceptions)
 - `AdapterHasMessagingWindow` — optional adapter contract for platforms with limited messaging windows (e.g., WhatsApp 24h)
 - `RequiresSyncResponse` / `RequiresAsyncResponse` — marker contracts declaring adapter's sync/async preference for concurrency handling
+- `MustRehydrateAttachments` — adapter contract for auto-rehydrating `Attachment::fetchData` after queue deserialization. `Chat::dispatchIncomingMessage()` checks this interface and calls `rehydrateAttachment()` on each attachment.
 
 ## architecture notes
 - Thread IDs are canonical: `"{adapter}:{platformChannelId}:{platformThreadId}"`
@@ -82,6 +83,10 @@ Framework-agnostic PHP Chat SDK core. Namespace: `BootDesk\ChatSDK\Core`
 
 ## attachments
 - `Attachment` — URL-based media value object (type, url, name, mimeType, size, fetchData, fetchMetadata)
+- `Attachment::fetchData` — typed `(callable(Attachment): StreamInterface)|null` via PHPDoc. Constructor rejects non-null, non-callable values. Stores `[$adapter, 'fetchMedia']` pattern (no closures) for serialization safety.
+- `Attachment::read(): ?StreamInterface` — calls `($this->fetchData)($this)` if fetchData is set. Returns PSR-7 StreamInterface for reading attachment body.
+- `Attachment::__serialize()` — excludes `fetchData` (not serializable). Only `fetchMetadata` survives serialization.
+- `Attachment::__unserialize()` — restores props, sets `fetchData = null`. Adapter's `MustRehydrateAttachments::rehydrateAttachment()` restores it after deserialization.
 - `FileUpload` — binary file upload value object (data, filename, mimeType); supports resource or string data
 - `FileUpload::fromFilename(string $path)` — factory that opens file, infers MIME via `mime_content_type()`
 - Adapters with native upload support (Slack, Telegram, Discord) handle `FileUpload` directly

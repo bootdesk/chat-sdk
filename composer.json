@@ -2,7 +2,7 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "bootdesk/chat-sdk",
     "type": "library",
-    "description": "Multi-platform chat bot SDK for PHP — Slack, Telegram, WhatsApp, Discord, Messenger, Web, GitHub, Linear, Telnyx + Laravel integration + BotMan compatibility",
+    "description": "Multi-platform chat bot SDK for PHP — Slack, Telegram, WhatsApp, Discord, Messenger, Web, GitHub, Linear, Telnyx, Twilio + Laravel integration + BotMan compatibility",
     "require": {
         "php": ">=8.2",
         "psr/http-client": "^1.0",
@@ -39,6 +39,7 @@
             "BootDesk\\ChatSDK\\GitHub\\": "packages/adapter-github/src/",
             "BootDesk\\ChatSDK\\Linear\\": "packages/adapter-linear/src/",
             "BootDesk\\ChatSDK\\Telnyx\\": "packages/adapter-telnyx/src/",
+            "BootDesk\\ChatSDK\\Twilio\\": "packages/adapter-twilio/src/",
             "BotMan\\BotMan\\": "packages/botman-compat/src/"
         },
         "files": [
@@ -51,6 +52,7 @@
             "packages/adapter-github/src/register.php",
             "packages/adapter-linear/src/register.php",
             "packages/adapter-telnyx/src/register.php",
+            "packages/adapter-twilio/src/register.php",
             "packages/adapter-web/src/register.php"
         ]
     },
@@ -68,6 +70,7 @@
             "BootDesk\\ChatSDK\\GitHub\\Tests\\": "packages/adapter-github/tests/",
             "BootDesk\\ChatSDK\\Linear\\Tests\\": "packages/adapter-linear/tests/",
             "BootDesk\\ChatSDK\\Telnyx\\Tests\\": "packages/adapter-telnyx/tests/",
+            "BootDesk\\ChatSDK\\Twilio\\Tests\\": "packages/adapter-twilio/tests/",
             "BotMan\\BotMan\\Tests\\": "packages/botman-compat/tests/"
         },
         "files": [

@@ -8,195 +8,20 @@ use BootDesk\ChatSDK\Core\Channel;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\Conversations\Conversation;
 use BootDesk\ChatSDK\Core\Conversations\ConversationState;
-use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\MessageContext;
 use BootDesk\ChatSDK\Core\ReactionEvent;
 use BootDesk\ChatSDK\Core\SlashCommandEvent;
+use BootDesk\ChatSDK\Core\Tests\Conversations\ActionAwareConversation;
+use BootDesk\ChatSDK\Core\Tests\Conversations\NoInterceptConversation;
+use BootDesk\ChatSDK\Core\Tests\Conversations\PauseParentConversation;
+use BootDesk\ChatSDK\Core\Tests\Conversations\RepeatConversation;
+use BootDesk\ChatSDK\Core\Tests\Conversations\SkipConversation;
+use BootDesk\ChatSDK\Core\Tests\Conversations\StartConversation;
+use BootDesk\ChatSDK\Core\Tests\Conversations\TestConversation;
 use BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;
 use BootDesk\ChatSDK\Core\Tests\Helpers\MockAdapter;
 use BootDesk\ChatSDK\Core\Thread;
 use PHPUnit\Framework\TestCase;
-
-class TestConversation extends Conversation
-{
-    public array $log = [];
-
-    public function run(Thread $thread, Message $message): void
-    {
-        $this->log[] = 'run';
-        $this->ask('What is your name?', 'askEmail');
-    }
-
-    public function askEmail(Thread $thread, Message $message): void
-    {
-        $this->log[] = "name:{$message->text}";
-        $this->ask("Hi {$message->text}! What is your email?", 'confirm', ['name' => $message->text]);
-    }
-
-    public function confirm(Thread $thread, Message $message): void
-    {
-        $state = ConversationState::get($thread);
-        $this->log[] = "email:{$message->text}";
-        $this->log[] = 'data:'.json_encode($state['data']);
-        $this->say('Done!');
-        $this->end();
-    }
-}
-
-class SkipConversation extends Conversation
-{
-    public array $log = [];
-
-    public function run(Thread $thread, Message $message): void
-    {
-        $this->log[] = 'run';
-        $this->ask('First question?', 'stepOne');
-    }
-
-    public function stepOne(Thread $thread, Message $message): void
-    {
-        $this->log[] = 'stepOne';
-        $this->skip('stepThree', $message, ['skipped' => true]);
-    }
-
-    public function stepThree(Thread $thread, Message $message): void
-    {
-        $this->log[] = 'stepThree';
-        $this->say('Skipped to three!');
-        $this->end();
-    }
-}
-
-class RepeatConversation extends Conversation
-{
-    public array $log = [];
-
-    public function run(Thread $thread, Message $message): void
-    {
-        $this->log[] = 'run';
-        $this->ask('What color?', 'handleColor');
-    }
-
-    public function handleColor(Thread $thread, Message $message): void
-    {
-        $this->log[] = "color:{$message->text}";
-        $this->repeat();
-    }
-}
-
-class StartConversation extends Conversation
-{
-    public array $log = [];
-
-    public array $innerData = [];
-
-    public function run(Thread $thread, Message $message): void
-    {
-        $this->log[] = 'outer-run';
-        $this->startConversation(InnerConversation::class, $message);
-    }
-}
-
-class InnerConversation extends Conversation
-{
-    public array $log = [];
-
-    public function run(Thread $thread, Message $message): void
-    {
-        $this->log[] = 'inner-run';
-        $this->say('Inner started');
-        $this->end();
-    }
-}
-
-class PauseParentConversation extends Conversation
-{
-    public array $log = [];
-
-    public function run(Thread $thread, Message $message): void
-    {
-        $this->log[] = 'parent-run';
-        $this->ask('Parent question?', 'pausePoint');
-    }
-
-    public function pausePoint(Thread $thread, Message $message): void
-    {
-        $this->log[] = 'pausePoint';
-        $this->pause(PauseChildConversation::class, $message);
-    }
-}
-
-class PauseChildConversation extends Conversation
-{
-    public array $log = [];
-
-    public function run(Thread $thread, Message $message): void
-    {
-        $this->log[] = 'child-run';
-        $this->say('Child running');
-        $this->end();
-    }
-}
-
-class ActionAwareConversation extends Conversation
-{
-    public bool $actionHandled = false;
-
-    public bool $slashHandled = false;
-
-    public bool $reactionHandled = false;
-
-    public array $log = [];
-
-    public function run(Thread $thread, Message $message): void
-    {
-        $this->log[] = 'run';
-        $this->ask('Pick one', 'handleChoice');
-    }
-
-    public function handleChoice(Thread $thread, Message $message): void
-    {
-        $this->log[] = "choice:{$message->text}";
-    }
-
-    public function onAction(Thread $thread, ActionEvent $action): ?bool
-    {
-        $this->actionHandled = true;
-
-        return true;
-    }
-
-    public function onSlashCommand(Thread $thread, SlashCommandEvent $command): ?bool
-    {
-        $this->slashHandled = true;
-
-        return true;
-    }
-
-    public function onReaction(Thread $thread, ReactionEvent $reaction): ?bool
-    {
-        $this->reactionHandled = true;
-
-        return true;
-    }
-}
-
-class NoInterceptConversation extends Conversation
-{
-    public bool $actionFallthrough = false;
-
-    public function run(Thread $thread, Message $message): void
-    {
-        $this->ask('Question?', 'step');
-    }
-
-    public function step(Thread $thread, Message $message): void {}
-
-    public function onAction(Thread $thread, ActionEvent $action): ?bool
-    {
-        return null;
-    }
-}
 
 class ConversationTest extends TestCase
 {
@@ -297,7 +122,6 @@ class ConversationTest extends TestCase
 
     public function test_repeat_reposts_last_question(): void
     {
-        $conv = new RepeatConversation;
         $msg = \BootDesk\ChatSDK\Core\Tests\Helpers\createTestMessage(text: 'red', threadId: 'mock:C123:conv');
 
         ConversationState::save($this->thread, [
@@ -347,7 +171,6 @@ class ConversationTest extends TestCase
 
         $this->chat->conversationManager->intercept($this->thread, $msg);
 
-        // Check that the skipped-to step had merged data
         $state = ConversationState::get($this->thread);
         $this->assertEmpty($state); // ended
     }
@@ -420,7 +243,6 @@ class ConversationTest extends TestCase
     public function test_end_clears_state_without_stack(): void
     {
         $msg = \BootDesk\ChatSDK\Core\Tests\Helpers\createTestMessage(threadId: 'mock:C123:conv');
-        $conv = new TestConversation;
 
         ConversationState::save($this->thread, [
             'class' => TestConversation::class,
@@ -509,7 +331,7 @@ class ConversationTest extends TestCase
         $this->assertTrue($consumed);
     }
 
-    public function test_intercept_action_fallthrough(): void
+    public function test_intercept_action_fallthrough_routes_as_message(): void
     {
         ConversationState::save($this->thread, [
             'class' => NoInterceptConversation::class,
@@ -527,8 +349,10 @@ class ConversationTest extends TestCase
             raw: null,
         );
 
+        // When onAction returns null, the action is routed through the message
+        // pipeline as a synthetic message — still consumed by conversation
         $consumed = $this->chat->conversationManager->interceptAction($this->thread, $actionEvent);
-        $this->assertFalse($consumed);
+        $this->assertTrue($consumed);
     }
 
     // ─── Non-message intercepts: slash command consumed ──────────

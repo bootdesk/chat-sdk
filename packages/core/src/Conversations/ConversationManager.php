@@ -150,7 +150,25 @@ class ConversationManager
 
         $result = $conv->$method($thread, $event);
 
-        return $result === true;
+        if ($result === true) {
+            return true;
+        }
+
+        // Not consumed by the conversation — route through message pipeline
+        // with a synthetic message so card button clicks work with ask()
+        if ($event instanceof ActionEvent) {
+            $synthetic = new Message(
+                id: 'action_'.$thread->id,
+                threadId: $thread->id,
+                author: new Author(id: $event->user->id),
+                text: $event->value ?? $event->actionId,
+                raw: $event->raw,
+            );
+
+            return $this->intercept($thread, $synthetic);
+        }
+
+        return false;
     }
 
     /**

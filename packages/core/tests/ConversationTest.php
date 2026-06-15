@@ -349,10 +349,15 @@ class ConversationTest extends TestCase
             raw: null,
         );
 
-        // When onAction returns null, the action is routed through the message
-        // pipeline as a synthetic message — still consumed by conversation
+        // When onAction returns null, interceptAction returns false and stores
+        // a synthetic message for the caller to route through message pipeline
         $consumed = $this->chat->conversationManager->interceptAction($this->thread, $actionEvent);
-        $this->assertTrue($consumed);
+        $this->assertFalse($consumed);
+
+        $synthetic = $this->chat->conversationManager->consumePendingSyntheticMessage();
+        $this->assertNotNull($synthetic);
+        $this->assertSame('no', $synthetic->text);
+        $this->assertSame($this->thread->id, $synthetic->threadId);
     }
 
     // ─── Non-message intercepts: slash command consumed ──────────

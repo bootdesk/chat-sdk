@@ -34,7 +34,7 @@ Framework-agnostic PHP Chat SDK core. Namespace: `BootDesk\ChatSDK\Core`
 - `Strategy` enum: `Drop`, `Queue`, `Debounce`, `Concurrent` — config key `concurrency` maps to these.
 - `RequiresSyncResponse` adapters always process inline (WebAdapter, DiscordAdapter). `RequiresAsyncResponse` adapters always defer to async (Slack, Telegram, Meta platforms). No marker = adaptive (inline when no contention, strategy on contention).
 - Deduplication via `StateAdapter::setIfNotExists` (300s TTL)
-- Event system: ReactionEvent, ActionEvent, SlashCommandEvent, ModalSubmitEvent, ModalCloseEvent, OptionsLoadEvent, AssistantThreadStartedEvent, AssistantContextChangedEvent, AppHomeOpenedEvent, MemberJoinedChannelEvent
+- Event system: ReactionEvent, ActionEvent, SlashCommandEvent, ModalSubmitEvent, ModalCloseEvent, OptionsLoadEvent, AssistantThreadStartedEvent, AssistantContextChangedEvent, AppHomeOpenedEvent, MemberJoinedChannelEvent, MessageCostEvent, UnsupportedOperationEvent
 - `ActionEvent` and `SlashCommandEvent` have `openModal(Modal $modal)` via `OpensModals` trait
 - `ReactionEvent` has `added: bool` and `rawEmoji: string` properties
 

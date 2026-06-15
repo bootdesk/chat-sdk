@@ -371,6 +371,24 @@ Called once per event in a batched webhook, before dispatch. The middleware rece
 
 All 3 events are processed (not just the first).
 
+## Unsupported Operations
+
+Platforms sometimes send webhook payloads the SDK doesn't handle (e.g., Telegram `business_connection`, GitHub ping, unrecognized Meta messaging events). Instead of silently dropping or crashing, the SDK fires `UnsupportedOperationEvent`:
+
+```php
+$chat->listen(UnsupportedOperationEvent::class, function (UnsupportedOperationEvent $e) {
+    Log::info('Unsupported webhook from ' . $e->adapterName);
+    // $e->payload contains the raw decoded body
+});
+```
+
+**How it fires:**
+
+- **Non-batched adapters** (Telegram, GitHub, Linear, Telnyx, Twilio): `parseWebhook()` throws `UnsupportedOperationException` when it can't handle the payload. `Chat::handleWebhook()` catches it, extracts the raw body, and dispatches the event.
+- **Batched adapters** (WhatsApp, Messenger, Instagram): `parseBatchedWebhook()` yields `WebhookEvent::TYPE_UNSUPPORTED` for unrecognized entries inside the changes/messaging loop.
+
+The adapter continues to return a 200 OK response — the platform knows the webhook was delivered.
+
 ## Webhook Verification Challenges
 
 Platforms verify webhooks differently:

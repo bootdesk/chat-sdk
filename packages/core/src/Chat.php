@@ -33,6 +33,7 @@ use BootDesk\ChatSDK\Core\Events\ListenerProvider;
 use BootDesk\ChatSDK\Core\Events\MentionEvent;
 use BootDesk\ChatSDK\Core\Events\SubscribedEvent;
 use BootDesk\ChatSDK\Core\Exceptions\ResourceNotFoundException;
+use BootDesk\ChatSDK\Core\Exceptions\UnsupportedOperationException;
 use BootDesk\ChatSDK\Core\Middleware\MiddlewareDispatcher;
 use BootDesk\ChatSDK\Core\Transcript\DefaultTranscriptsApi;
 use BootDesk\ChatSDK\Core\Transcript\TranscriptSentMiddleware;
@@ -1250,7 +1251,24 @@ class Chat
                     }
                 }
 
-                $message = $adapter->parseWebhook($request);
+                try {
+                    $message = $adapter->parseWebhook($request);
+                } catch (UnsupportedOperationException $e) {
+                    try {
+                        $request->getBody()->rewind();
+                        $rawBody = (string) $request->getBody();
+                    } catch (\Throwable) {
+                        $rawBody = '';
+                    }
+
+                    $this->dispatch(new UnsupportedOperationEvent(
+                        adapterName: $adapter->getName(),
+                        payload: json_decode($rawBody, true) ?? $rawBody,
+                    ));
+
+                    return $this->webhookResponse($adapter);
+                }
+
                 $this->processMessage($adapter, $message->threadId, $message, $request);
 
                 return $this->webhookResponse($adapter);
@@ -1315,6 +1333,11 @@ class Chat
                 raw: $event->payload['raw'] ?? null,
                 originId: $event->originId,
             ),
+            WebhookEvent::TYPE_UNSUPPORTED => $this->dispatch(new UnsupportedOperationEvent(
+                adapterName: $adapter->getName(),
+                payload: $event->payload,
+                threadId: $event->threadId,
+            )),
         };
     }
 

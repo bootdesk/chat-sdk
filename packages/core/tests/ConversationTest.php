@@ -356,7 +356,8 @@ class ConversationTest extends TestCase
 
         $synthetic = $this->chat->conversationManager->consumePendingSyntheticMessage();
         $this->assertNotNull($synthetic);
-        $this->assertSame('no', $synthetic->text);
+        $this->assertSame('btn_no', $synthetic->text);
+        $this->assertSame('no', $synthetic->extras['action_value']);
         $this->assertSame($this->thread->id, $synthetic->threadId);
     }
 

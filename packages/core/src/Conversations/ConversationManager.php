@@ -177,9 +177,12 @@ class ConversationManager
                 id: 'action_'.uniqid(),
                 threadId: $thread->id,
                 author: new Author(id: $event->user->id),
-                text: $event->triggerId ?? $event->value ?? $event->actionId,
+                text: $event->triggerId ?? $event->actionId,
                 raw: $event->raw,
             );
+
+            $this->pendingSyntheticMessage->extras['action_value'] = $event->value;
+            $this->pendingSyntheticMessage->extras['action_id'] = $event->actionId;
         }
 
         return false;

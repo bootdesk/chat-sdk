@@ -236,6 +236,51 @@ $adapter->editMessage('telegram:12345', '100', new PostableMessage(
 ));
 ```
 
+## Thread Info & Editing
+
+Fetch thread details (forum topic or chat info):
+
+```php
+use BootDesk\ChatSDK\Core\ThreadInfo;
+
+// Forum topic — calls getForumTopic API
+$info = $adapter->fetchThread('telegram:-100123:42');
+echo $info->title; // "General Discussion"
+echo $info->iconCustomEmojiId; // "emoji123"
+
+// Regular chat — calls getChat API
+$info = $adapter->fetchThread('telegram:-100456');
+echo $info->title; // "Project Chat"
+echo $info->topic; // "For project discussions"
+```
+
+Edit thread properties with `ThreadInfo::withParameters()`:
+
+```php
+// Rename a forum topic
+$adapter->editThread('telegram:-100123:42', new ThreadInfo(
+    id: 'telegram:-100123:42',
+    channelId: '-100123',
+    title: 'Renamed Topic',
+));
+
+// Or use withParameters from existing info
+$info = $adapter->fetchThread('telegram:-100123:42');
+$adapter->editThread($info->id, $info->withParameters([
+    'title' => 'Updated Name',
+    'iconCustomEmojiId' => null,
+]));
+```
+
+Supported operations per context:
+
+| Context | Update method | Fields |
+|---------|---------------|--------|
+| Forum topic | `editForumTopic` | `title`, `iconCustomEmojiId` |
+| Forum topic | `closeForumTopic` / `reopenForumTopic` | `isArchived` |
+| Group/supergroup | `setChatTitle` | `title` |
+| Group/supergroup | `setChatDescription` | `topic` |
+
 ## Deleting Messages
 
 ```php
@@ -278,6 +323,7 @@ Raw arrays are also accepted in `metadata.reply_markup` for power users.
 | Bot commands         | ✓         |
 | Group chats          | ✓         |
 | Topic forums         | ✓         |
+| Thread info & edit   | ✓         |
 
 ## Webhook
 

@@ -81,8 +81,16 @@ Add capabilities by implementing optional contracts:
 | `HandlesOptionsLoad`        | Parse external select queries               |
 | `SupportsEditMessages`      | Support editing sent messages               |
 | `SupportsDeleteMessages`    | Support deleting sent messages              |
+| `SupportsEditThread`        | Support editing thread/forum/channel info   |
 | `AdapterHasMessagingWindow` | Support 24h messaging windows               |
 | `SupportsModals`            | Support opening modals (Slack-only for now) |
+
+Composite interfaces (in `BootDesk\ChatSDK\Core\Contracts\CompositeInterfaces`) group related contracts:
+
+| Composite                | Extends                                              |
+| ------------------------ | ---------------------------------------------------- |
+| `HandlesInteractions`    | `HandlesActions`, `HandlesReactions`, `HandlesSlashCommands` |
+| `SupportsMessageMutability` | `SupportsEditMessages`, `SupportsDeleteMessages`, `SupportsEditThread` |
 
 **Note:** Even if you don't implement a contract, the `Adapter` interface requires all methods (e.g., `editMessage`, `deleteMessage`). Throw `AdapterException` for unsupported operations.
 

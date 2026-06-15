@@ -56,7 +56,6 @@ Framework-agnostic PHP Chat SDK core. Namespace: `BootDesk\ChatSDK\Core`
   `intercept(thread, message)` calls stored step, loops for skip chains
   (max depth 10). `interceptAction/Reaction/SlashCommand()` check active
   conv before event dispatch.
-- `Conversations/AskResponse` — deprecated (no longer returned by `ask()`).
 - `Conversations/ConversationState` — static helpers for state
   read/write/clear under the `_conversation` key.
 

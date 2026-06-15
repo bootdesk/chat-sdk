@@ -501,6 +501,10 @@ class Chat
             originId: $originId,
         );
 
+        if ($this->conversationManager->interceptReaction($thread, $event)) {
+            return;
+        }
+
         $this->dispatch($event);
     }
 
@@ -527,6 +531,10 @@ class Chat
             raw: $raw,
             originId: $originId,
         );
+
+        if ($this->conversationManager->interceptAction($thread, $event)) {
+            return;
+        }
 
         $this->dispatch($event);
     }
@@ -642,6 +650,10 @@ class Chat
             raw: $raw,
             triggerId: $triggerId,
         );
+
+        if ($this->conversationManager->interceptSlashCommand($thread, $event)) {
+            return;
+        }
 
         $this->dispatch($event);
     }

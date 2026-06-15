@@ -161,7 +161,7 @@ class ConversationManager
                 id: 'action_'.$thread->id,
                 threadId: $thread->id,
                 author: new Author(id: $event->user->id),
-                text: $event->value ?? $event->actionId,
+                text: $event->triggerId ?? $event->value ?? $event->actionId,
                 raw: $event->raw,
             );
 

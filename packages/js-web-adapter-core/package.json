@@ -1,6 +1,6 @@
 {
   "name": "@bootdesk/js-web-adapter-core",
-  "version": "0.4.21",
+  "version": "0.4.22",
   "description": "Core JavaScript SDK for BootDesk Chat SDK WebAdapter",
   "repository": "https://github.com/bootdesk/chat-sdk",
   "type": "module",

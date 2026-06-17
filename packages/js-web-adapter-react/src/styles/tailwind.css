@@ -1,3 +1,184 @@
+/* ── Scoped reset (Tailwind preflight equivalent, no host leakage) ──
+     Placed before @tailwind so component classes override, not reversed.
+──*/
+.bdesk-widget,
+.bdesk-widget *,
+.bdesk-widget ::before,
+.bdesk-widget ::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: currentColor;
+}
+
+.bdesk-widget ::before,
+.bdesk-widget ::after {
+  --tw-content: '';
+}
+
+.bdesk-widget {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -moz-tab-size: 4;
+  tab-size: 4;
+  font-family: var(--chat-font-family);
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+  -webkit-tap-highlight-color: transparent;
+  margin: 0;
+}
+
+.bdesk-widget :where(hr) {
+  height: 0;
+  color: inherit;
+  border-top-width: 1px;
+}
+
+.bdesk-widget :where(h1, h2, h3, h4, h5, h6) {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.bdesk-widget :where(a) {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+.bdesk-widget :where(b, strong) {
+  font-weight: bolder;
+}
+
+.bdesk-widget :where(code, kbd, samp, pre) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 1em;
+}
+
+.bdesk-widget :where(small) {
+  font-size: 80%;
+}
+
+.bdesk-widget :where(sub, sup) {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+.bdesk-widget :where(sub) {
+  bottom: -0.25em;
+}
+
+.bdesk-widget :where(sup) {
+  top: -0.5em;
+}
+
+.bdesk-widget :where(table) {
+  text-indent: 0;
+  border-color: inherit;
+  border-collapse: collapse;
+}
+
+.bdesk-widget :where(button, input, optgroup, select, textarea) {
+  font-family: inherit;
+  font-feature-settings: inherit;
+  font-variation-settings: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+.bdesk-widget :where(button, select) {
+  text-transform: none;
+}
+
+.bdesk-widget :where(button, input:where([type='button']), input:where([type='reset']), input:where([type='submit'])) {
+  -webkit-appearance: button;
+  background-color: transparent;
+  background-image: none;
+}
+
+.bdesk-widget :where(progress) {
+  vertical-align: baseline;
+}
+
+.bdesk-widget :where(input)::-webkit-inner-spin-button,
+.bdesk-widget :where(input)::-webkit-outer-spin-button {
+  height: auto;
+}
+
+.bdesk-widget :where(input[type='search']) {
+  -webkit-appearance: textfield;
+  outline-offset: -2px;
+}
+
+.bdesk-widget :where(input)::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+.bdesk-widget :where(input)::-webkit-file-upload-button {
+  -webkit-appearance: button;
+  font: inherit;
+}
+
+.bdesk-widget :where(summary) {
+  display: list-item;
+}
+
+.bdesk-widget :where(blockquote, dl, dd, h1, h2, h3, h4, h5, h6, hr, figure, p, pre) {
+  margin: 0;
+}
+
+.bdesk-widget :where(fieldset) {
+  margin: 0;
+  padding: 0;
+}
+
+.bdesk-widget :where(legend) {
+  padding: 0;
+}
+
+.bdesk-widget :where(ol, ul, menu) {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bdesk-widget :where(textarea) {
+  resize: vertical;
+}
+
+.bdesk-widget :where(input)::placeholder,
+.bdesk-widget :where(textarea)::placeholder {
+  opacity: 1;
+  color: var(--chat-text-secondary);
+}
+
+.bdesk-widget :where(button, [role="button"]) {
+  cursor: pointer;
+}
+
+.bdesk-widget :where(:disabled) {
+  cursor: default;
+}
+
+.bdesk-widget :where(img, svg, video, canvas, audio, iframe, embed, object) {
+  display: block;
+  vertical-align: middle;
+}
+
+.bdesk-widget :where(img, video) {
+  max-width: 100%;
+  height: auto;
+}
+
+.bdesk-widget :where([hidden]:not([hidden="until-found"])) {
+  display: none;
+}
+
 @tailwind components;
 @tailwind utilities;
 
@@ -37,7 +218,6 @@
   --chat-error: #f87171;
   --chat-success: #4ade80;
 }
-
 /* ── bdesk-* component classes ── */
 .bdesk-header {
   @apply flex items-center justify-between border-b border-[var(--chat-border)] bg-[var(--chat-surface)] px-4 py-3;

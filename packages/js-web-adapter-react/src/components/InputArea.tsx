@@ -138,6 +138,7 @@ export function InputArea({
           className="bdc-input"
           data-chat-input="true"
           rows={1}
+          name="chat-message"
         />
 
         <button

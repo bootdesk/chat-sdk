@@ -102,6 +102,7 @@ export class PusherBroadcastClient implements BroadcastClient {
       "message.deleted",
       "reaction.added",
       "reaction.removed",
+      "typing.started",
     ] as const;
 
     threadEvents.forEach((eventType) => {

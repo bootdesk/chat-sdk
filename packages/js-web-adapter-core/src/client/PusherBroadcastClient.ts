@@ -23,6 +23,7 @@ export class PusherBroadcastClient implements BroadcastClient {
   private channelPrefix: string;
   private threadChannelType: "public" | "private" | "presence";
   private userChannelType: "private" | "presence";
+  private useHashChannel: boolean;
   private subscriptions: Map<string, PusherChannel> = new Map();
 
   constructor(pusher: Pusher, channelPrefix?: string, channelTypes?: ChannelTypeConfig);
@@ -35,6 +36,7 @@ export class PusherBroadcastClient implements BroadcastClient {
     this.channelPrefix = channelPrefix;
     this.threadChannelType = channelTypes?.threadChannel ?? "public";
     this.userChannelType = channelTypes?.userChannel ?? "private";
+    this.useHashChannel = channelTypes?.useHashChannel ?? false;
 
     if ("key" in pusherOrConfig) {
       const PusherCtor = (globalThis as any).Pusher ?? (globalThis as any).pusherJs;
@@ -58,6 +60,23 @@ export class PusherBroadcastClient implements BroadcastClient {
     }
   }
 
+  protected async buildResolvedChannelName(threadId: string): Promise<string> {
+    const name = this.useHashChannel ? await this.hashChannelName(threadId) : threadId;
+
+    return `${this.channelPrefix}.${name}`;
+  }
+
+  private async hashChannelName(name: string): Promise<string> {
+    if (typeof crypto?.subtle?.digest !== "function") {
+      throw new Error("Web Crypto API not available. Cannot hash channel names.");
+    }
+    const encoder = new TextEncoder();
+    const data = encoder.encode(name);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
   connect(): void {
     if (this.pusher.connection?.state !== "connected") {
       this.pusher.connect();
@@ -70,8 +89,8 @@ export class PusherBroadcastClient implements BroadcastClient {
     this.pusher.disconnect?.();
   }
 
-  subscribe(threadId: string, handlers: EventHandlers): Unsubscribe {
-    const baseName = `${this.channelPrefix}.${threadId}`;
+  async subscribe(threadId: string, handlers: EventHandlers): Promise<Unsubscribe> {
+    const baseName = await this.buildResolvedChannelName(threadId);
     const channelName = this.buildChannelName(baseName, this.threadChannelType);
     const channel = this.pusher.subscribe(channelName);
     const key = `thread:${threadId}`;
@@ -100,8 +119,12 @@ export class PusherBroadcastClient implements BroadcastClient {
     };
   }
 
-  subscribeToUser(threadId: string, userId: string, handlers: EventHandlers): Unsubscribe {
-    const baseName = `${this.channelPrefix}.${threadId}.${userId}`;
+  async subscribeToUser(
+    threadId: string,
+    userId: string,
+    handlers: EventHandlers,
+  ): Promise<Unsubscribe> {
+    const baseName = `${await this.buildResolvedChannelName(threadId)}.${userId}`;
     const channelName = this.buildChannelName(baseName, this.userChannelType);
     const channel = this.pusher.subscribe(channelName);
     const key = `user:${threadId}:${userId}`;

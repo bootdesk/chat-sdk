@@ -799,12 +799,17 @@ return [
     'channel_prefix'       => env('CHAT_BROADCASTING_CHANNEL_PREFIX', 'chat'),
     'thread_channel_type'  => env('CHAT_BROADCASTING_THREAD_CHANNEL_TYPE', 'public'),  // public|private|presence
     'user_channel_type'    => env('CHAT_BROADCASTING_USER_CHANNEL_TYPE', 'private'),   // private|presence
+    'use_hash_channel'     => env('CHAT_BROADCASTING_USE_HASH_CHANNEL', false),       // hash threadId via SHA-256
 ];
 ```
 
 Enable by binding `BroadcastAdapter::class` in a service provider. The
 `ChatFactory` reads `chat-broadcasting.enabled` and injects the bound
-adapter into each `Chat` instance.
+adapter into each `Chat` instance. The package uses `bindIf()` — your
+binding takes priority if registered first.
+
+Custom adapter: extend `LaravelBroadcastAdapter` and override
+`buildChannelName()` or `hashChannelName()` (protected).
 
 ### Commands
 

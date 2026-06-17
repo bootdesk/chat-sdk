@@ -16,12 +16,13 @@ export type Unsubscribe = () => void;
 export interface ChannelTypeConfig {
   threadChannel?: "public" | "private" | "presence";
   userChannel?: "private" | "presence";
+  useHashChannel?: boolean;
 }
 
 export interface BroadcastClient {
   connect(): void | Promise<void>;
   disconnect(): void;
-  subscribe(threadId: string, handlers: EventHandlers): Unsubscribe;
-  subscribeToUser(threadId: string, userId: string, handlers: EventHandlers): Unsubscribe;
+  subscribe(threadId: string, handlers: EventHandlers): Promise<Unsubscribe>;
+  subscribeToUser(threadId: string, userId: string, handlers: EventHandlers): Promise<Unsubscribe>;
   isConnected(): boolean;
 }

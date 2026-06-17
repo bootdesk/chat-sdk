@@ -18,6 +18,7 @@ export class LaravelEchoBroadcastClient implements BroadcastClient {
   private channelPrefix: string;
   private threadChannelType: "public" | "private" | "presence";
   private userChannelType: "private" | "presence";
+  private useHashChannel: boolean;
   private subscriptions: Map<string, EchoChannel> = new Map();
 
   constructor(echo: Echo<any>, channelPrefix: string = "chat", channelTypes?: ChannelTypeConfig) {
@@ -25,6 +26,7 @@ export class LaravelEchoBroadcastClient implements BroadcastClient {
     this.channelPrefix = channelPrefix;
     this.threadChannelType = channelTypes?.threadChannel ?? "public";
     this.userChannelType = channelTypes?.userChannel ?? "private";
+    this.useHashChannel = channelTypes?.useHashChannel ?? false;
   }
 
   private subscribeToEcho(name: string, type: "public" | "private" | "presence"): EchoChannel {
@@ -50,8 +52,25 @@ export class LaravelEchoBroadcastClient implements BroadcastClient {
     this.subscriptions.clear();
   }
 
-  subscribe(threadId: string, handlers: EventHandlers): Unsubscribe {
-    const channelName = `${this.channelPrefix}.${threadId}`;
+  protected async buildResolvedChannelName(threadId: string): Promise<string> {
+    const name = this.useHashChannel ? await this.hashChannelName(threadId) : threadId;
+
+    return `${this.channelPrefix}.${name}`;
+  }
+
+  private async hashChannelName(name: string): Promise<string> {
+    if (typeof crypto?.subtle?.digest !== "function") {
+      throw new Error("Web Crypto API not available. Cannot hash channel names.");
+    }
+    const encoder = new TextEncoder();
+    const data = encoder.encode(name);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async subscribe(threadId: string, handlers: EventHandlers): Promise<Unsubscribe> {
+    const channelName = await this.buildResolvedChannelName(threadId);
     const channel = this.subscribeToEcho(channelName, this.threadChannelType);
     const key = `thread:${threadId}`;
     this.subscriptions.set(key, channel);
@@ -78,8 +97,12 @@ export class LaravelEchoBroadcastClient implements BroadcastClient {
     };
   }
 
-  subscribeToUser(threadId: string, userId: string, handlers: EventHandlers): Unsubscribe {
-    const channelName = `${this.channelPrefix}.${threadId}.${userId}`;
+  async subscribeToUser(
+    threadId: string,
+    userId: string,
+    handlers: EventHandlers,
+  ): Promise<Unsubscribe> {
+    const channelName = `${await this.buildResolvedChannelName(threadId)}.${userId}`;
     const channel = this.subscribeToEcho(channelName, this.userChannelType);
     const key = `user:${threadId}:${userId}`;
     this.subscriptions.set(key, channel);

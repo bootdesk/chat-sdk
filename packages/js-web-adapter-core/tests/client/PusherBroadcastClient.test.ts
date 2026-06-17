@@ -75,16 +75,16 @@ describe("PusherBroadcastClient", () => {
     expect(mockPusher.pusher.connect).not.toHaveBeenCalled();
   });
 
-  it("disconnects and cleans up subscriptions", () => {
+  it("disconnects and cleans up subscriptions", async () => {
     const ch = createMockChannel();
     mockPusher.pusher.subscribe.mockReturnValue(ch);
-    client.subscribe("thread-1", {});
+    await client.subscribe("thread-1", {});
     client.disconnect();
     expect(ch.unbind_all).toHaveBeenCalled();
   });
 
-  it("subscribes to thread channel and binds events", () => {
-    const unsub = client.subscribe("thread-1", {
+  it("subscribes to thread channel and binds events", async () => {
+    const unsub = await client.subscribe("thread-1", {
       onMessagePosted: vi.fn(),
     });
 
@@ -96,8 +96,8 @@ describe("PusherBroadcastClient", () => {
     expect(mockPusher.pusher.unsubscribe).toHaveBeenCalledWith(expectedChannel);
   });
 
-  it("subscribes to user channel and binds events", () => {
-    const unsub = client.subscribeToUser("thread-1", "user-1", {
+  it("subscribes to user channel and binds events", async () => {
+    const unsub = await client.subscribeToUser("thread-1", "user-1", {
       onTypingStarted: vi.fn(),
     });
 
@@ -108,21 +108,21 @@ describe("PusherBroadcastClient", () => {
     expect(mockPusher.pusher.unsubscribe).toHaveBeenCalledWith(expectedChannel);
   });
 
-  it("uses private- prefix for private thread channels", () => {
+  it("uses private- prefix for private thread channels", async () => {
     const privateClient = new PusherBroadcastClient(mockPusher.pusher, "chat", {
       threadChannel: "private",
     });
 
-    privateClient.subscribe("thread-1", {});
+    await privateClient.subscribe("thread-1", {});
     expect(mockPusher.pusher.subscribe).toHaveBeenCalledWith(`private-chat.thread-1`);
   });
 
-  it("uses presence- prefix for presence user channels", () => {
+  it("uses presence- prefix for presence user channels", async () => {
     const presenceClient = new PusherBroadcastClient(mockPusher.pusher, "chat", {
       userChannel: "presence",
     });
 
-    presenceClient.subscribeToUser("thread-1", "user-1", {});
+    await presenceClient.subscribeToUser("thread-1", "user-1", {});
     expect(mockPusher.pusher.subscribe).toHaveBeenCalledWith(`presence-chat.thread-1.user-1`);
   });
 
@@ -132,9 +132,9 @@ describe("PusherBroadcastClient", () => {
     expect(client.isConnected()).toBe(false);
   });
 
-  it("dispatches parsed events to handlers", () => {
+  it("dispatches parsed events to handlers", async () => {
     const handler = vi.fn();
-    client.subscribe("thread-1", {
+    await client.subscribe("thread-1", {
       onMessagePosted: handler,
     });
 
@@ -159,8 +159,8 @@ describe("PusherBroadcastClient", () => {
     );
   });
 
-  it("returns unsubscribed state after unsubscribe", () => {
-    const unsub = client.subscribe("thread-1", {});
+  it("returns unsubscribed state after unsubscribe", async () => {
+    const unsub = await client.subscribe("thread-1", {});
     unsub();
 
     expect(mockPusher.pusher.unsubscribe).toHaveBeenCalled();

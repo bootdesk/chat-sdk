@@ -194,6 +194,24 @@ const client = new WebChatClient({
 });
 ```
 
+### Hashed Channel Names
+
+When threadIds contain characters incompatible with the broadcaster (Pusher only allows `[-_\.a-zA-Z0-9]`), enable hashing via `ChannelTypeConfig`:
+
+```typescript
+const broadcast = new PusherBroadcastClient(
+  { key: "pusher-key", cluster: "us2" },
+  "chat",
+  { useHashChannel: true },
+);
+```
+
+This uses the Web Crypto API (`crypto.subtle.digest("SHA-256")`) to produce a hex channel name. The same hash is computed server-side so subscriptions match.
+
+Both `PusherBroadcastClient` and `LaravelEchoBroadcastClient` expose a protected `buildResolvedChannelName(threadId: string): Promise<string>` method you can override for custom naming logic.
+
+Note: `subscribe()` and `subscribeToUser()` now return `Promise<Unsubscribe>` and must be awaited.
+
 ## HTTP Client
 
 The `HttpClient` is also exported directly:

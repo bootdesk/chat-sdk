@@ -15,6 +15,29 @@ description: >
 Guide for building chat interfaces with the BootDesk Chat SDK JavaScript
 packages.
 
+## Repository
+
+Source, examples, and tests live at **https://github.com/bootdesk/chat-sdk**.
+When in doubt about an API, grep the source — the SDK is the source of truth.
+Useful paths for this skill:
+
+- `packages/js-web-adapter-core/src/` — `client/WebChatClient.ts`,
+  `client/{Pusher,LaravelEcho}BroadcastClient.ts`, `events/`, `push/`,
+  `types/`
+- `packages/js-web-adapter-react/src/` — `components/ChatWidget.tsx`,
+  `hooks/` (useChatClient, useMessages, useStreaming, useTyping,
+  useAttachmentUpload, usePushNotifications, useBridge),
+  `cards/` (CardProvider, CardRenderer, DefaultCard, ImageCard, FileCard),
+  `i18n/`, `types/components.ts` (ChatWidgetProps, PreEntryConfig)
+- `packages/chat-widget-bridge/src/` — `useIframeBridge.ts`, `embed-chat.js`
+  (vanilla `window.ChatSDK.initialize` script), `shim.ts`
+- `examples/hello-world-laravel/` — full Laravel + React app: broadcasting,
+  pre-entry (email verification), web adapter, push, file uploads
+- `examples/react-native-app/`, `examples/android-native-app/`,
+  `examples/ios-native-app/` — mobile integrations
+
+The signatures below mirror the real source in those paths.
+
 ## Package Overview
 
 Three npm packages:

@@ -14,6 +14,27 @@ description: >
 
 Guide for creating a new messaging platform adapter for the BootDesk Chat SDK.
 
+## Repository
+
+Source, examples, and tests live at **https://github.com/bootdesk/chat-sdk**.
+When in doubt about a contract or behavior, grep the source — the SDK is the
+source of truth. Useful paths for this skill:
+
+- `packages/core/src/Contracts/Adapter.php` — the interface you must implement
+- `packages/core/src/Contracts/Handles*.php`, `Supports*.php`,
+  `Requires*.php`, `MustRehydrateAttachments.php`, `HasAuthorInfo.php` —
+  feature contracts
+- `packages/core/src/Contracts/CompositeInterfaces/` — `HandlesInteractions`,
+  `SupportsMessageMutability`
+- `packages/core/src/WebhookEvent.php`, `Support/AdapterRegistry.php`
+- `packages/adapter-{slack,telegram,whatsapp,discord,messenger,web,...}/src/`
+  — reference adapter implementations to model yours on
+- `packages/adapter-{name}/tests/` — adapter test patterns
+- `stubs/adapter/` (Laravel package) — what `php artisan chat:make-adapter`
+  copies from
+
+The signatures below mirror the real source in those paths.
+
 ## Overview
 
 An adapter bridges the SDK with a specific messaging platform. Every adapter

@@ -14,9 +14,24 @@ description: >
 
 Guide for building chatbot applications with the BootDesk Chat SDK.
 
-All code below mirrors the actual signatures in `packages/core/src/` and
-`packages/laravel/src/`. When in doubt, grep the source — the SDK is the
-source of truth.
+## Repository
+
+Source, examples, and tests live at **https://github.com/bootdesk/chat-sdk**.
+When in doubt about an API, grep the source — the SDK is the source of truth.
+Useful paths for this skill:
+
+- `packages/core/src/Chat.php`, `Thread.php`, `MessageContext.php`, `Message.php`
+- `packages/core/src/Conversations/Conversation.php`,
+  `ConversationManager.php`
+- `packages/core/src/Cards/`, `Modals/`, `Contracts/`
+- `packages/laravel/src/` — `ChatFactory`, `ChatServiceProvider`,
+  `Http/Controllers/WebhookController`, `config/chat.php`
+- `examples/hello-world-laravel/` — complete Laravel app: handlers,
+  conversations, web adapter, broadcasting, pre-entry flow
+- `packages/core/tests/Helpers/` — `MockAdapter`, `MemoryStateAdapter`,
+  `createTestMessage()`
+
+All signatures below mirror the real source in those paths.
 
 ## Installation
 

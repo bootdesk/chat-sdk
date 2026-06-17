@@ -374,18 +374,18 @@ $thread->post(PostableMessage::card($card));
 
 `Card` builder methods (all return `$this` for chaining):
 
-| Method | Notes |
-|--------|-------|
-| `Card::make()` | static factory (no constructor arg) |
-| `header(string $header)` | |
-| `imageUrl(string $url, string $alt = '')` | also `image()` alias |
-| `text(string $content, TextStyle $style = Plain)` | |
-| `divider()` | |
-| `section(callable $builder)` | receives `Section` — call `->text()`, `->fields(['K' => 'V'])` |
-| `actions(Button[] $buttons)` | replaces buttons |
-| `link(string $label, string $url)` | text link |
-| `linkButton(string $label, string $url, ButtonStyle = Secondary)` | also `LinkButton::primary/danger` |
-| `table(array $headers, array $rows, array $align = [])` | |
+| Method                                                            | Notes                                                          |
+| ----------------------------------------------------------------- | -------------------------------------------------------------- |
+| `Card::make()`                                                    | static factory (no constructor arg)                            |
+| `header(string $header)`                                          |                                                                |
+| `imageUrl(string $url, string $alt = '')`                         | also `image()` alias                                           |
+| `text(string $content, TextStyle $style = Plain)`                 |                                                                |
+| `divider()`                                                       |                                                                |
+| `section(callable $builder)`                                      | receives `Section` — call `->text()`, `->fields(['K' => 'V'])` |
+| `actions(Button[] $buttons)`                                      | replaces buttons                                               |
+| `link(string $label, string $url)`                                | text link                                                      |
+| `linkButton(string $label, string $url, ButtonStyle = Secondary)` | also `LinkButton::primary/danger`                              |
+| `table(array $headers, array $rows, array $align = [])`           |                                                                |
 
 Button factory methods: `Button::primary(label, actionId, data = [], actionHref = null)`,
 `Button::danger(...)`, `Button::secondary(...)`. `data` is an array (e.g.
@@ -569,6 +569,7 @@ $chat = new Chat(
 ```
 
 Adapters declare sync/async preference via marker interfaces:
+
 - `RequiresSyncResponse` — web, Discord (inline processing in the webhook)
 - `RequiresAsyncResponse` — Slack, Telegram, WhatsApp, Meta platforms (deferred)
 - No marker — adaptive (inline when no contention, strategy on contention)
@@ -901,19 +902,19 @@ every Slack assistant event.
 
 Verified against each `*Adapter.php` `implements` clause:
 
-| Package | Async | Actions | Reactions | Slash | Modals | HasAuthorInfo |
-|---------|-------|---------|-----------|-------|--------|---------------|
-| adapter-slack | Async | Yes | Yes | Yes | Yes | Yes |
-| adapter-telegram | Async | Yes | Yes | Yes | No | Yes |
-| adapter-whatsapp | Async | No | Yes | Yes | No | Yes |
-| adapter-discord | Sync | No | Yes | Yes | No | No |
-| adapter-messenger | Async | Yes | Yes | Yes | No | Yes |
-| adapter-instagram | Async | Yes | Yes | Yes | No | Yes |
-| adapter-github | Async | No | No | Yes | No | Yes |
-| adapter-linear | Async | No | No | No | No | No |
-| adapter-telnyx | Async | No | No | Yes | No | No |
-| adapter-twilio | Sync | No | No | No | No | No |
-| adapter-web | Sync | Yes | No | Yes | No | Yes |
+| Package           | Async | Actions | Reactions | Slash | Modals | HasAuthorInfo |
+| ----------------- | ----- | ------- | --------- | ----- | ------ | ------------- |
+| adapter-slack     | Async | Yes     | Yes       | Yes   | Yes    | Yes           |
+| adapter-telegram  | Async | Yes     | Yes       | Yes   | No     | Yes           |
+| adapter-whatsapp  | Async | No      | Yes       | Yes   | No     | Yes           |
+| adapter-discord   | Sync  | No      | Yes       | Yes   | No     | No            |
+| adapter-messenger | Async | Yes     | Yes       | Yes   | No     | Yes           |
+| adapter-instagram | Async | Yes     | Yes       | Yes   | No     | Yes           |
+| adapter-github    | Async | No      | No        | Yes   | No     | Yes           |
+| adapter-linear    | Async | No      | No        | No    | No     | No            |
+| adapter-telnyx    | Async | No      | No        | Yes   | No     | No            |
+| adapter-twilio    | Sync  | No      | No        | No    | No     | No            |
+| adapter-web       | Sync  | Yes     | No        | Yes   | No     | Yes           |
 
 `Async` = `RequiresAsyncResponse`, `Sync` = `RequiresSyncResponse`. Reactions
 includes the `HandlesReactions` contract; Actions includes `HandlesActions`.

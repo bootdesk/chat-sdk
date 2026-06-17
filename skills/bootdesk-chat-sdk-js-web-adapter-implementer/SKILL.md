@@ -42,11 +42,11 @@ The signatures below mirror the real source in those paths.
 
 Three npm packages:
 
-| Package | Purpose |
-|---------|---------|
-| `@bootdesk/js-web-adapter-core` | Core client (`WebChatClient`) — connects to web adapter, manages messages, real-time events |
-| `@bootdesk/js-web-adapter-react` | React components (`ChatWidget`, `ChatProvider`) + hooks |
-| `@bootdesk/chat-widget-bridge` | Iframe embedding bridge for cross-origin chat |
+| Package                          | Purpose                                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------------------------- |
+| `@bootdesk/js-web-adapter-core`  | Core client (`WebChatClient`) — connects to web adapter, manages messages, real-time events |
+| `@bootdesk/js-web-adapter-react` | React components (`ChatWidget`, `ChatProvider`) + hooks                                     |
+| `@bootdesk/chat-widget-bridge`   | Iframe embedding bridge for cross-origin chat                                               |
 
 ## Quick Start (React)
 
@@ -56,7 +56,7 @@ npm install @bootdesk/js-web-adapter-react @bootdesk/js-web-adapter-core
 
 ```tsx
 import { ChatWidget, useChatClient } from "@bootdesk/js-web-adapter-react";
-import "@bootdesk/js-web-adapter-react/styles.css";  // REQUIRED — Tailwind styles
+import "@bootdesk/js-web-adapter-react/styles.css"; // REQUIRED — Tailwind styles
 
 function App() {
   const client = useChatClient({
@@ -67,11 +67,7 @@ function App() {
   });
 
   return (
-    <ChatWidget
-      client={client}
-      title="Support Chat"
-      initialMode="floating"
-    />
+    <ChatWidget client={client} title="Support Chat" initialMode="floating" />
   );
 }
 ```
@@ -86,13 +82,13 @@ Omitting the `styles.css` import leaves `ChatWidget` unstyled.
 import { WebChatClient } from "@bootdesk/js-web-adapter-core";
 
 const client = new WebChatClient({
-  apiUrl: "https://your-app.com",         // required
-  userId: "user-123",                      // required
-  userName: "Alice",                       // required
-  verifyToken: "optional-secret",          // optional: verify header
-  conversationId: "existing-conv-id",      // optional: resume conversation
-  headers: { "X-Custom": "value" },        // optional: extra headers
-  broadcastClient: pusherClient,           // optional: real-time events
+  apiUrl: "https://your-app.com", // required
+  userId: "user-123", // required
+  userName: "Alice", // required
+  verifyToken: "optional-secret", // optional: verify header
+  conversationId: "existing-conv-id", // optional: resume conversation
+  headers: { "X-Custom": "value" }, // optional: extra headers
+  broadcastClient: pusherClient, // optional: real-time events
   endpoints: {
     sendMessage: "/api/chat/send",
     loadMessages: "/api/chat/messages",
@@ -102,9 +98,9 @@ const client = new WebChatClient({
     removeReaction: "/api/chat/messages/{id}/reactions/{emoji}",
   },
   features: {
-    editMessages: true,    // enable edit UI
-    deleteMessages: true,  // enable delete UI
-    reactions: true,       // enable reaction UI
+    editMessages: true, // enable edit UI
+    deleteMessages: true, // enable delete UI
+    reactions: true, // enable reaction UI
   },
 });
 ```
@@ -112,8 +108,8 @@ const client = new WebChatClient({
 ### Connect / Disconnect
 
 ```typescript
-await client.connect();   // starts broadcast listener
-client.disconnect();      // cleanup
+await client.connect(); // starts broadcast listener
+client.disconnect(); // cleanup
 ```
 
 ### Send / Load Messages
@@ -172,12 +168,24 @@ const unsub = client.onMessagePosted((event) => {
 });
 unsub(); // unsubscribe
 
-client.onMessageEdited((event) => { /* event.messageId, event.newText */ });
-client.onMessageDeleted((event) => { /* event.messageId */ });
-client.onReactionAdded((event) => { /* event.emoji, event.user */ });
-client.onReactionRemoved((event) => { /* event.emoji, event.user */ });
-client.onStreamingChunk((event) => { /* event.chunk, event.isFinal */ });
-client.onTypingStarted((event) => { /* event.userId */ });
+client.onMessageEdited((event) => {
+  /* event.messageId, event.newText */
+});
+client.onMessageDeleted((event) => {
+  /* event.messageId */
+});
+client.onReactionAdded((event) => {
+  /* event.emoji, event.user */
+});
+client.onReactionRemoved((event) => {
+  /* event.emoji, event.user */
+});
+client.onStreamingChunk((event) => {
+  /* event.chunk, event.isFinal */
+});
+client.onTypingStarted((event) => {
+  /* event.userId */
+});
 ```
 
 ### Direct Event Subscription
@@ -191,12 +199,12 @@ const unsub = client.addEventListener("message:added", (message) => {
 ### Accessors
 
 ```typescript
-client.getThreadId();        // "web:{userId}:{conversationId}"
-client.getConversationId();  // current conversation ID
-client.getMessages();        // Message[] (local cache)
+client.getThreadId(); // "web:{userId}:{conversationId}"
+client.getConversationId(); // current conversation ID
+client.getMessages(); // Message[] (local cache)
 client.getCurrentUserId();
-client.getFeatures();        // features config
-client.getEndpoints();       // endpoints config
+client.getFeatures(); // features config
+client.getEndpoints(); // endpoints config
 ```
 
 ### Send Action (button click)
@@ -214,13 +222,14 @@ Real signature from `types/components.ts`:
 
 ```typescript
 interface ChatWidgetProps {
-  client: WebChatClient;                       // required
-  locale?: string;                             // "en", "pt-BR", etc.
-  initialMode?: "floating" | "fullscreen" | "embedded";  // default "floating"
-  theme?: "light" | "dark" | "auto";           // default "auto"
+  client: WebChatClient; // required
+  locale?: string; // "en", "pt-BR", etc.
+  initialMode?: "floating" | "fullscreen" | "embedded"; // default "floating"
+  theme?: "light" | "dark" | "auto"; // default "auto"
   onThemeChange?: (theme: ThemeMode) => void;
   position?: "bottom-right" | "bottom-left" | "top-right" | "top-left"; // default "bottom-right"
-  className?: {                                // per-component overrides, NOT a string
+  className?: {
+    // per-component overrides, NOT a string
     container?: string;
     header?: string;
     messageList?: string;
@@ -232,8 +241,9 @@ interface ChatWidgetProps {
   placeholder?: string;
   onOpen?: () => void;
   onClose?: () => void;
-  embedded?: boolean;                          // embedded mode (no floating button)
-  floatingButton?: {                           // object, NOT ReactNode
+  embedded?: boolean; // embedded mode (no floating button)
+  floatingButton?: {
+    // object, NOT ReactNode
     icon?: React.ReactNode;
     openIcon?: React.ReactNode;
     badgeCount?: number;
@@ -243,11 +253,12 @@ interface ChatWidgetProps {
     className?: string;
   };
   enableAttachments?: boolean;
-  uploadConfig?: UploadConfig;                 // see File Uploads
+  uploadConfig?: UploadConfig; // see File Uploads
   accept?: string;
   maxFileSize?: number;
-  renderPushPrompt?: () => React.ReactNode;    // custom push permission UI
-  pushConfig?: {                               // see Push Notifications for full shape
+  renderPushPrompt?: () => React.ReactNode; // custom push permission UI
+  pushConfig?: {
+    // see Push Notifications for full shape
     getVapidPublicKey: () => Promise<string>;
     onSubscribe: (subscription: PushSubscriptionJSON) => Promise<void>;
     onUnsubscribe: (subscription: PushSubscriptionJSON) => Promise<void>;
@@ -256,7 +267,7 @@ interface ChatWidgetProps {
     serviceWorkerType?: "classic" | "module";
     notificationOptions?: { icon?; badge?; sound?; requireInteraction? };
   };
-  preEntry?: PreEntryConfig;                   // { render: (helpers) => ReactNode } — NOT a bare function
+  preEntry?: PreEntryConfig; // { render: (helpers) => ReactNode } — NOT a bare function
   onChatStart?: (config?: ReconfigureConfig) => void;
 }
 ```
@@ -296,7 +307,12 @@ const [theme, setTheme] = useState<ThemeMode>("auto");
 For custom layouts without the full ChatWidget:
 
 ```tsx
-import { ChatProvider, MessageList, InputArea, Header } from "@bootdesk/js-web-adapter-react";
+import {
+  ChatProvider,
+  MessageList,
+  InputArea,
+  Header,
+} from "@bootdesk/js-web-adapter-react";
 
 function CustomChat({ client }) {
   return (
@@ -330,22 +346,22 @@ const client = useChatClient({
 
 ```typescript
 const {
-  messages,            // Message[]
-  loading,             // boolean — currently sending
-  isLoadingHistory,    // boolean — loading initial/older messages
-  hasMore,             // boolean — more history available
-  loadMore,            // () => Promise<void> — fetch older messages
-  reloadMessages,      // () => Promise<void> — reload from server
-  retryLoad,           // () => Promise<void> — retry failed load
-  loadError,           // Error | null
-  canEdit,             // boolean — from features config
-  canDelete,           // boolean
-  canReact,            // boolean
-  sendMessage,         // (text, attachments?) => Promise<void>
-  editMessage,         // (id, text) => Promise<void>
-  deleteMessage,       // (id) => Promise<void>
-  addReaction,         // (id, emoji) => Promise<void>
-  removeReaction,      // (id, emoji) => Promise<void>
+  messages, // Message[]
+  loading, // boolean — currently sending
+  isLoadingHistory, // boolean — loading initial/older messages
+  hasMore, // boolean — more history available
+  loadMore, // () => Promise<void> — fetch older messages
+  reloadMessages, // () => Promise<void> — reload from server
+  retryLoad, // () => Promise<void> — retry failed load
+  loadError, // Error | null
+  canEdit, // boolean — from features config
+  canDelete, // boolean
+  canReact, // boolean
+  sendMessage, // (text, attachments?) => Promise<void>
+  editMessage, // (id, text) => Promise<void>
+  deleteMessage, // (id) => Promise<void>
+  addReaction, // (id, emoji) => Promise<void>
+  removeReaction, // (id, emoji) => Promise<void>
 } = useMessages(client);
 ```
 
@@ -369,14 +385,14 @@ const { typingUsers, isSomeoneTyping } = useTyping(client);
 
 ```typescript
 const {
-  attachments,             // PendingAttachment[] (id, file, name, mimeType, size, status, progress, url?, error?)
-  addFiles,                // (FileList | File[]) => void — auto-uploads on add
-  removeAttachment,        // (id: string) => void — aborts in-flight, removes from list
-  clearAttachments,        // () => void — aborts all, empties list
-  resetUploads,            // () => void — retries errored uploads
-  getUploadedAttachments,  // () => PendingAttachment[] — successfully uploaded
-  isUploading,             // boolean — any upload in flight
-  isComplete,              // boolean — all uploaded or errored
+  attachments, // PendingAttachment[] (id, file, name, mimeType, size, status, progress, url?, error?)
+  addFiles, // (FileList | File[]) => void — auto-uploads on add
+  removeAttachment, // (id: string) => void — aborts in-flight, removes from list
+  clearAttachments, // () => void — aborts all, empties list
+  resetUploads, // () => void — retries errored uploads
+  getUploadedAttachments, // () => PendingAttachment[] — successfully uploaded
+  isUploading, // boolean — any upload in flight
+  isComplete, // boolean — all uploaded or errored
 } = useAttachmentUpload(uploadConfig);
 ```
 
@@ -390,15 +406,15 @@ package root export).
 import { useBridge } from "@bootdesk/js-web-adapter-react/hooks";
 
 const {
-  config,                    // unknown — config pushed from parent frame
-  isInIframe,                // boolean
-  isInWebView,               // boolean
-  notifyMessage,             // (text: string) => void
-  notifyViewportConfig,      // (viewportContent: string) => void
-  onNotificationClicked,     // (cb: () => void) => void — register notification click handler
-  pushState,                 // BridgePushStatus | null
-  requestPushSubscribe,      // () => void
-  requestPushUnsubscribe,    // () => void
+  config, // unknown — config pushed from parent frame
+  isInIframe, // boolean
+  isInWebView, // boolean
+  notifyMessage, // (text: string) => void
+  notifyViewportConfig, // (viewportContent: string) => void
+  onNotificationClicked, // (cb: () => void) => void — register notification click handler
+  pushState, // BridgePushStatus | null
+  requestPushSubscribe, // () => void
+  requestPushUnsubscribe, // () => void
 } = useBridge();
 ```
 
@@ -406,7 +422,7 @@ const {
 
 ```typescript
 interface UsePushNotificationsOptions {
-  enabled?: boolean;                              // default false; gate initialization
+  enabled?: boolean; // default false; gate initialization
   getVapidPublicKey: () => Promise<string>;
   onSubscribe: (subscription: PushSubscriptionJSON) => Promise<void>;
   onUnsubscribe: (subscription: PushSubscriptionJSON) => Promise<void>;
@@ -417,11 +433,11 @@ interface UsePushNotificationsOptions {
 }
 
 const {
-  status,           // PushSubscriptionStatus: "unsupported"|"denied"|"default"|"subscribing"|"subscribed"|"error"
-  isSupported,      // boolean (PushManager.isSupported())
-  isSubscribed,     // boolean (status === "subscribed")
-  subscribe,        // () => Promise<void>
-  unsubscribe,      // () => Promise<void>
+  status, // PushSubscriptionStatus: "unsupported"|"denied"|"default"|"subscribing"|"subscribed"|"error"
+  isSupported, // boolean (PushManager.isSupported())
+  isSubscribed, // boolean (status === "subscribed")
+  subscribe, // () => Promise<void>
+  unsubscribe, // () => Promise<void>
 } = usePushNotifications(options);
 ```
 
@@ -449,12 +465,16 @@ import type { CardRendererProps } from "@bootdesk/js-web-adapter-react";
 
 // CardRenderer is a React component (function or class), NOT a render prop function.
 function MyCard({ card, onActionClick }: CardRendererProps) {
-  return <div className="my-card">{/* read card fields, call onActionClick(id, value) */}</div>;
+  return (
+    <div className="my-card">
+      {/* read card fields, call onActionClick(id, value) */}
+    </div>
+  );
 }
 
 <CardProvider renderers={{ "my-card-type": MyCard }}>
   <ChatWidget client={client} />
-</CardProvider>
+</CardProvider>;
 ```
 
 CardRendererProps shape:
@@ -482,7 +502,7 @@ import {
 } from "@bootdesk/js-web-adapter-react";
 
 // Individual card components can be used standalone
-<DefaultCard card={card} onAction={handleAction} />
+<DefaultCard card={card} onAction={handleAction} />;
 ```
 
 ## Pre-Entry Flow
@@ -515,16 +535,25 @@ function ChatPage() {
   );
 }
 
-function PreEntryForm({ start }: { start: (config?: ReconfigureConfig) => void }) {
+function PreEntryForm({
+  start,
+}: {
+  start: (config?: ReconfigureConfig) => void;
+}) {
   const [email, setEmail] = useState("");
 
   return (
-    <form onSubmit={(e) => {
-      e.preventDefault();
-      fetch("/api/chat/verify", { method: "POST", body: JSON.stringify({ email }) })
-        .then((r) => r.json())
-        .then((config) => start(config)); // calls client.reconfigure(config) and transitions to chat
-    }}>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        fetch("/api/chat/verify", {
+          method: "POST",
+          body: JSON.stringify({ email }),
+        })
+          .then((r) => r.json())
+          .then((config) => start(config)); // calls client.reconfigure(config) and transitions to chat
+      }}
+    >
       <input value={email} onChange={(e) => setEmail(e.target.value)} />
       <button type="submit">Start Chat</button>
     </form>
@@ -571,8 +600,12 @@ don't exist.
     title: "Chat",
     placeholder: "Type a message...",
     buttonInnerHtml: "<svg>...</svg>",
-    buttonStyle: { /* override defaults */ },
-    overlayStyle: { /* override defaults */ },
+    buttonStyle: {
+      /* override defaults */
+    },
+    overlayStyle: {
+      /* override defaults */
+    },
   });
 
   // Later: ChatSDK.destroy();
@@ -612,7 +645,10 @@ There is **no** `startChat`, `ChatFrame`, or default React component.
 Real-time events from server to client via Pusher or Laravel Echo:
 
 ```typescript
-import { WebChatClient, PusherBroadcastClient } from "@bootdesk/js-web-adapter-core";
+import {
+  WebChatClient,
+  PusherBroadcastClient,
+} from "@bootdesk/js-web-adapter-core";
 import Pusher from "pusher-js";
 
 const pusherClient = new PusherBroadcastClient({
@@ -646,16 +682,16 @@ const broadcastClient = new LaravelEchoBroadcastClient(echo);
 
 ### Event Types (Broadcasted from PHP)
 
-| Event | Trigger | Data |
-|-------|---------|------|
-| `message.posted` | New message sent | messageId, text, author, card, attachments, timestamp |
-| `message.edited` | Message edited | messageId, newText, card, timestamp |
-| `message.deleted` | Message deleted | messageId, timestamp |
-| `reaction.added` | Reaction added | messageId, emoji, user, timestamp |
-| `reaction.removed` | Reaction removed | messageId, emoji, user, timestamp |
-| `typing.started` | Typing started | userId, timestamp |
-| `streaming.chunk` | Streaming chunk | messageId, chunk, isFinal, timestamp |
-| `dm.requested` | DM requested | userId, timestamp |
+| Event              | Trigger          | Data                                                  |
+| ------------------ | ---------------- | ----------------------------------------------------- |
+| `message.posted`   | New message sent | messageId, text, author, card, attachments, timestamp |
+| `message.edited`   | Message edited   | messageId, newText, card, timestamp                   |
+| `message.deleted`  | Message deleted  | messageId, timestamp                                  |
+| `reaction.added`   | Reaction added   | messageId, emoji, user, timestamp                     |
+| `reaction.removed` | Reaction removed | messageId, emoji, user, timestamp                     |
+| `typing.started`   | Typing started   | userId, timestamp                                     |
+| `streaming.chunk`  | Streaming chunk  | messageId, chunk, isFinal, timestamp                  |
+| `dm.requested`     | DM requested     | userId, timestamp                                     |
 
 ## i18n
 
@@ -742,8 +778,12 @@ import { PushManager } from "@bootdesk/js-web-adapter-core";
 
 const push = new PushManager({
   getVapidPublicKey: async () => "...",
-  onSubscribe: async (sub) => { /* persist */ },
-  onUnsubscribe: async (sub) => { /* remove */ },
+  onSubscribe: async (sub) => {
+    /* persist */
+  },
+  onUnsubscribe: async (sub) => {
+    /* remove */
+  },
   serviceWorkerUrl: "/sw.js",
 });
 
@@ -854,9 +894,9 @@ interface PHPCard {
   fallbackText: string;
   header?: string;
   image?: { url: string; alt: string };
-  sections?: CardSection[];     // { type: "section"; text?; fields?: CardField[] }
-  actions?: CardAction[];       // { type: "button"; id; label; style?; value?; href? }
-  elements?: CardElement[];     // TextElement | DividerElement | LinkElement | TableElement | LinkButtonElement | ImageElement
+  sections?: CardSection[]; // { type: "section"; text?; fields?: CardField[] }
+  actions?: CardAction[]; // { type: "button"; id; label; style?; value?; href? }
+  elements?: CardElement[]; // TextElement | DividerElement | LinkElement | TableElement | LinkButtonElement | ImageElement
 }
 
 interface ImageCard {
@@ -952,6 +992,7 @@ import "@bootdesk/js-web-adapter-react/styles.css";
 Without this, `ChatWidget` will render without styling.
 
 Each package has its own `AGENTS.md` with detailed conventions:
+
 - `packages/js-web-adapter-core/AGENTS.md`
 - `packages/js-web-adapter-react/AGENTS.md`
 - `packages/chat-widget-bridge/AGENTS.md`

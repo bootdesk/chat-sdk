@@ -340,17 +340,17 @@ public function createResponse(): ?ResponseInterface
 Implement these interfaces to add capabilities. Return `null` from parse
 methods when the webhook is not the expected type.
 
-| Contract | Methods | Return Shape |
-|----------|---------|-------------|
-| `HandlesActions` | `parseAction()`, `acknowledgeAction()` | `{author?, actionId, value?, threadId, messageId, userId, isBot, isMe, triggerId, raw, callbackQueryId?, originId?}` |
-| `HandlesReactions` | `parseReaction()` | `{author?, emoji, rawEmoji, added, threadId, messageId, userId, raw, originId?}` |
-| `HandlesSlashCommands` | `parseSlashCommand()` | `{author?, command, text, userId, isBot, isMe, channelId, triggerId?, raw}` |
-| `HandlesModals` | `parseModalSubmit()`, `parseModalClose()` | submit: `{author?, callbackId, viewId, values, userId, contextId?, raw}` / close: `{author?, callbackId, viewId, userId, contextId?, raw}` |
-| `HandlesStatuses` | `parseStatus()` | `{type: 'delivered'|'read'|'failed', messageIds[], threadId, userId, raw, timestamp?, originId?}` |
-| `HandlesMessageCosts` | `parseMessageCost()` | `{messageIds[], threadId, userId, price: ?Money, raw, originId?}` |
-| `HandlesOptionsLoad` | `parseOptionsLoad()`, `respondToOptionsLoad()` | `{author?, actionId, query, userId, raw}` |
-| `HandlesSlackEvents` | `parseAssistantThreadStarted()`, `parseAssistantContextChanged()`, `parseAppHomeOpened()`, `parseMemberJoinedChannel()` | Slack-specific event shapes (see contracts) |
-| `HandlesBatchedWebhooks` | `parseBatchedWebhook()` | `WebhookEvent[]` — for platforms with batched payloads |
+| Contract                 | Methods                                                                                                                 | Return Shape                                                                                                                               |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ---------------------------------------------------------------------- |
+| `HandlesActions`         | `parseAction()`, `acknowledgeAction()`                                                                                  | `{author?, actionId, value?, threadId, messageId, userId, isBot, isMe, triggerId, raw, callbackQueryId?, originId?}`                       |
+| `HandlesReactions`       | `parseReaction()`                                                                                                       | `{author?, emoji, rawEmoji, added, threadId, messageId, userId, raw, originId?}`                                                           |
+| `HandlesSlashCommands`   | `parseSlashCommand()`                                                                                                   | `{author?, command, text, userId, isBot, isMe, channelId, triggerId?, raw}`                                                                |
+| `HandlesModals`          | `parseModalSubmit()`, `parseModalClose()`                                                                               | submit: `{author?, callbackId, viewId, values, userId, contextId?, raw}` / close: `{author?, callbackId, viewId, userId, contextId?, raw}` |
+| `HandlesStatuses`        | `parseStatus()`                                                                                                         | `{type: 'delivered'                                                                                                                        | 'read' | 'failed', messageIds[], threadId, userId, raw, timestamp?, originId?}` |
+| `HandlesMessageCosts`    | `parseMessageCost()`                                                                                                    | `{messageIds[], threadId, userId, price: ?Money, raw, originId?}`                                                                          |
+| `HandlesOptionsLoad`     | `parseOptionsLoad()`, `respondToOptionsLoad()`                                                                          | `{author?, actionId, query, userId, raw}`                                                                                                  |
+| `HandlesSlackEvents`     | `parseAssistantThreadStarted()`, `parseAssistantContextChanged()`, `parseAppHomeOpened()`, `parseMemberJoinedChannel()` | Slack-specific event shapes (see contracts)                                                                                                |
+| `HandlesBatchedWebhooks` | `parseBatchedWebhook()`                                                                                                 | `WebhookEvent[]` — for platforms with batched payloads                                                                                     |
 
 ### Marker Contracts (no methods)
 
@@ -632,17 +632,17 @@ AdapterRegistry::register('myplatform', MyPlatformAdapter::class);
 
 ```json
 {
-    "name": "bootdesk/chat-sdk-myplatform",
-    "autoload": {
-        "psr-4": {
-            "BootDesk\\ChatSDK\\MyPlatform\\": "src/"
-        },
-        "files": ["src/register.php"]
+  "name": "bootdesk/chat-sdk-myplatform",
+  "autoload": {
+    "psr-4": {
+      "BootDesk\\ChatSDK\\MyPlatform\\": "src/"
     },
-    "require": {
-        "php": "^8.2",
-        "bootdesk/chat-sdk-core": "*"
-    }
+    "files": ["src/register.php"]
+  },
+  "require": {
+    "php": "^8.2",
+    "bootdesk/chat-sdk-core": "*"
+  }
 }
 ```
 
@@ -650,15 +650,15 @@ AdapterRegistry::register('myplatform', MyPlatformAdapter::class);
 
 ```json
 {
-    "autoload": {
-        "psr-4": {
-            "BootDesk\\ChatSDK\\MyPlatform\\": "packages/adapter-myplatform/src/"
-        },
-        "files": [
-            "packages/adapter-slack/src/register.php",
-            "packages/adapter-myplatform/src/register.php"
-        ]
-    }
+  "autoload": {
+    "psr-4": {
+      "BootDesk\\ChatSDK\\MyPlatform\\": "packages/adapter-myplatform/src/"
+    },
+    "files": [
+      "packages/adapter-slack/src/register.php",
+      "packages/adapter-myplatform/src/register.php"
+    ]
+  }
 }
 ```
 

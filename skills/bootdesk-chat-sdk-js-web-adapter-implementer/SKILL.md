@@ -680,6 +680,27 @@ const echo = new Echo({ broadcaster: "pusher", key: "key", cluster: "us2" });
 const broadcastClient = new LaravelEchoBroadcastClient(echo);
 ```
 
+### Channel Type Config
+
+```typescript
+interface ChannelTypeConfig {
+  threadChannel?: "public" | "private" | "presence";
+  userChannel?: "private" | "presence";
+  useHashChannel?: boolean;  // SHA-256 hash threadId for broadcaster-safe names
+}
+```
+
+When `useHashChannel: true`, channel names are hashed via Web Crypto API
+(`crypto.subtle.digest("SHA-256")` → hex) — safe for Pusher's char
+restrictions (`[-_\.a-zA-Z0-9]`). The server-side `LaravelBroadcastAdapter`
+computes the same SHA-256 hash so subscriptions match.
+
+Override protected `buildResolvedChannelName(threadId): Promise<string>`
+for custom channel naming logic.
+
+Note: `subscribe()` / `subscribeToUser()` return `Promise<Unsubscribe>`
+and must be awaited.
+
 ### Event Types (Broadcasted from PHP)
 
 | Event              | Trigger          | Data                                                  |

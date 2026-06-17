@@ -50,15 +50,15 @@ describe("LaravelEchoBroadcastClient", () => {
     await expect(client.connect()).resolves.toBeUndefined();
   });
 
-  it("disconnects and cleans up subscriptions", () => {
-    client.subscribe("thread-1", {});
+  it("disconnects and cleans up subscriptions", async () => {
+    await client.subscribe("thread-1", {});
     client.disconnect();
     expect(mockEcho.publicChannel.unsubscribe).toHaveBeenCalled();
     expect(mockEcho.publicChannel.stopListening).toHaveBeenCalled();
   });
 
-  it("subscribes to thread channel and binds events", () => {
-    const unsub = client.subscribe("thread-1", {
+  it("subscribes to thread channel and binds events", async () => {
+    const unsub = await client.subscribe("thread-1", {
       onMessagePosted: vi.fn(),
     });
 
@@ -70,26 +70,26 @@ describe("LaravelEchoBroadcastClient", () => {
     expect(mockEcho.publicChannel.unsubscribe).toHaveBeenCalled();
   });
 
-  it("uses private() for private thread channels", () => {
+  it("uses private() for private thread channels", async () => {
     const privateClient = new LaravelEchoBroadcastClient(mockEcho.echo, "chat", {
       threadChannel: "private",
     });
 
-    privateClient.subscribe("thread-1", {});
+    await privateClient.subscribe("thread-1", {});
     expect(mockEcho.echo.private).toHaveBeenCalledWith("chat.thread-1");
   });
 
-  it("uses join() for presence thread channels", () => {
+  it("uses join() for presence thread channels", async () => {
     const presenceClient = new LaravelEchoBroadcastClient(mockEcho.echo, "chat", {
       threadChannel: "presence",
     });
 
-    presenceClient.subscribe("thread-1", {});
+    await presenceClient.subscribe("thread-1", {});
     expect(mockEcho.echo.join).toHaveBeenCalledWith("chat.thread-1");
   });
 
-  it("subscribes to user channel", () => {
-    const unsub = client.subscribeToUser("thread-1", "user-1", {
+  it("subscribes to user channel", async () => {
+    const unsub = await client.subscribeToUser("thread-1", "user-1", {
       onTypingStarted: vi.fn(),
     });
 
@@ -106,9 +106,9 @@ describe("LaravelEchoBroadcastClient", () => {
     expect(client.isConnected()).toBe(false);
   });
 
-  it("dispatches parsed events to handlers", () => {
+  it("dispatches parsed events to handlers", async () => {
     const handler = vi.fn();
-    client.subscribe("thread-1", {
+    await client.subscribe("thread-1", {
       onMessagePosted: handler,
     });
 

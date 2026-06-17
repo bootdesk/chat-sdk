@@ -43,3 +43,9 @@ npm run typecheck       # tsc --noEmit
 - `on*` methods return `Unsubscribe` (callable to remove listener)
 - `generateId()` uses crypto.randomUUID with fallback
 - `format: ["esm", "cjs"]` with DTS, peer deps kept external
+
+## broadcasting
+- `PusherBroadcastClient` / `LaravelEchoBroadcastClient` support `ChannelTypeConfig.useHashChannel` for SHA-256 hashed channel names (safe for Pusher char restrictions)
+- `subscribe()` / `subscribeToUser()` return `Promise<Unsubscribe>` (async due to Web Crypto hash)
+- Override `buildResolvedChannelName(threadId): Promise<string>` for custom channel naming
+- Private `hashChannelName(name): Promise<string>` uses `crypto.subtle.digest("SHA-256")`

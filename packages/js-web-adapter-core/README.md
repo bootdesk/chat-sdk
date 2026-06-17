@@ -83,6 +83,14 @@ const client = new WebChatClient({
 });
 ```
 
+Channel name hashing (for threadIds with incompatible chars like `:`):
+```typescript
+const broadcast = new PusherBroadcastClient(config, "chat", {
+  useHashChannel: true,
+});
+// Uses Web Crypto SHA-256 — safe for Pusher char restrictions
+```
+
 ### Push Notifications
 
 ```typescript

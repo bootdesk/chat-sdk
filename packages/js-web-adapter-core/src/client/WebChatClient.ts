@@ -152,9 +152,9 @@ export class WebChatClient {
         threadEvents.onReactionRemoved = (event) => this.handleReactionRemoved(event);
       }
 
-      this.broadcastClient.subscribe(threadId, threadEvents);
+      await this.broadcastClient.subscribe(threadId, threadEvents);
 
-      this.unsubscribeUserChannel = this.broadcastClient.subscribeToUser(
+      this.unsubscribeUserChannel = await this.broadcastClient.subscribeToUser(
         threadId,
         this.currentUserId,
         {

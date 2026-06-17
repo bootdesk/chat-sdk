@@ -528,16 +528,18 @@ return [
     'channel_prefix' => env('CHAT_BROADCASTING_CHANNEL_PREFIX', 'chat'),
     'thread_channel_type' => env('CHAT_BROADCASTING_THREAD_CHANNEL_TYPE', 'public'),
     'user_channel_type' => env('CHAT_BROADCASTING_USER_CHANNEL_TYPE', 'private'),
+    'use_hash_channel' => env('CHAT_BROADCASTING_USE_HASH_CHANNEL', false),
 ];
 ```
 
-| Option               | Default    | Description                                    |
-| -------------------- | ---------- | ---------------------------------------------- |
-| `enabled`            | `true`     | Enable/disable broadcasting globally           |
-| `default`            | `'pusher'` | Broadcaster driver (pusher/redis/log/null)     |
-| `channel_prefix`     | `'chat'`   | Prefix for all channel names                   |
-| `thread_channel_type` | `'public'` | Thread channel type (public/private/presence) |
-| `user_channel_type`  | `'private'` | User channel type (private/presence)        |
+| Option               | Default    | Description                                              |
+| -------------------- | ---------- | -------------------------------------------------------- |
+| `enabled`            | `true`     | Enable/disable broadcasting globally                     |
+| `default`            | `'pusher'` | Broadcaster driver (pusher/redis/log/null)               |
+| `channel_prefix`     | `'chat'`   | Prefix for all channel names                             |
+| `thread_channel_type` | `'public'` | Thread channel type (public/private/presence)           |
+| `user_channel_type`  | `'private'` | User channel type (private/presence)                  |
+| `use_hash_channel`   | `false`    | Hash threadId via SHA-256 for broadcaster-safe names     |
 
 ### Channel Types
 
@@ -606,4 +608,47 @@ const userChannel = pusher.subscribe('private-chat.web:user123:conv456.user123')
 userChannel.bind('chat.typing.started', (data) => {
     console.log('User is typing...');
 });
+```
+
+### Hashed Channel Names
+
+When threadIds contain characters incompatible with the broadcaster (e.g., `:` in `slack:C123:1234567890.123456` — Pusher only allows `[-_\.a-zA-Z0-9]`), enable hashed channel names:
+
+```bash
+CHAT_BROADCASTING_USE_HASH_CHANNEL=true
+```
+
+This uses SHA-256 to produce a safe hex channel name. The same hash is computed client-side via the Web Crypto API so subscriptions match.
+
+Override the hashing algorithm by extending `LaravelBroadcastAdapter`:
+
+```php
+use BootDesk\ChatSDK\Laravel\Broadcasting\LaravelBroadcastAdapter;
+
+class MyBroadcastAdapter extends LaravelBroadcastAdapter
+{
+    protected function hashChannelName(string $threadId): string
+    {
+        return hash('sha1', $threadId);
+    }
+}
+```
+
+### Custom Broadcast Adapter
+
+To provide your own adapter implementation, bind `BroadcastAdapter::class` before the package's `BroadcastServiceProvider` registers:
+
+```php
+// In your AppServiceProvider
+use BootDesk\ChatSDK\Core\Contracts\BroadcastAdapter;
+
+public function register(): void
+{
+    $this->app->bind(BroadcastAdapter::class, function () {
+        return new MyCustomAdapter(config(...));
+    });
+}
+```
+
+The package uses `bindIf()`, so your binding takes priority.
 ```

@@ -7,8 +7,8 @@ function createMockBroadcastClient(): BroadcastClient {
   return {
     connect: vi.fn(),
     disconnect: vi.fn(),
-    subscribe: vi.fn().mockReturnValue(vi.fn()),
-    subscribeToUser: vi.fn().mockReturnValue(vi.fn()),
+    subscribe: vi.fn().mockResolvedValue(vi.fn()),
+    subscribeToUser: vi.fn().mockResolvedValue(vi.fn()),
     isConnected: vi.fn().mockReturnValue(true),
   };
 }
@@ -632,22 +632,22 @@ describe("WebChatClient", () => {
   });
 
   describe("with broadcast client", () => {
-    it("connect subscribes to thread and user channels", () => {
+    it("connect subscribes to thread and user channels", async () => {
       const broadcast = createMockBroadcastClient();
       const client = createClient({ broadcastClient: broadcast, features: { reactions: true } });
 
-      client.connect();
+      await client.connect();
 
       expect(broadcast.connect).toHaveBeenCalledOnce();
       expect(broadcast.subscribe).toHaveBeenCalledOnce();
       expect(broadcast.subscribeToUser).toHaveBeenCalledOnce();
     });
 
-    it("connect subscribes thread channel based on features", () => {
+    it("connect subscribes thread channel based on features", async () => {
       const broadcast = createMockBroadcastClient();
       const client = createClient({ broadcastClient: broadcast });
 
-      client.connect();
+      await client.connect();
 
       const callArgs = (broadcast.subscribe as any).mock.calls[0];
       const handlers = callArgs[1] as EventHandlers;
@@ -658,14 +658,14 @@ describe("WebChatClient", () => {
       expect(handlers.onReactionRemoved).toBeUndefined();
     });
 
-    it("connect includes edit/delete/reaction handlers when features enabled", () => {
+    it("connect includes edit/delete/reaction handlers when features enabled", async () => {
       const broadcast = createMockBroadcastClient();
       const client = createClient({
         broadcastClient: broadcast,
         features: { editMessages: true, deleteMessages: true, reactions: true },
       });
 
-      client.connect();
+      await client.connect();
 
       const callArgs = (broadcast.subscribe as any).mock.calls[0];
       const handlers = callArgs[1] as EventHandlers;
@@ -675,11 +675,11 @@ describe("WebChatClient", () => {
       expect(handlers.onReactionRemoved).toBeDefined();
     });
 
-    it("disconnect cleans up broadcast subscriptions", () => {
+    it("disconnect cleans up broadcast subscriptions", async () => {
       const broadcast = createMockBroadcastClient();
       const client = createClient({ broadcastClient: broadcast });
 
-      client.connect();
+      await client.connect();
       client.disconnect();
 
       expect(broadcast.disconnect).toHaveBeenCalledOnce();

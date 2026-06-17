@@ -10,22 +10,22 @@ export function TypingIndicator({ users = [] }: TypingIndicatorProps): React.JSX
 
   return (
     <div
-      className="chat-typing-indicator"
+      className="bdc-typing-indicator"
       data-chat-typing-indicator="true"
       data-testid="chat-typing-indicator"
     >
-      <span className="flex items-center gap-2">
-        <span className="flex gap-1">
+      <span className="bdc-typing-wrapper">
+        <span className="bdc-typing-dots">
           <span
-            className="w-1.5 h-1.5 rounded-full bg-chat-text-secondary animate-bounce"
+            className="bdc-typing-dot"
             style={{ animationDelay: "0ms" }}
           />
           <span
-            className="w-1.5 h-1.5 rounded-full bg-chat-text-secondary animate-bounce"
+            className="bdc-typing-dot"
             style={{ animationDelay: "160ms" }}
           />
           <span
-            className="w-1.5 h-1.5 rounded-full bg-chat-text-secondary animate-bounce"
+            className="bdc-typing-dot"
             style={{ animationDelay: "320ms" }}
           />
         </span>

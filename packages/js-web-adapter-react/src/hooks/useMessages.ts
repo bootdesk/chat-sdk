@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { WebChatClient } from "@bootdesk/js-web-adapter-core";
 import { Message } from "@bootdesk/js-web-adapter-core";
 
+const THINKING_DELAY = 800;
+
 interface UseMessagesResult {
   messages: Message[];
   loading: boolean;
+  thinking: boolean;
   isLoadingHistory: boolean;
   hasMore: boolean;
   loadMore: () => Promise<void>;
@@ -32,6 +35,14 @@ interface UseMessagesResult {
 export function useMessages(client: WebChatClient, enabled = true): UseMessagesResult {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [thinking, setThinking] = useState(false);
+  const thinkingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearThinkingTimer = useCallback(() => {
+    if (thinkingTimerRef.current !== null) {
+      clearTimeout(thinkingTimerRef.current);
+      thinkingTimerRef.current = null;
+    }
+  }, []);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<number | undefined>(undefined);
@@ -201,6 +212,14 @@ export function useMessages(client: WebChatClient, enabled = true): UseMessagesR
     };
   }, [client]);
 
+  useEffect(() => {
+    const unsub = client.onTypingStarted(() => {
+      clearThinkingTimer();
+      setThinking(false);
+    });
+    return unsub;
+  }, [client, clearThinkingTimer]);
+
   const sendMessage = useCallback(
     async (
       text: string,
@@ -212,13 +231,20 @@ export function useMessages(client: WebChatClient, enabled = true): UseMessagesR
       }>,
     ) => {
       setLoading(true);
+      setThinking(false);
+      clearThinkingTimer();
+      thinkingTimerRef.current = setTimeout(() => {
+        setThinking(true);
+      }, THINKING_DELAY);
       try {
         await client.sendMessage(text, attachments || []);
       } finally {
+        clearThinkingTimer();
+        setThinking(false);
         setLoading(false);
       }
     },
-    [client],
+    [client, clearThinkingTimer],
   );
 
   const editMessage = useCallback(
@@ -288,6 +314,7 @@ export function useMessages(client: WebChatClient, enabled = true): UseMessagesR
   return {
     messages,
     loading,
+    thinking,
     isLoadingHistory,
     hasMore,
     loadMore,

@@ -3,6 +3,7 @@ import { useAttachmentUpload } from "../hooks/useAttachmentUpload";
 import { Dropzone } from "./Dropzone";
 import { AttachmentList } from "./AttachmentList";
 import { useLocale } from "../i18n/LocaleProvider";
+import { cn } from "../lib/cn";
 
 interface InputAreaProps {
   onSend: (
@@ -84,7 +85,7 @@ export function InputArea({
 
   return (
     <div
-      className={`chat-input-area ${className || ""}`}
+      className={cn("bdc-input-area", className)}
       data-chat-input-area="true"
       data-testid="chat-input-area"
     >
@@ -101,16 +102,15 @@ export function InputArea({
         />
       )}
 
-      <div className="flex gap-3">
+      <div className="bdc-input-area-row">
         {enableAttachments && uploadConfig && (
           <button
             onClick={() => setShowDropzone((prev) => !prev)}
             disabled={disabled}
-            className={`p-2 rounded-lg cursor-pointer transition ${
-              showDropzone
-                ? "bg-chat-primary/10 text-chat-primary"
-                : "bg-transparent text-chat-text-secondary"
-            } disabled:cursor-not-allowed disabled:opacity-50`}
+            className={cn(
+              "bdc-input-area-attach",
+              showDropzone && "bdc-input-area-attach--active",
+            )}
             data-chat-attachment-toggle="true"
             aria-label="Toggle file attachment"
           >
@@ -135,7 +135,7 @@ export function InputArea({
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="chat-input"
+          className="bdc-input"
           data-chat-input="true"
           rows={1}
         />
@@ -143,7 +143,7 @@ export function InputArea({
         <button
           onClick={handleSubmit}
           disabled={disabled || !canSend}
-          className="chat-send-button"
+          className="bdc-send-btn"
           data-chat-send-button="true"
           aria-label={t("inputArea.send")}
         >
@@ -157,7 +157,7 @@ export function InputArea({
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="animate-spin"
+              className="bdc-spinner"
             >
               <path d="M21 12a9 9 0 1 1-6.219-8.56" />
             </svg>

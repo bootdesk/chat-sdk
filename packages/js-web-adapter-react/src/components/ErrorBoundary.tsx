@@ -36,14 +36,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     return (
       <div
-        className="flex flex-col items-center justify-center p-6 text-center"
+        className="bdc-error-boundary"
         data-chat-error-boundary="true"
       >
-        <div className="text-chat-error text-lg font-semibold mb-2">Something went wrong</div>
-        <div className="text-chat-text-secondary text-sm mb-4">{this.state.error.message}</div>
+        <div className="bdc-error-boundary-title">Something went wrong</div>
+        <div className="bdc-error-boundary-msg">{this.state.error.message}</div>
         <button
           onClick={() => this.setState({ error: null })}
-          className="px-4 py-2 bg-chat-primary text-white rounded text-sm cursor-pointer hover:opacity-90"
+          className="bdc-error-boundary-retry"
         >
           Try again
         </button>

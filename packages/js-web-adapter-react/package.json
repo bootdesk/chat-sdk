@@ -30,12 +30,12 @@
     "docs": "typedoc --out ../../docs/_build/js/react src"
   },
   "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0",
+    "@bootdesk/chat-widget-bridge": "0.4.19",
     "@bootdesk/js-web-adapter-core": "0.4.19",
-    "marked": "^18.0.0",
     "dompurify": "^3.4.5",
-    "@bootdesk/chat-widget-bridge": "0.4.19"
+    "marked": "^18.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "peerDependenciesMeta": {
     "@bootdesk/chat-widget-bridge": {
@@ -63,5 +63,9 @@
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.59.4",
     "vitest": "^4.1.8"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.6.0"
   }
 }

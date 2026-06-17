@@ -10,6 +10,7 @@ import { TypingIndicator } from "./TypingIndicator";
 import { PushPermissionPrompt } from "./PushPermissionPrompt";
 import type { ReconfigureConfig } from "@bootdesk/js-web-adapter-core";
 import type { ChatWidgetProps, DisplayMode, ThemeMode } from "../types/components";
+import { cn } from "../lib/cn";
 
 export function ChatWidget({
   client,
@@ -163,7 +164,7 @@ export function ChatWidget({
     }
   }, [isOpen, displayMode, isSmallScreen, inBridge, notifyViewportConfig]);
 
-  const { messages, sendMessage, loading, isLoadingHistory, reloadMessages } = useMessages(
+  const { messages, sendMessage, loading, thinking, isLoadingHistory, reloadMessages } = useMessages(
     client,
     (isOpen || effectiveEmbedded) && !isPreEntry,
   );
@@ -314,13 +315,14 @@ export function ChatWidget({
       />
 
       {isPreEntry && preEntry ? (
-        <div className="flex-1 overflow-y-auto p-4">{preEntry.render({ start: handleStart })}</div>
+        <div className="bdc-pre-entry">{preEntry.render({ start: handleStart })}</div>
       ) : (
         <>
           <MessageList
             messages={messages}
             currentUserId={currentUserId}
             isLoading={isLoadingHistory || loading}
+            thinking={thinking}
             onActionClick={handleActionClick}
             onReactionClick={handleReactionClick}
             className={className?.messageList}
@@ -356,7 +358,7 @@ export function ChatWidget({
   const widget = effectiveEmbedded ? (
     <div
       dir={dir}
-      className="flex flex-col h-full min-h-[300px] overflow-hidden bg-chat-background"
+      className="bdc-widget"
       data-chat-widget="embedded"
       data-chat-theme={effectiveTheme}
     >
@@ -382,21 +384,19 @@ export function ChatWidget({
       {isOpen && (
         <div
           dir={dir}
-          className={`flex flex-col overflow-hidden ${
+          className={cn(
+            "bdc-widget--float",
             displayMode === "fullscreen"
-              ? "fixed inset-0 z-50"
-              : `absolute ${
-                  position === "bottom-right"
-                    ? "bottom-20 right-5"
-                    : position === "bottom-left"
-                      ? "bottom-20 left-5"
-                      : position === "top-right"
-                        ? "top-20 right-5"
-                        : position === "top-left"
-                          ? "top-20 left-5"
-                          : ""
-                } w-[480px] max-w-[min(800px,calc(100dvw-40px))] h-dvh max-h-[min(600px,80dvh)] z-10 shadow-xl border border-chat-border rounded-2xl`
-          } bg-chat-background`}
+              ? "bdc-widget--fullscreen"
+              : cn(
+                  position === "bottom-right" ? "bdc-widget--pos-bottom-right" :
+                  position === "bottom-left" ? "bdc-widget--pos-bottom-left" :
+                  position === "top-right" ? "bdc-widget--pos-top-right" :
+                  position === "top-left" ? "bdc-widget--pos-top-left" :
+                  "",
+                  "bdc-widget--float-size",
+                ),
+          )}
           data-chat-widget={displayMode}
           data-chat-position={position}
           data-chat-theme={effectiveTheme}

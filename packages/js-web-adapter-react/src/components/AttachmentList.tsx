@@ -2,6 +2,7 @@ import React from "react";
 import { PendingAttachment } from "../types/AttachmentUpload";
 import { useLocale } from "../i18n/LocaleProvider";
 import { formatSize } from "../utils/formatSize";
+import { cn } from "../lib/cn";
 
 interface AttachmentListProps {
   attachments: PendingAttachment[];
@@ -27,27 +28,27 @@ export function AttachmentList({
   }
 
   return (
-    <div className={`flex flex-wrap gap-1 p-1 ${className || ""}`} data-chat-attachment-list="true">
+    <div className={cn("bdc-attachment-list", className)} data-chat-attachment-list="true">
       {attachments.map((att) => (
         <div
           key={att.id}
-          className={`flex items-center gap-1 px-2 py-1 text-xs rounded border max-w-[200px] ${
-            att.status === "error"
-              ? "bg-chat-error/15 border-chat-error"
-              : "bg-chat-surface shadow-sm border-chat-border"
-          }`}
+          className={cn(
+            "bdc-attachment-item",
+            att.status === "error" && "bdc-attachment-item--error",
+          )}
           data-chat-attachment-item={att.id}
         >
           <span>{getFileIcon(att.mimeType)}</span>
           <div className="flex-1 min-w-0">
             <div
-              className={`overflow-hidden text-ellipsis whitespace-nowrap ${
-                att.status === "error" ? "text-chat-error" : "text-chat-text"
-              }`}
+              className={cn(
+                "bdc-attachment-name",
+                att.status === "error" && "bdc-attachment-name--error",
+              )}
             >
               {att.name}
             </div>
-            <div className="text-[10px] text-chat-text-secondary">
+            <div className="bdc-attachment-size">
               {att.status === "uploading"
                 ? `${att.progress}%`
                 : att.status === "error"
@@ -55,9 +56,9 @@ export function AttachmentList({
                   : formatSize(att.size)}
             </div>
             {att.status === "uploading" && (
-              <div className="h-0.5 bg-chat-border rounded overflow-hidden mt-0.5">
+              <div className="bdc-attachment-progress">
                 <div
-                  className="h-full bg-chat-primary transition-[width] duration-150"
+                  className="bdc-attachment-progress-fill"
                   style={{ width: `${att.progress}%` }}
                 />
               </div>
@@ -66,7 +67,7 @@ export function AttachmentList({
           {onRemove && att.status !== "uploading" && (
             <button
               onClick={() => onRemove(att.id)}
-              className="bg-none border-none cursor-pointer text-chat-text-secondary p-0.5 leading-none hover:text-chat-error"
+              className="bdc-attachment-remove"
               aria-label={`Remove ${att.name}`}
             >
               ×

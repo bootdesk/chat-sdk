@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocale } from "../i18n/LocaleProvider";
+import { cn } from "../lib/cn";
 
 interface FloatingButtonProps {
   onClick: () => void;
@@ -40,7 +41,7 @@ export function FloatingButton({
   return (
     <button
       onClick={onClick}
-      className={`${positionClasses[position]} chat-floating-button hover:scale-105 transition-transform ${className || ""}`}
+      className={cn(positionClasses[position], "bdc-floating-btn", className)}
       style={{ width: size, height: size, backgroundColor }}
       data-chat-floating-button="true"
       data-testid="chat-floating-button"
@@ -50,7 +51,7 @@ export function FloatingButton({
     >
       {badgeCount && badgeCount > 0 && (
         <span
-          className="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-chat-error text-white text-xs font-bold flex items-center justify-center px-1"
+          className="bdc-floating-btn-badge"
           data-chat-badge="true"
         >
           {badgeCount > 99 ? "99+" : badgeCount}

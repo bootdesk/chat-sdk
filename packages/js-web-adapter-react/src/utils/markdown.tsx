@@ -1,6 +1,7 @@
 import React from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
+import { cn } from "../lib/cn";
 
 const renderer = new marked.Renderer();
 renderer.link = ({ href, text }): string => {
@@ -27,7 +28,7 @@ export function MarkdownRenderer({
 }): React.JSX.Element {
   return (
     <div
-      className={`prose prose-sm max-w-none prose-headings:font-semibold prose-a:text-chat-primary prose-a:no-underline hover:prose-a:underline prose-code:bg-chat-surface prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:text-sm prose-blockquote:border-l-chat-border prose-blockquote:text-chat-text-secondary ${className || ""}`}
+      className={cn("prose prose-sm max-w-none prose-headings:font-semibold prose-a:text-chat-primary prose-a:no-underline hover:prose-a:underline prose-code:bg-chat-surface prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:text-sm prose-blockquote:border-l-chat-border prose-blockquote:text-chat-text-secondary", className)}
       dangerouslySetInnerHTML={{ __html: renderMarkdown(text) }}
     />
   );

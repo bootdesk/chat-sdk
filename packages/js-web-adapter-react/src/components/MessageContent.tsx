@@ -2,6 +2,7 @@ import React from "react";
 import { Message } from "@bootdesk/js-web-adapter-core";
 import { CardRenderer } from "../cards/CardRenderer";
 import { MarkdownRenderer } from "../utils/markdown";
+import { cn } from "../lib/cn";
 
 interface MessageContentProps {
   message: Message;
@@ -12,13 +13,13 @@ export function MessageContent({ message, onActionClick }: MessageContentProps):
   return (
     <div data-chat-message-content="true">
       {message.content.text && !message.content.cards?.length && (
-        <div className="break-words text-sm leading-relaxed" data-chat-text="true">
+        <div className="bdc-msg-text" data-chat-text="true">
           <MarkdownRenderer text={message.content.text} />
         </div>
       )}
 
       {message.content.cards?.map((card, index) => (
-        <div key={index} className={index > 0 ? "mt-2" : undefined}>
+        <div key={index} className={cn(index > 0 && "bdc-card-mt")}>
           <CardRenderer
             card={card}
             onActionClick={(actionId, value) => onActionClick?.(message.id, actionId, value)}
@@ -30,13 +31,13 @@ export function MessageContent({ message, onActionClick }: MessageContentProps):
         const isImage = attachment.type === "image" || attachment.mimeType?.startsWith("image/");
 
         return (
-          <div key={attachment.id} className="mt-2">
+          <div key={attachment.id} className="bdc-attach-mt">
             {isImage ? (
               <a href={attachment.url} target="_blank" rel="noopener noreferrer">
                 <img
                   src={attachment.url}
                   alt={attachment.name || "Image"}
-                  className="max-w-full rounded object-cover"
+                  className="bdc-img-attach"
                   loading="lazy"
                   data-chat-attachment={attachment.id}
                 />
@@ -46,7 +47,7 @@ export function MessageContent({ message, onActionClick }: MessageContentProps):
                 href={attachment.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 bg-chat-surface rounded text-sm no-underline text-chat-text hover:bg-chat-background transition"
+                className="bdc-file-attach"
                 data-chat-attachment={attachment.id}
               >
                 <svg
@@ -58,7 +59,7 @@ export function MessageContent({ message, onActionClick }: MessageContentProps):
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="shrink-0"
+                  className="bdc-file-icon"
                 >
                   <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                 </svg>

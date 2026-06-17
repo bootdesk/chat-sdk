@@ -47,20 +47,20 @@ export function PushPermissionPrompt({
 
   return (
     <div
-      className="p-3 bg-chat-surface rounded-lg flex items-start gap-3"
+      className="bdc-push-prompt"
       data-chat-push-prompt="true"
     >
-      <div className="flex-1">
-        <div className="font-semibold mb-1 text-chat-text">{title || t("push.title")}</div>
-        <div className="text-sm text-chat-text-secondary">
+      <div className="bdc-push-prompt-body">
+        <div className="bdc-push-prompt-title">{title || t("push.title")}</div>
+        <div className="bdc-push-prompt-desc">
           {description || t("push.description")}
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="bdc-push-prompt-actions">
         {!isSubscribed && status !== "denied" && (
           <button
             onClick={handleEnable}
-            className="px-3 py-1.5 bg-chat-primary text-white border-none rounded cursor-pointer text-sm hover:opacity-90"
+            className="bdc-push-prompt-enable"
           >
             {t("push.enable")}
           </button>
@@ -68,14 +68,14 @@ export function PushPermissionPrompt({
         {isSubscribed && (
           <button
             onClick={handleDisable}
-            className="px-3 py-1.5 bg-transparent text-chat-text-secondary border border-chat-border rounded cursor-pointer text-sm hover:bg-chat-surface"
+            className="bdc-push-prompt-disable"
           >
             {t("push.disable")}
           </button>
         )}
         <button
           onClick={() => setDismissed(true)}
-          className="px-1.5 bg-transparent border-none cursor-pointer text-chat-text-secondary hover:text-chat-text"
+          className="bdc-push-prompt-dismiss"
         >
           ✕
         </button>

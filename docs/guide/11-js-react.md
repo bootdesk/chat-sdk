@@ -327,27 +327,208 @@ function App() {
 }
 ```
 
-## Theming
+## Styling
+
+The widget uses a CSS component class system with the `bdc-*` (`bootdesk-chat`) prefix. Every visual element has a dedicated class, making it easy to target and override with your own CSS.
+
+### CSS Component Classes
+
+All classes are defined in the widget's CSS via Tailwind `@apply`. They resolve to the CSS custom properties listed below, so changing a variable updates all components automatically.
+
+| Area | Class | Element |
+|------|-------|---------|
+| **Widget** | `bdc-widget` | Root container (embedded) |
+| | `bdc-widget--float` | Floating mode wrapper |
+| | `bdc-widget--fullscreen` | Fullscreen mode overlay |
+| | `bdc-widget--pos-{bottom-right,bottom-left,top-right,top-left}` | Floating position |
+| | `bdc-widget--float-size` | Floating dimensions + shadow |
+| | `bdc-pre-entry` | Pre-entry screen wrapper |
+| **Header** | `bdc-header` | Header bar |
+| | `bdc-header-left` | Left section (dot + title) |
+| | `bdc-header-dot` | Connection status dot |
+| | `bdc-header-dot--connected` | Connected state |
+| | `bdc-header-dot--disconnected` | Disconnected state |
+| | `bdc-header-title` | Title text |
+| | `bdc-header-right` | Right button group |
+| | `bdc-header-btn` | Any header button |
+| **Message List** | `bdc-message-list` | Scrollable container |
+| | `bdc-message-group` | Consecutive messages from same author |
+| | `bdc-message-group-author` | Author name above group |
+| | `bdc-message-item` | Single message wrapper |
+| | `bdc-message-bubble-own` | Current user's bubble |
+| | `bdc-message-bubble-other` | Other user's bubble |
+| | `bdc-message-text` | Message text content |
+| | `bdc-msg-timestamp` | Timestamp below message |
+| | `bdc-reactions` | Reaction row |
+| | `bdc-reaction-btn` | Single reaction button |
+| | `bdc-reaction-btn--active` | User has reacted |
+| | `bdc-reaction-btn--inactive` | User has not reacted |
+| | `bdc-reaction-count` | Reaction count |
+| | `bdc-empty-state` | Empty message list |
+| | `bdc-empty-state-text` | Empty state text |
+| | `bdc-loading` | Loading skeleton wrapper |
+| | `bdc-loading-dots` | Loading dot container |
+| | `bdc-loading-dot` | Individual bounce dot |
+| | `bdc-thinking` | Thinking indicator wrapper |
+| | `bdc-thinking-dots` | Thinking dot container |
+| | `bdc-thinking-dot` | Individual bounce dot |
+| | `bdc-scroll-anchor` | Invisible scroll target |
+| **Input Area** | `bdc-input-area` | Input area container |
+| | `bdc-input-area-row` | Input + send button row |
+| | `bdc-input-area-attach` | Attachment toggle button |
+| | `bdc-input-area-attach--active` | Dropzone visible state |
+| | `bdc-input` | Message textarea |
+| | `bdc-send-btn` | Send button |
+| | `bdc-spinner` | Uploading spinner |
+| **Typing** | `bdc-typing-indicator` | Typing indicator bar |
+| | `bdc-typing-wrapper` | Dot + label wrapper |
+| | `bdc-typing-dots` | Dot container |
+| | `bdc-typing-dot` | Individual bounce dot |
+| **Floating Button** | `bdc-floating-btn` | FAB button |
+| | `bdc-floating-btn-badge` | Unread count badge |
+| **Dropzone** | `bdc-dropzone` | File drop zone |
+| | `bdc-dropzone--dragging` | Drag active state |
+| | `bdc-dropzone--disabled` | Disabled state |
+| | `bdc-dropzone-input` | Hidden file input |
+| | `bdc-dropzone-center` | Centered content wrapper |
+| | `bdc-dropzone-icon` | Upload icon |
+| | `bdc-dropzone-text` | Instruction text |
+| **Attachments** | `bdc-attachment-list` | Attachment list |
+| | `bdc-attachment-item` | Single attachment |
+| | `bdc-attachment-item--error` | Upload failed |
+| | `bdc-attachment-name` | File name |
+| | `bdc-attachment-name--error` | Failed file name |
+| | `bdc-attachment-size` | File size / status |
+| | `bdc-attachment-progress` | Progress bar track |
+| | `bdc-attachment-progress-fill` | Progress bar fill |
+| | `bdc-attachment-remove` | Remove button |
+| **Push Notifications** | `bdc-push-prompt` | Permission prompt |
+| | `bdc-push-prompt-body` | Text container |
+| | `bdc-push-prompt-title` | Prompt title |
+| | `bdc-push-prompt-desc` | Prompt description |
+| | `bdc-push-prompt-actions` | Button row |
+| | `bdc-push-prompt-enable` | Enable button |
+| | `bdc-push-prompt-disable` | Disable button |
+| | `bdc-push-prompt-dismiss` | Dismiss button |
+| | `bdc-push-toggle` | Toggle label |
+| | `bdc-push-toggle-input` | Checkbox |
+| | `bdc-push-toggle-text` | Label text |
+| | `bdc-push-unsupported` | Unsupported message |
+| | `bdc-push-denied` | Denied message |
+| **Cards** | `bdc-card` | Card container |
+| | `bdc-card-header` | Card header |
+| | `bdc-card-img` | Card image |
+| | `bdc-card-section` | Card section |
+| | `bdc-card-section-text` | Section text |
+| | `bdc-card-field` | Key-value field |
+| | `bdc-card-field-title` | Field label |
+| | `bdc-card-field-value` | Field value |
+| | `bdc-card-element-text` | Text element |
+| | `bdc-card-element-text--muted` | Muted style |
+| | `bdc-card-element-text--bold` | Bold style |
+| | `bdc-card-divider` | Horizontal rule |
+| | `bdc-card-link` | Hyperlink |
+| | `bdc-card-table` | Table |
+| | `bdc-card-table-th` | Table header cell |
+| | `bdc-card-table-td` | Table data cell |
+| | `bdc-card-link-btn` | Link-style button |
+| | `bdc-card-link-btn--primary` | Primary style |
+| | `bdc-card-link-btn--danger` | Danger style |
+| | `bdc-card-link-btn--default` | Default style |
+| | `bdc-card-img-element` | Image element |
+| | `bdc-card-actions` | Action button row |
+| | `bdc-card-action-btn` | Action button |
+| | `bdc-card-action-btn--primary` | Primary action |
+| | `bdc-card-action-btn--danger` | Danger action |
+| | `bdc-card-action-btn--default` | Default action |
+| | `bdc-image-card` | Image card wrapper |
+| | `bdc-image-card-img` | Image card image |
+| | `bdc-image-card-title` | Image card caption |
+| | `bdc-file-card` | File card wrapper |
+| | `bdc-file-card-icon` | File type icon |
+| | `bdc-file-card-info` | File metadata |
+| | `bdc-file-card-name` | File name |
+| | `bdc-file-card-size` | File size |
+| | `bdc-file-card-download` | Download link |
+| **Message Attachments** | `bdc-img-attach` | Inline image |
+| | `bdc-file-attach` | Inline file link |
+| | `bdc-file-icon` | File link icon |
+| | `bdc-attach-mt` | Attachment top margin |
+| **Error** | `bdc-error-boundary` | Error fallback |
+| | `bdc-error-boundary-title` | Error heading |
+| | `bdc-error-boundary-msg` | Error message |
+| | `bdc-error-boundary-retry` | Retry button |
+
+### Overriding Styles
+
+Target any `bdc-*` class in your own CSS. Because the widget does not apply a global CSS reset, your page's styles remain unaffected.
+
+```css
+/* Custom header background */
+.bdc-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Rounded own bubbles */
+.bdc-message-bubble-own {
+  border-radius: 12px 12px 2px 12px;
+}
+
+/* Larger send button */
+.bdc-send-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+```
+
+### className Prop
+
+Components accept a `className` prop for per-instance overrides. The widget uses `cn()` (powered by `clsx` + `tailwind-merge`) so your classes merge cleanly without conflicts:
+
+```tsx
+<ChatWidget
+  client={client}
+  className={{
+    header: "bg-gradient-to-r",
+    messageList: "px-2",
+    inputArea: "border-t-2",
+  }}
+/>
+
+<MessageList
+  messages={messages}
+  className="bg-gray-50"
+/>
+```
 
 ### CSS Variables
 
-Override on your root element:
+Override on your root element for a consistent theme:
 
 ```css
 :root {
   --chat-primary: #4f46e5;
+  --chat-primary-hover: #4338ca;
   --chat-background: #ffffff;
-  --chat-text: #0f172a;
-  --chat-border: #e2e8f0;
   --chat-surface: #f8fafc;
+  --chat-text: #0f172a;
+  --chat-text-secondary: #64748b;
+  --chat-border: #e2e8f0;
+  --chat-own-message: #4f46e5;
+  --chat-own-message-text: #ffffff;
+  --chat-other-message: #f1f5f9;
+  --chat-other-message-text: #0f172a;
+  --chat-error: #ef4444;
+  --chat-success: #22c55e;
+  --chat-font-family: "Inter", system-ui, sans-serif;
 }
 ```
 
-Dark mode values are set automatically when `theme="auto"` or `theme="dark"`.
-
 ### Theme Toggle
 
-The widget's header includes a theme toggle button by default. Listen for changes with `onThemeChange`. Theme is persisted to `localStorage` key `chat-theme`.
+The header includes a theme toggle button by default. Listen for changes with `onThemeChange`. Theme is persisted to `localStorage` key `chat-theme`.
+
+
 
 ## Responsive
 

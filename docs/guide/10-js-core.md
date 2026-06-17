@@ -40,18 +40,18 @@ await client.connect();
 
 ### Configuration
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `apiUrl` | `string` | required | Backend base URL |
-| `userId` | `string` | required | Current user ID (sent as `X-User-Id` header) |
-| `userName` | `string` | required | Display name (sent as `X-User-Name` header) |
-| `verifyToken` | `string?` | — | Sent as `X-Verify-Token` for webhook verification |
-| `broadcastClient` | `BroadcastClient?` | — | Pusher or Laravel Echo instance for real-time |
-| `headers` | `Record<string,string>?` | `{}` | Extra HTTP headers |
-| `conversationId` | `string?` | auto | Manually set conversation ID |
-| `features.editMessages` | `boolean?` | `false` | Enables `editMessage()` |
-| `features.deleteMessages` | `boolean?` | `false` | Enables `deleteMessage()` |
-| `features.reactions` | `boolean?` | `false` | Enables `addReaction()`/`removeReaction()` |
+| Option                    | Type                     | Default  | Description                                       |
+| ------------------------- | ------------------------ | -------- | ------------------------------------------------- |
+| `apiUrl`                  | `string`                 | required | Backend base URL                                  |
+| `userId`                  | `string`                 | required | Current user ID (sent as `X-User-Id` header)      |
+| `userName`                | `string`                 | required | Display name (sent as `X-User-Name` header)       |
+| `verifyToken`             | `string?`                | —        | Sent as `X-Verify-Token` for webhook verification |
+| `broadcastClient`         | `BroadcastClient?`       | —        | Pusher or Laravel Echo instance for real-time     |
+| `headers`                 | `Record<string,string>?` | `{}`     | Extra HTTP headers                                |
+| `conversationId`          | `string?`                | auto     | Manually set conversation ID                      |
+| `features.editMessages`   | `boolean?`               | `false`  | Enables `editMessage()`                           |
+| `features.deleteMessages` | `boolean?`               | `false`  | Enables `deleteMessage()`                         |
+| `features.reactions`      | `boolean?`               | `false`  | Enables `addReaction()`/`removeReaction()`        |
 
 Custom endpoints (all have sensible defaults):
 
@@ -78,7 +78,9 @@ const client = new WebChatClient({
 await client.sendMessage("Hello, world!");
 
 // Load history
-const { messages, hasMore, loadMore } = await client.loadMessages({ limit: 30 });
+const { messages, hasMore, loadMore } = await client.loadMessages({
+  limit: 30,
+});
 
 // Edit / delete
 await client.editMessage("msg-123", "Updated text");
@@ -161,7 +163,10 @@ const threadId = client.getThreadId();
 ### Pusher
 
 ```typescript
-import { WebChatClient, PusherBroadcastClient } from "@bootdesk/js-web-adapter-core";
+import {
+  WebChatClient,
+  PusherBroadcastClient,
+} from "@bootdesk/js-web-adapter-core";
 
 const broadcast = new PusherBroadcastClient({
   key: "pusher-key",
@@ -236,7 +241,10 @@ await http.del("/api/chat/messages/123");
 Requires a service worker:
 
 ```typescript
-import { PushManager, createPushSubscriptionHandlers } from "@bootdesk/js-web-adapter-core";
+import {
+  PushManager,
+  createPushSubscriptionHandlers,
+} from "@bootdesk/js-web-adapter-core";
 
 const push = new PushManager({
   ...createPushSubscriptionHandlers(fetch),
@@ -266,7 +274,10 @@ await push.unsubscribe();
 All events extend `ChatEvent` with fields `type`, `threadId`, `timestamp`. Parse raw JSON from the server:
 
 ```typescript
-import { parseChatEvent, MessagePostedEvent } from "@bootdesk/js-web-adapter-core";
+import {
+  parseChatEvent,
+  MessagePostedEvent,
+} from "@bootdesk/js-web-adapter-core";
 
 const event = parseChatEvent(rawJson);
 if (event instanceof MessagePostedEvent) {
@@ -276,22 +287,25 @@ if (event instanceof MessagePostedEvent) {
 
 Available event classes:
 
-| Class | Fields |
-|---|---|
-| `MessagePostedEvent` | `messageId`, `text`, `author`, `card?`, `attachments?` |
-| `MessageEditedEvent` | `messageId`, `newText`, `card?` |
-| `MessageDeletedEvent` | `messageId` |
-| `ReactionAddedEvent` | `messageId`, `emoji`, `user` |
-| `ReactionRemovedEvent` | `messageId`, `emoji`, `user` |
-| `TypingStartedEvent` | `userId` |
-| `StreamingChunkEvent` | `messageId`, `chunk`, `isFinal` |
-| `DMRequestedEvent` | `userId` |
-| `UnknownEvent` | fallback for unrecognised types |
+| Class                  | Fields                                                 |
+| ---------------------- | ------------------------------------------------------ |
+| `MessagePostedEvent`   | `messageId`, `text`, `author`, `card?`, `attachments?` |
+| `MessageEditedEvent`   | `messageId`, `newText`, `card?`                        |
+| `MessageDeletedEvent`  | `messageId`                                            |
+| `ReactionAddedEvent`   | `messageId`, `emoji`, `user`                           |
+| `ReactionRemovedEvent` | `messageId`, `emoji`, `user`                           |
+| `TypingStartedEvent`   | `userId`                                               |
+| `StreamingChunkEvent`  | `messageId`, `chunk`, `isFinal`                        |
+| `DMRequestedEvent`     | `userId`                                               |
+| `UnknownEvent`         | fallback for unrecognised types                        |
 
 ## Utilities
 
 ```typescript
-import { generateId, generateConversationId } from "@bootdesk/js-web-adapter-core";
+import {
+  generateId,
+  generateConversationId,
+} from "@bootdesk/js-web-adapter-core";
 
 generateId(); // "a1b2c3d4-..." — uses crypto.randomUUID
 ```

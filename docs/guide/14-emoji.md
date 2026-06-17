@@ -97,16 +97,16 @@ Adapters with `EmojiResolver` constructor injection (Slack, Discord, Telegram, M
 
 ### Supported platforms
 
-| Platform  | Format                          |
-|-----------|---------------------------------|
-| `slack`   | `:emoji_name:` (colon format)   |
-| `gchat`   | Unicode emoji character         |
-| `teams`   | Unicode emoji character         |
-| `discord` | Unicode emoji character         |
+| Platform    | Format                        |
+| ----------- | ----------------------------- |
+| `slack`     | `:emoji_name:` (colon format) |
+| `gchat`     | Unicode emoji character       |
+| `teams`     | Unicode emoji character       |
+| `discord`   | Unicode emoji character       |
 | `messenger` | Unicode emoji character       |
-| `github`  | Unicode emoji character         |
-| `linear`  | Unicode emoji character         |
-| `whatsapp` | Unicode emoji character        |
+| `github`    | Unicode emoji character       |
+| `linear`    | Unicode emoji character       |
+| `whatsapp`  | Unicode emoji character       |
 
 ## Built-in Emoji Map
 

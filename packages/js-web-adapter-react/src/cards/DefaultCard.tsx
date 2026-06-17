@@ -15,12 +15,9 @@ export function DefaultCard({
   const card = rawCard as PHPCard;
 
   return (
-    <div
-      className="bdc-card"
-      data-chat-card="default"
-    >
+    <div className="bdesk-card" data-chat-card="default">
       {card.header && (
-        <div className="bdc-card-header">
+        <div className="bdesk-card-header">
           <MarkdownRenderer text={card.header} />
         </div>
       )}
@@ -29,25 +26,23 @@ export function DefaultCard({
         <img
           src={card.image.url}
           alt={card.image.alt || ""}
-          className="bdc-card-img"
+          className="bdesk-card-img"
           data-chat-card-image="true"
         />
       )}
 
       {card.sections?.map((section, index) => (
-        <div key={index} className="bdc-card-section" data-chat-section={index}>
+        <div key={index} className="bdesk-card-section" data-chat-section={index}>
           {section.text && (
-            <div className="bdc-card-section-text">
+            <div className="bdesk-card-section-text">
               <MarkdownRenderer text={section.text} />
             </div>
           )}
 
           {section.fields?.map((field, fieldIndex) => (
-            <div key={fieldIndex} className="bdc-card-field" data-chat-field={fieldIndex}>
-              {field.title && (
-                <div className="bdc-card-field-title">{field.title}</div>
-              )}
-              <div className="bdc-card-field-value">{field.value}</div>
+            <div key={fieldIndex} className="bdesk-card-field" data-chat-field={fieldIndex}>
+              {field.title && <div className="bdesk-card-field-title">{field.title}</div>}
+              <div className="bdesk-card-field-value">{field.value}</div>
             </div>
           ))}
         </div>
@@ -60,17 +55,17 @@ export function DefaultCard({
               <div
                 key={`el-${elIndex}`}
                 className={cn(
-                  "bdc-card-element-text",
-                  element.style === "muted" && "bdc-card-element-text--muted",
-                  element.style === "bold" && "bdc-card-element-text--bold",
-                  !element.style && "bdc-card-element-text--normal",
+                  "bdesk-card-element-text",
+                  element.style === "muted" && "bdesk-card-element-text--muted",
+                  element.style === "bold" && "bdesk-card-element-text--bold",
+                  !element.style && "bdesk-card-element-text--normal",
                 )}
               >
                 <MarkdownRenderer text={element.content} />
               </div>
             );
           case "divider":
-            return <hr key={`el-${elIndex}`} className="bdc-card-divider" />;
+            return <hr key={`el-${elIndex}`} className="bdesk-card-divider" />;
           case "link":
             return (
               <a
@@ -78,22 +73,19 @@ export function DefaultCard({
                 href={element.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bdc-card-link"
+                className="bdesk-card-link"
               >
                 {element.label}
               </a>
             );
           case "table":
             return (
-              <table key={`el-${elIndex}`} className="bdc-card-table">
+              <table key={`el-${elIndex}`} className="bdesk-card-table">
                 {element.headers.length > 0 && (
                   <thead>
                     <tr>
                       {element.headers.map((h, i) => (
-                        <th
-                          key={i}
-                          className="bdc-card-table-th"
-                        >
+                        <th key={i} className="bdesk-card-table-th">
                           {h}
                         </th>
                       ))}
@@ -104,7 +96,7 @@ export function DefaultCard({
                   {element.rows.map((row, rIdx) => (
                     <tr key={rIdx}>
                       {row.map((cell, cIdx) => (
-                        <td key={cIdx} className="bdc-card-table-td">
+                        <td key={cIdx} className="bdesk-card-table-td">
                           {cell}
                         </td>
                       ))}
@@ -121,10 +113,11 @@ export function DefaultCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
-                  "bdc-card-link-btn",
-                  element.style === "primary" && "bdc-card-link-btn--primary",
-                  element.style === "danger" && "bdc-card-link-btn--danger",
-                  (!element.style || (element.style !== "primary" && element.style !== "danger")) && "bdc-card-link-btn--default",
+                  "bdesk-card-link-btn",
+                  element.style === "primary" && "bdesk-card-link-btn--primary",
+                  element.style === "danger" && "bdesk-card-link-btn--danger",
+                  (!element.style || (element.style !== "primary" && element.style !== "danger")) &&
+                    "bdesk-card-link-btn--default",
                 )}
               >
                 {element.label}
@@ -136,7 +129,7 @@ export function DefaultCard({
                 key={`el-${elIndex}`}
                 src={element.url}
                 alt={element.alt || ""}
-                className="bdc-card-img-element"
+                className="bdesk-card-img-element"
               />
             );
           default:
@@ -145,16 +138,17 @@ export function DefaultCard({
       })}
 
       {card.actions && card.actions.length > 0 && (
-        <div className="bdc-card-actions" data-chat-actions="true">
+        <div className="bdesk-card-actions" data-chat-actions="true">
           {card.actions.map((action) => (
             <button
               key={action.id}
               onClick={() => onActionClick?.(action.id, action.value || "")}
               className={cn(
-                "bdc-card-action-btn",
-                action.style === "primary" && "bdc-card-action-btn--primary",
-                action.style === "danger" && "bdc-card-action-btn--danger",
-                (!action.style || (action.style !== "primary" && action.style !== "danger")) && "bdc-card-action-btn--default",
+                "bdesk-card-action-btn",
+                action.style === "primary" && "bdesk-card-action-btn--primary",
+                action.style === "danger" && "bdesk-card-action-btn--danger",
+                (!action.style || (action.style !== "primary" && action.style !== "danger")) &&
+                  "bdesk-card-action-btn--default",
               )}
               data-chat-action={action.id}
             >

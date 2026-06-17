@@ -46,37 +46,23 @@ export function PushPermissionPrompt({
   };
 
   return (
-    <div
-      className="bdc-push-prompt"
-      data-chat-push-prompt="true"
-    >
-      <div className="bdc-push-prompt-body">
-        <div className="bdc-push-prompt-title">{title || t("push.title")}</div>
-        <div className="bdc-push-prompt-desc">
-          {description || t("push.description")}
-        </div>
+    <div className="bdesk-push-prompt" data-chat-push-prompt="true">
+      <div className="bdesk-push-prompt-body">
+        <div className="bdesk-push-prompt-title">{title || t("push.title")}</div>
+        <div className="bdesk-push-prompt-desc">{description || t("push.description")}</div>
       </div>
-      <div className="bdc-push-prompt-actions">
+      <div className="bdesk-push-prompt-actions">
         {!isSubscribed && status !== "denied" && (
-          <button
-            onClick={handleEnable}
-            className="bdc-push-prompt-enable"
-          >
+          <button onClick={handleEnable} className="bdesk-push-prompt-enable">
             {t("push.enable")}
           </button>
         )}
         {isSubscribed && (
-          <button
-            onClick={handleDisable}
-            className="bdc-push-prompt-disable"
-          >
+          <button onClick={handleDisable} className="bdesk-push-prompt-disable">
             {t("push.disable")}
           </button>
         )}
-        <button
-          onClick={() => setDismissed(true)}
-          className="bdc-push-prompt-dismiss"
-        >
+        <button onClick={() => setDismissed(true)} className="bdesk-push-prompt-dismiss">
           ✕
         </button>
       </div>

@@ -2,7 +2,6 @@
 
 Platform-specific limitations, common pitfalls, and important behaviors.
 
-
 ## Ephemeral Messages
 
 `Thread::postEphemeral()` exists in the core API but **no adapters implement it**. Calling this will throw an exception or silently fail depending on the adapter. Use regular `post()` for now.
@@ -41,6 +40,7 @@ Additional options:
 - **Laravel (`QueueConcurrencyHandler`)**: `drop` acquires a lock during the webhook — if acquired, dispatches `ProcessMessageJob` (lock released when job finishes); if contention, drops silently. `queue` and `concurrent` dispatch jobs. `debounce` stores messages in cache (`:latest`, `:skipped`, `:last` timestamp) and dispatches a unique delayed `ProcessDebouncedMessageJob`. When the job fires, it checks `:last` — if still within the debounce window, it re-dispatches with the remaining delay (but does **not** restore `:last`, preventing infinite re-dispatch loops).
 
 Adapter markers determine behavior:
+
 - `RequiresSyncResponse` (WebAdapter, DiscordAdapter) — always processes inline regardless of strategy
 - `RequiresAsyncResponse` (Slack, Telegram, Meta) — always defers to async
 - No marker — tries inline on no contention, strategy on contention
@@ -179,18 +179,19 @@ WhatsAppTemplate::create('order', 'en')
 
 Messenger, Instagram, and WhatsApp use single-character formatting syntax instead of standard markdown:
 
-| Format | Syntax | Example |
-|---|---|---|
-| Bold | `*text*` | `*hello*` → **hello** |
-| Italic | `_text_` | `_hello_` → *hello* |
-| Strikethrough | `~text~` | `~hello~` → ~~hello~~ |
-| Monospace | `` `text` `` | `` `hello` `` → `hello` |
-| Code Block | ``` ```text``` ``` | ``` ```echo hi``` ``` → code block |
-| Bullet List (WhatsApp) | `* item` / `- item` | `* one` → • one |
-| Numbered List (WhatsApp) | `1. item` | `1. one` → 1. one |
-| Quote (WhatsApp) | `> text` | `> hello` → blockquote |
+| Format                   | Syntax              | Example                    |
+| ------------------------ | ------------------- | -------------------------- |
+| Bold                     | `*text*`            | `*hello*` → **hello**      |
+| Italic                   | `_text_`            | `_hello_` → _hello_        |
+| Strikethrough            | `~text~`            | `~hello~` → ~~hello~~      |
+| Monospace                | `` `text` ``        | `` `hello` `` → `hello`    |
+| Code Block               | ` `text` `          | ` `echo hi` ` → code block |
+| Bullet List (WhatsApp)   | `* item` / `- item` | `* one` → • one            |
+| Numbered List (WhatsApp) | `1. item`           | `1. one` → 1. one          |
+| Quote (WhatsApp)         | `> text`            | `> hello` → blockquote     |
 
 The SDK's `FormatConverter` handles conversion automatically:
+
 - **Outgoing** (via `renderPostable()`): standard markdown (`**bold**`, `~~strike~~`) → platform format (`*bold*`, `~strike~`)
 - **Incoming** (via `toAst()`): platform format → standard markdown before CommonMark parsing
 
@@ -214,17 +215,17 @@ Some adapter files lack `declare(strict_types=1)`. This is a known inconsistency
 
 ## Platform Feature Matrix Quick Reference
 
-| Platform   | Edit | Delete | DM  | Typing | Reactions | Slash Commands | Cards       | Modals | markSeen |
-| ---------- | ---- | ------ | --- | ------ | --------- | -------------- | ----------- | ------ | -------- |
-| Slack      | ✓    | ✓      | ✗   | ✓      | ✓         | ✓             | ✓           | ✓      | ✗        |
-| Telegram   | ✓    | ✓      | ✓   | ✓      | ✓         | ✓             | ✓           | ✗      | ✗        |
-| Discord    | ✓    | ✓      | ✗   | ✓      | ✓         | ✓             | ✓           | ✗      | ✗        |
-| WhatsApp   | ✗    | ✗      | ✗   | ✓      | ✓         | ✓             | Partial     | ✗      | ✗        |
-| Messenger  | ✗    | ✗      | ✗   | ✓      | ✓         | ✓             | ✓\*         | ✗      | ✗        |
-| Instagram  | ✗    | ✗      | ✗   | ✓      | ✓\*\*     | ✓             | ✓\*\*\*     | ✗      | ✓        |
-| GitHub     | ✓    | ✓      | ✗   | ✗      | ✓         | ✓             | Text only   | ✗      | ✗        |
-| Linear     | ✓    | ✓\†    | ✗   | ✗      | ✓         | ✗             | Text only   | ✗      | ✗        |
-| Telnyx     | ✗    | ✗      | ✗   | ✗      | ✗         | ✓             | RCS only    | ✗      | ✗        |
+| Platform  | Edit | Delete | DM  | Typing | Reactions | Slash Commands | Cards     | Modals | markSeen |
+| --------- | ---- | ------ | --- | ------ | --------- | -------------- | --------- | ------ | -------- |
+| Slack     | ✓    | ✓      | ✗   | ✓      | ✓         | ✓              | ✓         | ✓      | ✗        |
+| Telegram  | ✓    | ✓      | ✓   | ✓      | ✓         | ✓              | ✓         | ✗      | ✗        |
+| Discord   | ✓    | ✓      | ✗   | ✓      | ✓         | ✓              | ✓         | ✗      | ✗        |
+| WhatsApp  | ✗    | ✗      | ✗   | ✓      | ✓         | ✓              | Partial   | ✗      | ✗        |
+| Messenger | ✗    | ✗      | ✗   | ✓      | ✓         | ✓              | ✓\*       | ✗      | ✗        |
+| Instagram | ✗    | ✗      | ✗   | ✓      | ✓\*\*     | ✓              | ✓\*\*\*   | ✗      | ✓        |
+| GitHub    | ✓    | ✓      | ✗   | ✗      | ✓         | ✓              | Text only | ✗      | ✗        |
+| Linear    | ✓    | ✓\†    | ✗   | ✗      | ✓         | ✗              | Text only | ✗      | ✗        |
+| Telnyx    | ✗    | ✗      | ✗   | ✗      | ✗         | ✓              | RCS only  | ✗      | ✗        |
 
 \* Messenger: templates render as native cards.
 \*\* Instagram: reactions support any emoji (sent via `sender_action: "react"`).
@@ -250,16 +251,16 @@ $chat->onSlashCommand(function (SlashCommandEvent $event) {
 
 ### Platform-Specific Behavior
 
-| Platform   | Detection                        | Notes                                    |
-| ---------- | -------------------------------- | ---------------------------------------- |
-| Discord    | `type === 1` (APPLICATION_COMMAND) | Native slash commands (built-in)        |
-| GitHub     | Comment text starts with `/`      | Works in Issues and PR comments          |
-| Telegram   | `text[0] === '/'`                 | Uses `bot_command` entity if available   |
-| Telnyx     | `text[0] === '/'`                 | SMS/MMS/RCS text detection              |
-| Slack      | `command` in payload              | Native slash commands (built-in)         |
-| WhatsApp   | `text['body'][0] === '/'`         | Checked in `messages[].text.body`       |
-| Messenger  | `text[0] === '/'`                 | Checked in `messaging[].message.text`   |
-| Instagram  | `text[0] === '/'`                 | Same as Messenger (Graph API)           |
+| Platform  | Detection                          | Notes                                  |
+| --------- | ---------------------------------- | -------------------------------------- |
+| Discord   | `type === 1` (APPLICATION_COMMAND) | Native slash commands (built-in)       |
+| GitHub    | Comment text starts with `/`       | Works in Issues and PR comments        |
+| Telegram  | `text[0] === '/'`                  | Uses `bot_command` entity if available |
+| Telnyx    | `text[0] === '/'`                  | SMS/MMS/RCS text detection             |
+| Slack     | `command` in payload               | Native slash commands (built-in)       |
+| WhatsApp  | `text['body'][0] === '/'`          | Checked in `messages[].text.body`      |
+| Messenger | `text[0] === '/'`                  | Checked in `messaging[].message.text`  |
+| Instagram | `text[0] === '/'`                  | Same as Messenger (Graph API)          |
 
 ### Discord & Slack Native Commands
 
@@ -303,6 +304,7 @@ Meta platforms (Messenger, Instagram, WhatsApp) may send **multiple events in a 
 - **After (fix)**: All events are iterated and dispatched individually through the full pipeline (self-filter, dedup, middleware, concurrency, event dispatch).
 
 Batched payloads dispatch each event independently:
+
 - Each message goes through its own dedup (separate message IDs get separate keys)
 - Each reaction/action/status fires its own event
 - Different thread IDs get separate concurrency locks
@@ -356,13 +358,22 @@ Called once per event in a batched webhook, before dispatch. The middleware rece
   "entry": [
     {
       "messaging": [
-        {"sender": {"id": "A"}, "message": {"text": "hello", "mid": "m1"}},
-        {"sender": {"id": "B"}, "postback": {"payload": "chat:{\"a\":\"ok\"}"}}
+        {
+          "sender": { "id": "A" },
+          "message": { "text": "hello", "mid": "m1" }
+        },
+        {
+          "sender": { "id": "B" },
+          "postback": { "payload": "chat:{\"a\":\"ok\"}" }
+        }
       ]
     },
     {
       "messaging": [
-        {"sender": {"id": "A"}, "reaction": {"reaction": "👍", "action": "react"}}
+        {
+          "sender": { "id": "A" },
+          "reaction": { "reaction": "👍", "action": "react" }
+        }
       ]
     }
   ]
@@ -393,16 +404,16 @@ The adapter continues to return a 200 OK response — the platform knows the web
 
 Platforms verify webhooks differently:
 
-| Platform   | Challenge Type          | Header                            |
-| ---------- | ----------------------- | --------------------------------- |
-| Slack      | URL challenge (POST)    | `X-Slack-Signature`               |
-| Telegram   | No challenge            | `X-Telegram-Bot-Api-Secret-Token` |
-| Discord    | No challenge            | `X-Signature-Ed25519`             |
-| WhatsApp   | GET `hub.challenge`     | `X-Hub-Signature-256`             |
-| Messenger  | GET `hub.challenge`     | `X-Hub-Signature-256`             |
-| Instagram  | GET `hub.challenge`     | `X-Hub-Signature-256`             |
-| Telnyx     | GET `webhook.challenge` | Ed25519 signature                 |
-| GitHub     | No challenge            | `X-Hub-Signature-256`             |
-| Linear     | No challenge            | `linear-signature`                |
+| Platform  | Challenge Type          | Header                            |
+| --------- | ----------------------- | --------------------------------- |
+| Slack     | URL challenge (POST)    | `X-Slack-Signature`               |
+| Telegram  | No challenge            | `X-Telegram-Bot-Api-Secret-Token` |
+| Discord   | No challenge            | `X-Signature-Ed25519`             |
+| WhatsApp  | GET `hub.challenge`     | `X-Hub-Signature-256`             |
+| Messenger | GET `hub.challenge`     | `X-Hub-Signature-256`             |
+| Instagram | GET `hub.challenge`     | `X-Hub-Signature-256`             |
+| Telnyx    | GET `webhook.challenge` | Ed25519 signature                 |
+| GitHub    | No challenge            | `X-Hub-Signature-256`             |
+| Linear    | No challenge            | `linear-signature`                |
 
 The `WebhookController` in Laravel handles both GET (for challenges) and POST (for webhooks).

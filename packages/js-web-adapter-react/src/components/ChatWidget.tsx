@@ -164,10 +164,8 @@ export function ChatWidget({
     }
   }, [isOpen, displayMode, isSmallScreen, inBridge, notifyViewportConfig]);
 
-  const { messages, sendMessage, loading, thinking, isLoadingHistory, reloadMessages } = useMessages(
-    client,
-    (isOpen || effectiveEmbedded) && !isPreEntry,
-  );
+  const { messages, sendMessage, loading, thinking, isLoadingHistory, reloadMessages } =
+    useMessages(client, (isOpen || effectiveEmbedded) && !isPreEntry);
   const { isSomeoneTyping } = useTyping(client);
 
   const webPushEnabled = !!pushConfig && !hasBridgePush;
@@ -315,7 +313,7 @@ export function ChatWidget({
       />
 
       {isPreEntry && preEntry ? (
-        <div className="bdc-pre-entry">{preEntry.render({ start: handleStart })}</div>
+        <div className="bdesk-pre-entry">{preEntry.render({ start: handleStart })}</div>
       ) : (
         <>
           <MessageList
@@ -358,7 +356,7 @@ export function ChatWidget({
   const widget = effectiveEmbedded ? (
     <div
       dir={dir}
-      className="bdc-widget"
+      className="bdesk-widget"
       data-chat-widget="embedded"
       data-chat-theme={effectiveTheme}
     >
@@ -385,16 +383,20 @@ export function ChatWidget({
         <div
           dir={dir}
           className={cn(
-            "bdc-widget--float",
+            "bdesk-widget--float",
             displayMode === "fullscreen"
-              ? "bdc-widget--fullscreen"
+              ? "bdesk-widget--fullscreen"
               : cn(
-                  position === "bottom-right" ? "bdc-widget--pos-bottom-right" :
-                  position === "bottom-left" ? "bdc-widget--pos-bottom-left" :
-                  position === "top-right" ? "bdc-widget--pos-top-right" :
-                  position === "top-left" ? "bdc-widget--pos-top-left" :
-                  "",
-                  "bdc-widget--float-size",
+                  position === "bottom-right"
+                    ? "bdesk-widget--pos-bottom-right"
+                    : position === "bottom-left"
+                      ? "bdesk-widget--pos-bottom-left"
+                      : position === "top-right"
+                        ? "bdesk-widget--pos-top-right"
+                        : position === "top-left"
+                          ? "bdesk-widget--pos-top-left"
+                          : "",
+                  "bdesk-widget--float-size",
                 ),
           )}
           data-chat-widget={displayMode}

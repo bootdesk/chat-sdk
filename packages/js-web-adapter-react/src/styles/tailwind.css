@@ -16,7 +16,9 @@
   --chat-other-message-text: #111827;
   --chat-error: #ef4444;
   --chat-success: #10b981;
-  --chat-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+  --chat-font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
 }
 
 [data-chat-theme="dark"] {
@@ -36,606 +38,606 @@
   --chat-success: #4ade80;
 }
 
-/* ── bdc-* component classes ── */
-  .bdc-header {
-    @apply flex items-center justify-between border-b border-[var(--chat-border)] bg-[var(--chat-surface)] px-4 py-3;
-  }
-
-  .bdc-header-left {
-    @apply flex items-center gap-2;
-  }
-
-  .bdc-header-dot {
-    @apply w-2 h-2 rounded-full;
-  }
-
-  .bdc-header-dot--connected {
-    @apply bg-[var(--chat-success)];
-  }
-
-  .bdc-header-dot--disconnected {
-    @apply bg-[var(--chat-error)];
-  }
-
-  .bdc-header-title {
-    @apply m-0 text-base font-semibold text-[var(--chat-text)];
-  }
-
-  .bdc-header-right {
-    @apply flex items-center gap-1;
-  }
-
-  .bdc-header-btn {
-    @apply p-1 bg-transparent border-none cursor-pointer text-[var(--chat-text-secondary)] rounded hover:bg-[var(--chat-surface)] transition;
-  }
-
-  .bdc-message-list {
-    @apply flex flex-1 flex-col gap-2 min-h-0 overflow-y-auto p-4 bg-[var(--chat-background)];
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--chat-text-secondary) transparent;
-  }
-
-  .bdc-message-list::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .bdc-message-list::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .bdc-message-list::-webkit-scrollbar-thumb {
-    background-color: var(--chat-text-secondary);
-    border-radius: 3px;
-  }
-
-  .bdc-message-list::-webkit-scrollbar-thumb:hover {
-    background-color: var(--chat-text);
-  }
-
-  .bdc-empty-state {
-    @apply flex flex-col items-center justify-center h-full min-h-[200px] text-center px-6;
-  }
-
-  .bdc-empty-state-text {
-    @apply text-[var(--chat-text-secondary)] text-sm;
-  }
-
-  .bdc-message-group {
-    @apply flex flex-col gap-1;
-  }
-
-  .bdc-message-group-author {
-    @apply text-xs text-[var(--chat-text-secondary)];
-  }
-
-  .bdc-message-item {
-    @apply flex flex-col;
-  }
-
-  .bdc-message-bubble-own {
-    @apply rounded-2xl rounded-br-sm bg-[var(--chat-own-message)] px-3 py-2 text-[var(--chat-own-message-text)];
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-
-  .bdc-message-bubble-other {
-    @apply rounded-2xl rounded-bl-sm bg-[var(--chat-other-message)] px-3 py-2 text-[var(--chat-other-message-text)];
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-
-  .bdc-reactions {
-    @apply flex gap-1 mt-1;
-  }
-
-  .bdc-reaction-btn {
-    @apply flex items-center gap-1 px-2 py-0.5 border border-[var(--chat-border)] rounded-full text-sm cursor-pointer transition;
-  }
-
-  .bdc-reaction-btn--active {
-    @apply bg-[var(--chat-surface)];
-  }
-
-  .bdc-reaction-btn--inactive {
-    @apply bg-transparent hover:bg-[var(--chat-surface)];
-  }
-
-  .bdc-reaction-count {
-    @apply text-[var(--chat-text-secondary)];
-  }
-
-  .bdc-msg-timestamp {
-    @apply text-xs text-[var(--chat-text-secondary)] mt-1;
-  }
-
-  .bdc-loading {
-    @apply flex items-center justify-center min-h-[200px];
-  }
-
-  .bdc-loading-dots {
-    @apply flex gap-1.5;
-  }
-
-  .bdc-loading-dot {
-    @apply w-2 h-2 rounded-full bg-[var(--chat-text-secondary)] animate-bounce;
-  }
-
-  .bdc-thinking {
-    @apply flex flex-col gap-1;
-  }
-
-  .bdc-thinking-dots {
-    @apply flex gap-1.5 py-0.5;
-  }
-
-  .bdc-thinking-dot {
-    @apply w-2 h-2 rounded-full bg-[var(--chat-text-secondary)] animate-bounce;
-  }
-
-  .bdc-scroll-anchor {
-    @apply h-px;
-  }
-
-  .bdc-msg-text {
-    @apply break-words text-sm leading-relaxed;
-  }
-
-  .bdc-card-mt {
-    @apply mt-2;
-  }
-
-  .bdc-attach-mt {
-    @apply mt-2;
-  }
-
-  .bdc-img-attach {
-    @apply max-w-full rounded object-cover;
-  }
-
-  .bdc-file-attach {
-    @apply inline-flex items-center gap-2 px-3 py-2 bg-[var(--chat-surface)] rounded text-sm no-underline text-[var(--chat-text)] hover:bg-[var(--chat-background)] transition;
-  }
-
-  .bdc-file-icon {
-    @apply shrink-0;
-  }
-
-  .bdc-input-area {
-    @apply flex flex-col gap-2 border-t border-[var(--chat-border)] bg-[var(--chat-surface)] p-4;
-  }
-
-  .bdc-input-area-row {
-    @apply flex gap-3;
-  }
-
-  .bdc-input-area-attach {
-    @apply p-2 rounded-lg cursor-pointer transition bg-transparent text-[var(--chat-text-secondary)] disabled:cursor-not-allowed disabled:opacity-50;
-  }
-
-  .bdc-input-area-attach--active {
-    background-color: color-mix(in srgb, var(--chat-primary) 10%, transparent);
-    color: var(--chat-primary);
-  }
-
-  .bdc-input {
-    @apply flex-1 resize-none rounded-lg border border-[var(--chat-border)] bg-[var(--chat-background)] px-3 py-2 text-base text-[var(--chat-text)] placeholder-[var(--chat-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--chat-primary)];
-    font-family: var(--chat-font-family);
-    scrollbar-width: thin;
-    scrollbar-color: var(--chat-text-secondary) transparent;
-  }
-
-  .bdc-input::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .bdc-input::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .bdc-input::-webkit-scrollbar-thumb {
-    background-color: var(--chat-text-secondary);
-    border-radius: 3px;
-  }
-
-  .bdc-input::-webkit-scrollbar-thumb:hover {
-    background-color: var(--chat-text);
-  }
-
-  .bdc-send-btn {
-    @apply rounded-lg bg-[var(--chat-primary)] px-4 py-2 font-medium text-white transition hover:bg-[var(--chat-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50;
-  }
-
-  .bdc-spinner {
-    @apply animate-spin;
-  }
-
-  .bdc-typing-indicator {
-    @apply px-4 pl-6 text-sm italic text-[var(--chat-text-secondary)];
-  }
-
-  .bdc-typing-wrapper {
-    @apply flex items-center gap-2;
-  }
-
-  .bdc-typing-dots {
-    @apply flex gap-1;
-  }
-
-  .bdc-typing-dot {
-    @apply w-1.5 h-1.5 rounded-full bg-[var(--chat-text-secondary)] animate-bounce;
-  }
-
-  .bdc-floating-btn {
-    @apply flex items-center justify-center rounded-full bg-[var(--chat-primary)] shadow-lg transition hover:scale-105;
-  }
-
-  .bdc-floating-btn-badge {
-    @apply absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-[var(--chat-error)] text-white text-xs font-bold flex items-center justify-center px-1;
-  }
-
-  .bdc-dropzone {
-    @apply flex items-center justify-center p-2 border-2 border-dashed rounded-lg cursor-pointer transition border-[var(--chat-border)];
-  }
-
-  .bdc-dropzone--dragging {
-    border-color: var(--chat-primary);
-    background-color: color-mix(in srgb, var(--chat-primary) 10%, transparent);
-  }
-
-  .bdc-dropzone--disabled {
-    @apply cursor-not-allowed opacity-50;
-  }
-
-  .bdc-dropzone-input {
-    @apply hidden;
-  }
-
-  .bdc-dropzone-center {
-    @apply text-center;
-  }
-
-  .bdc-dropzone-icon {
-    @apply mx-auto mb-1;
-  }
-
-  .bdc-dropzone-text {
-    @apply text-xs text-[var(--chat-text-secondary)];
-  }
-
-  .bdc-attachment-list {
-    @apply flex flex-wrap gap-1 p-1;
-  }
-
-  .bdc-attachment-item {
-    @apply flex items-center gap-1 px-2 py-1 text-xs rounded border max-w-[200px] bg-[var(--chat-surface)] shadow-sm border-[var(--chat-border)];
-  }
-
-  .bdc-attachment-item--error {
-    background-color: color-mix(in srgb, var(--chat-error) 15%, transparent);
-    border-color: var(--chat-error);
-  }
-
-  .bdc-attachment-name {
-    @apply overflow-hidden text-ellipsis whitespace-nowrap text-[var(--chat-text)];
-  }
-
-  .bdc-attachment-name--error {
-    @apply text-[var(--chat-error)];
-  }
-
-  .bdc-attachment-size {
-    @apply text-[10px] text-[var(--chat-text-secondary)];
-  }
-
-  .bdc-attachment-progress {
-    @apply h-0.5 bg-[var(--chat-border)] rounded overflow-hidden mt-0.5;
-  }
-
-  .bdc-attachment-progress-fill {
-    @apply h-full bg-[var(--chat-primary)] transition-[width] duration-150;
-  }
-
-  .bdc-attachment-remove {
-    @apply bg-none border-none cursor-pointer text-[var(--chat-text-secondary)] p-0.5 leading-none hover:text-[var(--chat-error)];
-  }
-
-  .bdc-push-prompt {
-    @apply p-3 bg-[var(--chat-surface)] rounded-lg flex items-start gap-3;
-  }
-
-  .bdc-push-prompt-body {
-    @apply flex-1;
-  }
-
-  .bdc-push-prompt-title {
-    @apply font-semibold mb-1 text-[var(--chat-text)];
-  }
-
-  .bdc-push-prompt-desc {
-    @apply text-sm text-[var(--chat-text-secondary)];
-  }
-
-  .bdc-push-prompt-actions {
-    @apply flex gap-2;
-  }
-
-  .bdc-push-prompt-enable {
-    @apply px-3 py-1.5 bg-[var(--chat-primary)] text-white border-none rounded cursor-pointer text-sm hover:opacity-90;
-  }
-
-  .bdc-push-prompt-disable {
-    @apply px-3 py-1.5 bg-transparent text-[var(--chat-text-secondary)] border border-[var(--chat-border)] rounded cursor-pointer text-sm hover:bg-[var(--chat-surface)];
-  }
-
-  .bdc-push-prompt-dismiss {
-    @apply px-1.5 bg-transparent border-none cursor-pointer text-[var(--chat-text-secondary)] hover:text-[var(--chat-text)];
-  }
-
-  .bdc-push-toggle {
-    @apply flex items-center gap-2 cursor-pointer;
-  }
-
-  .bdc-push-toggle-input {
-    @apply w-4 h-4 cursor-pointer;
-  }
-
-  .bdc-push-toggle-text {
-    @apply text-sm;
-  }
-
-  .bdc-push-unsupported {
-    @apply text-sm text-[var(--chat-text-secondary)];
-  }
-
-  .bdc-push-denied {
-    @apply text-sm text-[var(--chat-text-secondary)];
-  }
-
-  .bdc-error-boundary {
-    @apply flex flex-col items-center justify-center p-6 text-center;
-  }
-
-  .bdc-error-boundary-title {
-    @apply text-[var(--chat-error)] text-lg font-semibold mb-2;
-  }
-
-  .bdc-error-boundary-msg {
-    @apply text-[var(--chat-text-secondary)] text-sm mb-4;
-  }
-
-  .bdc-error-boundary-retry {
-    @apply px-4 py-2 bg-[var(--chat-primary)] text-white rounded text-sm cursor-pointer hover:opacity-90;
-  }
-
-  .bdc-card {
-    @apply border border-[var(--chat-border)] rounded-lg overflow-hidden max-w-sm bg-[var(--chat-background)];
-  }
-
-  .bdc-card-header {
-    @apply px-3 py-2 bg-[var(--chat-surface)] border-b border-[var(--chat-border)] font-semibold text-sm;
-  }
-
-  .bdc-card-img {
-    @apply block w-full h-auto max-h-48 object-cover;
-  }
-
-  .bdc-card-section {
-    @apply px-3 py-2;
-  }
-
-  .bdc-card-section-text {
-    @apply mb-2 text-sm leading-relaxed;
-  }
-
-  .bdc-card-field {
-    @apply mb-1 last:mb-0;
-  }
-
-  .bdc-card-field-title {
-    @apply text-xs text-[var(--chat-text-secondary)] font-medium;
-  }
-
-  .bdc-card-field-value {
-    @apply text-sm text-[var(--chat-text)];
-  }
-
-  .bdc-card-element-text {
-    @apply px-3 py-2 text-sm text-[var(--chat-text)];
-  }
-
-  .bdc-card-element-text--muted {
-    @apply text-[var(--chat-text-secondary)];
-  }
-
-  .bdc-card-element-text--bold {
-    @apply font-bold;
-  }
-
-  .bdc-card-divider {
-    @apply border-0 border-t border-[var(--chat-border)];
-  }
-
-  .bdc-card-link {
-    @apply block px-3 py-2 text-[var(--chat-primary)] text-sm no-underline hover:underline;
-  }
-
-  .bdc-card-table {
-    @apply w-full border-collapse text-xs;
-  }
-
-  .bdc-card-table-th {
-    @apply px-2 py-1 text-left border-b border-[var(--chat-border)] font-semibold;
-  }
-
-  .bdc-card-table-td {
-    @apply px-2 py-1 border-b border-[var(--chat-border)];
-  }
-
-  .bdc-card-link-btn {
-    @apply block px-2 py-1.5 mx-2 my-1 rounded text-sm font-medium text-center no-underline;
-  }
-
-  .bdc-card-link-btn--default {
-    @apply bg-[var(--chat-surface)] text-[var(--chat-text)] hover:bg-[var(--chat-background)];
-  }
-
-  .bdc-card-link-btn--primary {
-    @apply bg-[var(--chat-primary)] text-white;
-  }
-
-  .bdc-card-link-btn--danger {
-    @apply bg-[var(--chat-error)] text-white;
-  }
-
-  .bdc-card-img-element {
-    @apply block w-full h-auto max-h-36 object-cover;
-  }
-
-  .bdc-card-actions {
-    @apply flex flex-wrap gap-2 px-3 py-2;
-  }
-
-  .bdc-card-action-btn {
-    @apply px-3 py-1.5 border border-[var(--chat-border)] rounded text-sm font-medium transition cursor-pointer;
-  }
-
-  .bdc-card-action-btn--default {
-    @apply bg-[var(--chat-surface)] text-[var(--chat-text)] hover:bg-[var(--chat-background)];
-  }
-
-  .bdc-card-action-btn--primary {
-    @apply bg-[var(--chat-primary)] text-white border-transparent hover:bg-[var(--chat-primary-hover)];
-  }
-
-  .bdc-card-action-btn--danger {
-    @apply bg-[var(--chat-error)] text-white border-transparent hover:opacity-90;
-  }
-
-  .bdc-image-card {
-    @apply rounded-lg overflow-hidden max-w-full;
-  }
-
-  .bdc-image-card-img {
-    @apply block max-w-full h-auto;
-  }
-
-  .bdc-image-card-title {
-    @apply px-3 py-2 text-sm bg-[var(--chat-surface)];
-  }
-
-  .bdc-file-card {
-    @apply flex items-center gap-3 p-3 border border-[var(--chat-border)] rounded-lg max-w-xs;
-  }
-
-  .bdc-file-card-icon {
-    @apply w-10 h-10 flex items-center justify-center bg-[var(--chat-surface)] rounded;
-  }
-
-  .bdc-file-card-info {
-    @apply flex-1 min-w-0;
-  }
-
-  .bdc-file-card-name {
-    @apply text-sm font-medium truncate;
-  }
-
-  .bdc-file-card-size {
-    @apply text-xs text-[var(--chat-text-secondary)];
-  }
-
-  .bdc-file-card-download {
-    @apply px-3 py-2 bg-[var(--chat-primary)] text-white rounded text-sm font-medium no-underline hover:opacity-90;
-  }
-
-  .bdc-widget {
-    @apply flex flex-col h-full min-h-[300px] overflow-hidden bg-[var(--chat-background)];
-  }
-
-  .bdc-pre-entry {
-    @apply flex-1 overflow-y-auto p-4;
-  }
-
-  .bdc-widget--float {
-    @apply flex flex-col overflow-hidden bg-[var(--chat-background)];
-  }
-
-  .bdc-widget--fullscreen {
-    @apply fixed inset-0 z-50;
-  }
-
-  .bdc-widget--pos-bottom-right {
-    @apply absolute bottom-20 right-5;
-  }
-
-  .bdc-widget--pos-bottom-left {
-    @apply absolute bottom-20 left-5;
-  }
-
-  .bdc-widget--pos-top-right {
-    @apply absolute top-20 right-5;
-  }
-
-  .bdc-widget--pos-top-left {
-    @apply absolute top-20 left-5;
-  }
-
-  .bdc-widget--float-size {
-    @apply w-[480px] max-w-[min(800px,calc(100dvw-40px))] h-dvh max-h-[min(600px,80dvh)] z-10 shadow-xl border border-[var(--chat-border)] rounded-2xl;
-  }
-
-  [dir="rtl"] .bdc-message-bubble-own {
-    @apply rounded-br-2xl rounded-bl-sm;
-  }
-
-  [dir="rtl"] .bdc-message-bubble-other {
-    @apply rounded-bl-2xl rounded-br-sm;
-  }
-
-  [dir="rtl"] .bdc-typing-indicator {
-    @apply pl-4 pr-6;
-  }
-
-  [data-chat-widget] {
-    font-family: var(--chat-font-family);
-  }
-
+/* ── bdesk-* component classes ── */
+.bdesk-header {
+  @apply flex items-center justify-between border-b border-[var(--chat-border)] bg-[var(--chat-surface)] px-4 py-3;
+}
+
+.bdesk-header-left {
+  @apply flex items-center gap-2;
+}
+
+.bdesk-header-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.bdesk-header-dot--connected {
+  @apply bg-[var(--chat-success)];
+}
+
+.bdesk-header-dot--disconnected {
+  @apply bg-[var(--chat-error)];
+}
+
+.bdesk-header-title {
+  @apply m-0 text-base font-semibold text-[var(--chat-text)];
+}
+
+.bdesk-header-right {
+  @apply flex items-center gap-1;
+}
+
+.bdesk-header-btn {
+  @apply p-1 bg-transparent border-none cursor-pointer text-[var(--chat-text-secondary)] rounded hover:bg-[var(--chat-surface)] transition;
+}
+
+.bdesk-message-list {
+  @apply flex flex-1 flex-col gap-2 min-h-0 overflow-y-auto p-4 bg-[var(--chat-background)];
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--chat-text-secondary) transparent;
+}
+
+.bdesk-message-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.bdesk-message-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bdesk-message-list::-webkit-scrollbar-thumb {
+  background-color: var(--chat-text-secondary);
+  border-radius: 3px;
+}
+
+.bdesk-message-list::-webkit-scrollbar-thumb:hover {
+  background-color: var(--chat-text);
+}
+
+.bdesk-empty-state {
+  @apply flex flex-col items-center justify-center h-full min-h-[200px] text-center px-6;
+}
+
+.bdesk-empty-state-text {
+  @apply text-[var(--chat-text-secondary)] text-sm;
+}
+
+.bdesk-message-group {
+  @apply flex flex-col gap-1;
+}
+
+.bdesk-message-group-author {
+  @apply text-xs text-[var(--chat-text-secondary)];
+}
+
+.bdesk-message-item {
+  @apply flex flex-col;
+}
+
+.bdesk-message-bubble-own {
+  @apply rounded-2xl rounded-br-sm bg-[var(--chat-own-message)] px-3 py-2 text-[var(--chat-own-message-text)];
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.bdesk-message-bubble-other {
+  @apply rounded-2xl rounded-bl-sm bg-[var(--chat-other-message)] px-3 py-2 text-[var(--chat-other-message-text)];
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.bdesk-reactions {
+  @apply flex gap-1 mt-1;
+}
+
+.bdesk-reaction-btn {
+  @apply flex items-center gap-1 px-2 py-0.5 border border-[var(--chat-border)] rounded-full text-sm cursor-pointer transition;
+}
+
+.bdesk-reaction-btn--active {
+  @apply bg-[var(--chat-surface)];
+}
+
+.bdesk-reaction-btn--inactive {
+  @apply bg-transparent hover:bg-[var(--chat-surface)];
+}
+
+.bdesk-reaction-count {
+  @apply text-[var(--chat-text-secondary)];
+}
+
+.bdesk-msg-timestamp {
+  @apply text-xs text-[var(--chat-text-secondary)] mt-1;
+}
+
+.bdesk-loading {
+  @apply flex items-center justify-center min-h-[200px];
+}
+
+.bdesk-loading-dots {
+  @apply flex gap-1.5;
+}
+
+.bdesk-loading-dot {
+  @apply w-2 h-2 rounded-full bg-[var(--chat-text-secondary)] animate-bounce;
+}
+
+.bdesk-thinking {
+  @apply flex flex-col gap-1;
+}
+
+.bdesk-thinking-dots {
+  @apply flex gap-1.5 py-0.5;
+}
+
+.bdesk-thinking-dot {
+  @apply w-2 h-2 rounded-full bg-[var(--chat-text-secondary)] animate-bounce;
+}
+
+.bdesk-scroll-anchor {
+  @apply h-px;
+}
+
+.bdesk-msg-text {
+  @apply break-words text-sm leading-relaxed;
+}
+
+.bdesk-card-mt {
+  @apply mt-2;
+}
+
+.bdesk-attach-mt {
+  @apply mt-2;
+}
+
+.bdesk-img-attach {
+  @apply max-w-full rounded object-cover;
+}
+
+.bdesk-file-attach {
+  @apply inline-flex items-center gap-2 px-3 py-2 bg-[var(--chat-surface)] rounded text-sm no-underline text-[var(--chat-text)] hover:bg-[var(--chat-background)] transition;
+}
+
+.bdesk-file-icon {
+  @apply shrink-0;
+}
+
+.bdesk-input-area {
+  @apply flex flex-col gap-2 border-t border-[var(--chat-border)] bg-[var(--chat-surface)] p-4;
+}
+
+.bdesk-input-area-row {
+  @apply flex gap-3;
+}
+
+.bdesk-input-area-attach {
+  @apply p-2 rounded-lg cursor-pointer transition bg-transparent text-[var(--chat-text-secondary)] disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.bdesk-input-area-attach--active {
+  background-color: color-mix(in srgb, var(--chat-primary) 10%, transparent);
+  color: var(--chat-primary);
+}
+
+.bdesk-input {
+  @apply flex-1 resize-none rounded-lg border border-[var(--chat-border)] bg-[var(--chat-background)] px-3 py-2 text-base text-[var(--chat-text)] placeholder-[var(--chat-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--chat-primary)];
+  font-family: var(--chat-font-family);
+  scrollbar-width: thin;
+  scrollbar-color: var(--chat-text-secondary) transparent;
+}
+
+.bdesk-input::-webkit-scrollbar {
+  width: 6px;
+}
+
+.bdesk-input::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bdesk-input::-webkit-scrollbar-thumb {
+  background-color: var(--chat-text-secondary);
+  border-radius: 3px;
+}
+
+.bdesk-input::-webkit-scrollbar-thumb:hover {
+  background-color: var(--chat-text);
+}
+
+.bdesk-send-btn {
+  @apply rounded-lg bg-[var(--chat-primary)] px-4 py-2 font-medium text-white transition hover:bg-[var(--chat-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.bdesk-spinner {
+  @apply animate-spin;
+}
+
+.bdesk-typing-indicator {
+  @apply px-4 pl-6 text-sm italic text-[var(--chat-text-secondary)];
+}
+
+.bdesk-typing-wrapper {
+  @apply flex items-center gap-2;
+}
+
+.bdesk-typing-dots {
+  @apply flex gap-1;
+}
+
+.bdesk-typing-dot {
+  @apply w-1.5 h-1.5 rounded-full bg-[var(--chat-text-secondary)] animate-bounce;
+}
+
+.bdesk-floating-btn {
+  @apply flex items-center justify-center rounded-full bg-[var(--chat-primary)] shadow-lg transition hover:scale-105;
+}
+
+.bdesk-floating-btn-badge {
+  @apply absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-[var(--chat-error)] text-white text-xs font-bold flex items-center justify-center px-1;
+}
+
+.bdesk-dropzone {
+  @apply flex items-center justify-center p-2 border-2 border-dashed rounded-lg cursor-pointer transition border-[var(--chat-border)];
+}
+
+.bdesk-dropzone--dragging {
+  border-color: var(--chat-primary);
+  background-color: color-mix(in srgb, var(--chat-primary) 10%, transparent);
+}
+
+.bdesk-dropzone--disabled {
+  @apply cursor-not-allowed opacity-50;
+}
+
+.bdesk-dropzone-input {
+  @apply hidden;
+}
+
+.bdesk-dropzone-center {
+  @apply text-center;
+}
+
+.bdesk-dropzone-icon {
+  @apply mx-auto mb-1;
+}
+
+.bdesk-dropzone-text {
+  @apply text-xs text-[var(--chat-text-secondary)];
+}
+
+.bdesk-attachment-list {
+  @apply flex flex-wrap gap-1 p-1;
+}
+
+.bdesk-attachment-item {
+  @apply flex items-center gap-1 px-2 py-1 text-xs rounded border max-w-[200px] bg-[var(--chat-surface)] shadow-sm border-[var(--chat-border)];
+}
+
+.bdesk-attachment-item--error {
+  background-color: color-mix(in srgb, var(--chat-error) 15%, transparent);
+  border-color: var(--chat-error);
+}
+
+.bdesk-attachment-name {
+  @apply overflow-hidden text-ellipsis whitespace-nowrap text-[var(--chat-text)];
+}
+
+.bdesk-attachment-name--error {
+  @apply text-[var(--chat-error)];
+}
+
+.bdesk-attachment-size {
+  @apply text-[10px] text-[var(--chat-text-secondary)];
+}
+
+.bdesk-attachment-progress {
+  @apply h-0.5 bg-[var(--chat-border)] rounded overflow-hidden mt-0.5;
+}
+
+.bdesk-attachment-progress-fill {
+  @apply h-full bg-[var(--chat-primary)] transition-[width] duration-150;
+}
+
+.bdesk-attachment-remove {
+  @apply bg-none border-none cursor-pointer text-[var(--chat-text-secondary)] p-0.5 leading-none hover:text-[var(--chat-error)];
+}
+
+.bdesk-push-prompt {
+  @apply p-3 bg-[var(--chat-surface)] rounded-lg flex items-start gap-3;
+}
+
+.bdesk-push-prompt-body {
+  @apply flex-1;
+}
+
+.bdesk-push-prompt-title {
+  @apply font-semibold mb-1 text-[var(--chat-text)];
+}
+
+.bdesk-push-prompt-desc {
+  @apply text-sm text-[var(--chat-text-secondary)];
+}
+
+.bdesk-push-prompt-actions {
+  @apply flex gap-2;
+}
+
+.bdesk-push-prompt-enable {
+  @apply px-3 py-1.5 bg-[var(--chat-primary)] text-white border-none rounded cursor-pointer text-sm hover:opacity-90;
+}
+
+.bdesk-push-prompt-disable {
+  @apply px-3 py-1.5 bg-transparent text-[var(--chat-text-secondary)] border border-[var(--chat-border)] rounded cursor-pointer text-sm hover:bg-[var(--chat-surface)];
+}
+
+.bdesk-push-prompt-dismiss {
+  @apply px-1.5 bg-transparent border-none cursor-pointer text-[var(--chat-text-secondary)] hover:text-[var(--chat-text)];
+}
+
+.bdesk-push-toggle {
+  @apply flex items-center gap-2 cursor-pointer;
+}
+
+.bdesk-push-toggle-input {
+  @apply w-4 h-4 cursor-pointer;
+}
+
+.bdesk-push-toggle-text {
+  @apply text-sm;
+}
+
+.bdesk-push-unsupported {
+  @apply text-sm text-[var(--chat-text-secondary)];
+}
+
+.bdesk-push-denied {
+  @apply text-sm text-[var(--chat-text-secondary)];
+}
+
+.bdesk-error-boundary {
+  @apply flex flex-col items-center justify-center p-6 text-center;
+}
+
+.bdesk-error-boundary-title {
+  @apply text-[var(--chat-error)] text-lg font-semibold mb-2;
+}
+
+.bdesk-error-boundary-msg {
+  @apply text-[var(--chat-text-secondary)] text-sm mb-4;
+}
+
+.bdesk-error-boundary-retry {
+  @apply px-4 py-2 bg-[var(--chat-primary)] text-white rounded text-sm cursor-pointer hover:opacity-90;
+}
+
+.bdesk-card {
+  @apply border border-[var(--chat-border)] rounded-lg overflow-hidden max-w-sm bg-[var(--chat-background)];
+}
+
+.bdesk-card-header {
+  @apply px-3 py-2 bg-[var(--chat-surface)] border-b border-[var(--chat-border)] font-semibold text-sm;
+}
+
+.bdesk-card-img {
+  @apply block w-full h-auto max-h-48 object-cover;
+}
+
+.bdesk-card-section {
+  @apply px-3 py-2;
+}
+
+.bdesk-card-section-text {
+  @apply mb-2 text-sm leading-relaxed;
+}
+
+.bdesk-card-field {
+  @apply mb-1 last:mb-0;
+}
+
+.bdesk-card-field-title {
+  @apply text-xs text-[var(--chat-text-secondary)] font-medium;
+}
+
+.bdesk-card-field-value {
+  @apply text-sm text-[var(--chat-text)];
+}
+
+.bdesk-card-element-text {
+  @apply px-3 py-2 text-sm text-[var(--chat-text)];
+}
+
+.bdesk-card-element-text--muted {
+  @apply text-[var(--chat-text-secondary)];
+}
+
+.bdesk-card-element-text--bold {
+  @apply font-bold;
+}
+
+.bdesk-card-divider {
+  @apply border-0 border-t border-[var(--chat-border)];
+}
+
+.bdesk-card-link {
+  @apply block px-3 py-2 text-[var(--chat-primary)] text-sm no-underline hover:underline;
+}
+
+.bdesk-card-table {
+  @apply w-full border-collapse text-xs;
+}
+
+.bdesk-card-table-th {
+  @apply px-2 py-1 text-left border-b border-[var(--chat-border)] font-semibold;
+}
+
+.bdesk-card-table-td {
+  @apply px-2 py-1 border-b border-[var(--chat-border)];
+}
+
+.bdesk-card-link-btn {
+  @apply block px-2 py-1.5 mx-2 my-1 rounded text-sm font-medium text-center no-underline;
+}
+
+.bdesk-card-link-btn--default {
+  @apply bg-[var(--chat-surface)] text-[var(--chat-text)] hover:bg-[var(--chat-background)];
+}
+
+.bdesk-card-link-btn--primary {
+  @apply bg-[var(--chat-primary)] text-white;
+}
+
+.bdesk-card-link-btn--danger {
+  @apply bg-[var(--chat-error)] text-white;
+}
+
+.bdesk-card-img-element {
+  @apply block w-full h-auto max-h-36 object-cover;
+}
+
+.bdesk-card-actions {
+  @apply flex flex-wrap gap-2 px-3 py-2;
+}
+
+.bdesk-card-action-btn {
+  @apply px-3 py-1.5 border border-[var(--chat-border)] rounded text-sm font-medium transition cursor-pointer;
+}
+
+.bdesk-card-action-btn--default {
+  @apply bg-[var(--chat-surface)] text-[var(--chat-text)] hover:bg-[var(--chat-background)];
+}
+
+.bdesk-card-action-btn--primary {
+  @apply bg-[var(--chat-primary)] text-white border-transparent hover:bg-[var(--chat-primary-hover)];
+}
+
+.bdesk-card-action-btn--danger {
+  @apply bg-[var(--chat-error)] text-white border-transparent hover:opacity-90;
+}
+
+.bdesk-image-card {
+  @apply rounded-lg overflow-hidden max-w-full;
+}
+
+.bdesk-image-card-img {
+  @apply block max-w-full h-auto;
+}
+
+.bdesk-image-card-title {
+  @apply px-3 py-2 text-sm bg-[var(--chat-surface)];
+}
+
+.bdesk-file-card {
+  @apply flex items-center gap-3 p-3 border border-[var(--chat-border)] rounded-lg max-w-xs;
+}
+
+.bdesk-file-card-icon {
+  @apply w-10 h-10 flex items-center justify-center bg-[var(--chat-surface)] rounded;
+}
+
+.bdesk-file-card-info {
+  @apply flex-1 min-w-0;
+}
+
+.bdesk-file-card-name {
+  @apply text-sm font-medium truncate;
+}
+
+.bdesk-file-card-size {
+  @apply text-xs text-[var(--chat-text-secondary)];
+}
+
+.bdesk-file-card-download {
+  @apply px-3 py-2 bg-[var(--chat-primary)] text-white rounded text-sm font-medium no-underline hover:opacity-90;
+}
+
+.bdesk-widget {
+  @apply flex flex-col h-full min-h-[300px] overflow-hidden bg-[var(--chat-background)];
+}
+
+.bdesk-pre-entry {
+  @apply flex-1 overflow-y-auto p-4;
+}
+
+.bdesk-widget--float {
+  @apply flex flex-col overflow-hidden bg-[var(--chat-background)];
+}
+
+.bdesk-widget--fullscreen {
+  @apply fixed inset-0 z-50;
+}
+
+.bdesk-widget--pos-bottom-right {
+  @apply absolute bottom-20 right-5;
+}
+
+.bdesk-widget--pos-bottom-left {
+  @apply absolute bottom-20 left-5;
+}
+
+.bdesk-widget--pos-top-right {
+  @apply absolute top-20 right-5;
+}
+
+.bdesk-widget--pos-top-left {
+  @apply absolute top-20 left-5;
+}
+
+.bdesk-widget--float-size {
+  @apply w-[480px] max-w-[min(800px,calc(100dvw-40px))] h-dvh max-h-[min(600px,80dvh)] z-10 shadow-xl border border-[var(--chat-border)] rounded-2xl;
+}
+
+[dir="rtl"] .bdesk-message-bubble-own {
+  @apply rounded-br-2xl rounded-bl-sm;
+}
+
+[dir="rtl"] .bdesk-message-bubble-other {
+  @apply rounded-bl-2xl rounded-br-sm;
+}
+
+[dir="rtl"] .bdesk-typing-indicator {
+  @apply pl-4 pr-6;
+}
+
+[data-chat-widget] {
+  font-family: var(--chat-font-family);
+}
+
+[data-chat-widget="fullscreen"] {
+  height: 100dvh;
+}
+
+[data-chat-widget="floating"] {
+  max-height: min(600px, 80dvh);
+}
+
+@supports (padding: max(0px)) {
   [data-chat-widget="fullscreen"] {
-    height: 100dvh;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   [data-chat-widget="floating"] {
-    max-height: min(600px, 80dvh);
+    margin-bottom: env(safe-area-inset-bottom, 0px);
   }
+}
 
-  @supports (padding: max(0px)) {
-    [data-chat-widget="fullscreen"] {
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-
-    [data-chat-widget="floating"] {
-      margin-bottom: env(safe-area-inset-bottom, 0px);
-    }
+@media screen and (max-width: 768px) {
+  [data-chat-input] {
+    font-size: 16px !important;
   }
+}
 
-  @media screen and (max-width: 768px) {
-    [data-chat-input] {
-      font-size: 16px !important;
-    }
+@media screen and (max-width: 799px) {
+  [data-chat-widget="floating"] {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    z-index: 50 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
   }
-
-  @media screen and (max-width: 799px) {
-    [data-chat-widget="floating"] {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100% !important;
-      max-width: none !important;
-      max-height: none !important;
-      border-radius: 0 !important;
-      z-index: 50 !important;
-      padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-    }
-  }
+}

@@ -29,26 +29,26 @@ function App() {
 
 ## Components
 
-| Component | Description |
-|-----------|-------------|
-| `ChatWidget` | Floating/fullscreen/embedded chat UI |
-| `Header` | Chat header with connection status, fullscreen, close |
-| `MessageList` | Message groups with reactions, timestamps, auto-scroll |
-| `MessageContent` | Renders text (markdown), cards, and attachments |
-| `InputArea` | Text input with send, attachments toggle, auto-resize |
-| `TypingIndicator` | Animated typing dots |
-| `FloatingButton` | FAB with badge count |
+| Component         | Description                                            |
+| ----------------- | ------------------------------------------------------ |
+| `ChatWidget`      | Floating/fullscreen/embedded chat UI                   |
+| `Header`          | Chat header with connection status, fullscreen, close  |
+| `MessageList`     | Message groups with reactions, timestamps, auto-scroll |
+| `MessageContent`  | Renders text (markdown), cards, and attachments        |
+| `InputArea`       | Text input with send, attachments toggle, auto-resize  |
+| `TypingIndicator` | Animated typing dots                                   |
+| `FloatingButton`  | FAB with badge count                                   |
 
 ## Hooks
 
-| Hook | Description |
-|------|-------------|
-| `useChatClient(client)` | Connect/disconnect lifecycle |
-| `useMessages(client)` | Message list, send, edit, delete, reactions |
-| `useStreaming(client)` | Streaming message chunks |
-| `useTyping(client)` | Typing indicator subscription |
-| `useAttachmentUpload(config)` | File upload with progress |
-| `usePushNotifications(config)` | Web Push API subscription |
+| Hook                           | Description                                 |
+| ------------------------------ | ------------------------------------------- |
+| `useChatClient(client)`        | Connect/disconnect lifecycle                |
+| `useMessages(client)`          | Message list, send, edit, delete, reactions |
+| `useStreaming(client)`         | Streaming message chunks                    |
+| `useTyping(client)`            | Typing indicator subscription               |
+| `useAttachmentUpload(config)`  | File upload with progress                   |
+| `usePushNotifications(config)` | Web Push API subscription                   |
 
 ## i18n
 
@@ -78,9 +78,11 @@ Show a custom form (name, email, verification code, etc.) before the conversatio
 <ChatWidget
   client={client}
   preEntry={({ start }) => (
-    <PreEntryForm onReady={(data) => {
-      start({ userId: data.id, userName: data.name, verifyToken: data.token });
-    }} />
+    <PreEntryForm
+      onReady={(data) => {
+        start({ userId: data.id, userName: data.name, verifyToken: data.token });
+      }}
+    />
   )}
 />
 ```

@@ -28,13 +28,13 @@ export function AttachmentList({
   }
 
   return (
-    <div className={cn("bdc-attachment-list", className)} data-chat-attachment-list="true">
+    <div className={cn("bdesk-attachment-list", className)} data-chat-attachment-list="true">
       {attachments.map((att) => (
         <div
           key={att.id}
           className={cn(
-            "bdc-attachment-item",
-            att.status === "error" && "bdc-attachment-item--error",
+            "bdesk-attachment-item",
+            att.status === "error" && "bdesk-attachment-item--error",
           )}
           data-chat-attachment-item={att.id}
         >
@@ -42,13 +42,13 @@ export function AttachmentList({
           <div className="flex-1 min-w-0">
             <div
               className={cn(
-                "bdc-attachment-name",
-                att.status === "error" && "bdc-attachment-name--error",
+                "bdesk-attachment-name",
+                att.status === "error" && "bdesk-attachment-name--error",
               )}
             >
               {att.name}
             </div>
-            <div className="bdc-attachment-size">
+            <div className="bdesk-attachment-size">
               {att.status === "uploading"
                 ? `${att.progress}%`
                 : att.status === "error"
@@ -56,9 +56,9 @@ export function AttachmentList({
                   : formatSize(att.size)}
             </div>
             {att.status === "uploading" && (
-              <div className="bdc-attachment-progress">
+              <div className="bdesk-attachment-progress">
                 <div
-                  className="bdc-attachment-progress-fill"
+                  className="bdesk-attachment-progress-fill"
                   style={{ width: `${att.progress}%` }}
                 />
               </div>
@@ -67,7 +67,7 @@ export function AttachmentList({
           {onRemove && att.status !== "uploading" && (
             <button
               onClick={() => onRemove(att.id)}
-              className="bdc-attachment-remove"
+              className="bdesk-attachment-remove"
               aria-label={`Remove ${att.name}`}
             >
               ×

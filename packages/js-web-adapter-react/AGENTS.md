@@ -3,6 +3,7 @@
 React component library for BootDesk Chat SDK — drop-in chat widget, i18n, cards, file uploads, push notifications, iframe embedding.
 
 ## key commands
+
 ```
 npm run build           # tsup + tailwindcss (ESM + CJS + DTS + CSS)
 npm run test            # vitest run
@@ -13,6 +14,7 @@ npm run typecheck       # tsc --noEmit
 ```
 
 ## files
+
 - `src/components/` — `ChatWidget`, `Header`, `MessageList`, `MessageContent`, `InputArea`, `TypingIndicator`, `FloatingButton`, `Dropzone`, `AttachmentList`, `PushPermissionPrompt`, `PushToggle`, `ErrorBoundary`
 - `src/hooks/` — `useBridge`, `useChatClient`, `useMessages`, `useStreaming`, `useTyping`, `useAttachmentUpload`, `usePushNotifications`
 - `src/cards/` — `CardProvider`/`CardContext`, `CardRenderer`, `DefaultCard`, `ImageCard`, `FileCard`
@@ -22,6 +24,7 @@ npm run typecheck       # tsc --noEmit
 - `src/styles/` — `tailwind.css` (Tailwind component classes; safe-area & mobile styles injected at runtime)
 
 ## entrypoints
+
 - `ChatWidget` — main component (floating/fullscreen/embedded modes); supports `preEntry` prop for custom pre-chat forms
 - `ChatProvider` — wraps CardProvider + ChatContext
 - `Header`, `MessageList`, `InputArea`, `TypingIndicator`, `FloatingButton`
@@ -30,6 +33,7 @@ npm run typecheck       # tsc --noEmit
 - `useMessages`, `useTyping`, `useChatClient` (re-exports from core)
 
 ## peer deps
+
 - `react` ^18 || ^19
 - `@bootdesk/js-web-adapter-core` ^0.1.0
 - `marked` ^18.0.0
@@ -37,11 +41,13 @@ npm run typecheck       # tsc --noEmit
 - `@bootdesk/chat-widget-bridge` (optional — iframe embedding, viewport config for Android keyboard via `interactive-widget=resizes-content`)
 
 ## testing
+
 - Vitest, jsdom env, `@testing-library/react` + `@testing-library/jest-dom`
 - 18 test files, 100+ tests covering components, hooks, cards, i18n, utils
 - Run: `npm test`
 
 ## conventions
+
 - Components use `data-chat-*` + `data-testid` attributes for targeting
 - Props follow React conventions (className, children, event handlers)
 - `formatTimestamp` returns relative time ("Just now", "5m ago", "2h ago")

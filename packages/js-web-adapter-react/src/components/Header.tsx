@@ -42,26 +42,29 @@ export function Header({
 
   return (
     <div
-      className={cn("bdc-header", className)}
+      className={cn("bdesk-header", className)}
       data-chat-header="true"
       data-testid="chat-header"
     >
-      <div className="bdc-header-left">
+      <div className="bdesk-header-left">
         {showConnectionStatus && (
           <div
-            className={cn("bdc-header-dot", isConnected ? "bdc-header-dot--connected" : "bdc-header-dot--disconnected")}
+            className={cn(
+              "bdesk-header-dot",
+              isConnected ? "bdesk-header-dot--connected" : "bdesk-header-dot--disconnected",
+            )}
             data-chat-connection-status="true"
             title={isConnected ? "Connected" : "Disconnected"}
           />
         )}
-        <h2 className="bdc-header-title">{title}</h2>
+        <h2 className="bdesk-header-title">{title}</h2>
       </div>
 
-      <div className="bdc-header-right">
+      <div className="bdesk-header-right">
         {onPushToggle && pushStatus && pushStatus !== "unsupported" && (
           <button
             onClick={onPushToggle}
-            className="bdc-header-btn"
+            className="bdesk-header-btn"
             data-chat-push-toggle="true"
             aria-label={pushLabel}
             title={pushLabel}
@@ -118,7 +121,7 @@ export function Header({
             onClick={() =>
               onThemeChange(theme === "light" ? "dark" : theme === "dark" ? "auto" : "light")
             }
-            className="bdc-header-btn"
+            className="bdesk-header-btn"
             data-chat-theme-toggle="true"
             aria-label={
               theme === "light"
@@ -191,7 +194,7 @@ export function Header({
         {onToggleFullscreen && (
           <button
             onClick={onToggleFullscreen}
-            className="bdc-header-btn"
+            className="bdesk-header-btn"
             data-chat-fullscreen-toggle="true"
             aria-label={isFullscreen ? t("header.exitFullscreen") : t("header.enterFullscreen")}
             title={isFullscreen ? t("header.exitFullscreen") : t("header.enterFullscreen")}
@@ -229,7 +232,7 @@ export function Header({
         {onClose && (
           <button
             onClick={onClose}
-            className="bdc-header-btn"
+            className="bdesk-header-btn"
             data-chat-close="true"
             aria-label={t("header.closeChat")}
           >

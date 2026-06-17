@@ -35,15 +35,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (fallback) return fallback;
 
     return (
-      <div
-        className="bdc-error-boundary"
-        data-chat-error-boundary="true"
-      >
-        <div className="bdc-error-boundary-title">Something went wrong</div>
-        <div className="bdc-error-boundary-msg">{this.state.error.message}</div>
+      <div className="bdesk-error-boundary" data-chat-error-boundary="true">
+        <div className="bdesk-error-boundary-title">Something went wrong</div>
+        <div className="bdesk-error-boundary-msg">{this.state.error.message}</div>
         <button
           onClick={() => this.setState({ error: null })}
-          className="bdc-error-boundary-retry"
+          className="bdesk-error-boundary-retry"
         >
           Try again
         </button>

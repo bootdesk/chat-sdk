@@ -18,17 +18,17 @@ php artisan vendor:publish --tag=chat-config
 
 This creates `config/chat.php` with these options:
 
-| Option             | Default    | Description                                              |
-| ------------------ | ---------- | -------------------------------------------------------- |
-| `user_name`        | `'Bot'`    | Bot display name                                         |
-| `adapters`         | `[]`       | Per-adapter credentials                                  |
-| `state.prefix`     | `'chat:'`  | Key prefix for state                                     |
-| `handlers`         | `[]`       | Global handler classes (always registered)               |
-| `handler_groups`   | `[]`       | Adapter-scoped handler groups (e.g. `slack => [...]`)    |
-| `concurrency`      | `'drop'`   | Concurrency strategy (drop/queue/debounce/concurrent)    |
-| `lock_scope`       | `'thread'` | Lock scope for concurrency ('thread' or 'channel')       |
-| `transcripts`      | `null`     | Transcript config (requires IdentityResolver::class)     |
-| —                  | —          | `ConcurrencyHandler` can be overridden via container DI  |
+| Option           | Default    | Description                                             |
+| ---------------- | ---------- | ------------------------------------------------------- |
+| `user_name`      | `'Bot'`    | Bot display name                                        |
+| `adapters`       | `[]`       | Per-adapter credentials                                 |
+| `state.prefix`   | `'chat:'`  | Key prefix for state                                    |
+| `handlers`       | `[]`       | Global handler classes (always registered)              |
+| `handler_groups` | `[]`       | Adapter-scoped handler groups (e.g. `slack => [...]`)   |
+| `concurrency`    | `'drop'`   | Concurrency strategy (drop/queue/debounce/concurrent)   |
+| `lock_scope`     | `'thread'` | Lock scope for concurrency ('thread' or 'channel')      |
+| `transcripts`    | `null`     | Transcript config (requires IdentityResolver::class)    |
+| —                | —          | `ConcurrencyHandler` can be overridden via container DI |
 
 ```php
 return [
@@ -55,6 +55,7 @@ return [
 The Instagram adapter supports **two authentication paths**:
 
 **Path 1 — Facebook Page-linked account** (uses `graph.facebook.com`):
+
 ```php
 'instagram' => [
     'page_access_token' => env('INSTAGRAM_PAGE_ACCESS_TOKEN'),
@@ -64,6 +65,7 @@ The Instagram adapter supports **two authentication paths**:
 ```
 
 **Path 2 — Instagram Login** (uses `graph.instagram.com`):
+
 ```php
 'instagram' => [
     'ig_access_token' => env('INSTAGRAM_ACCESS_TOKEN'),
@@ -80,6 +82,7 @@ The adapter auto-detects which path to use based on which token is provided. The
 The WebAdapter provides browser-based chat UI integration. Configure it with a `WebAdapterConfig` class:
 
 **Basic:**
+
 ```php
 use BootDesk\ChatSDK\Web\WebAdapterConfig;
 use Illuminate\Support\Facades\Auth;
@@ -102,6 +105,7 @@ class AppWebAdapterConfig extends WebAdapterConfig
 ```
 
 **With signature verification:**
+
 ```php
 class AppWebAdapterConfig extends WebAdapterConfig
 {
@@ -178,14 +182,14 @@ It accepts both `GET` (for platform verification challenges like Telnyx) and `PO
 
 Under the hood, the `handle()` method is split into 6 overridable steps:
 
-| Method | Purpose | Default |
-|--------|---------|---------|
-| `createPsrRequest($request)` | Illuminate → PSR-7 conversion | `PsrHttpFactory` bridge |
-| `resolveGroups($adapter, $request, $psrRequest)` | Determine handler groups | `[$adapter]` |
-| `withGroupsAttribute($psrRequest, $groups)` | Store groups as request attribute | `withAttribute('chat_groups', $groups)` |
-| `createChat($groups, $psrRequest)` | Build Chat for groups | `$chatFactory->forGroups($groups, $psrRequest)` |
-| `handleWebhook($adapter, $chat, $psrRequest)` | Delegates to Chat | `$chat->handleWebhook(...)` |
-| `createResponse($psrResponse)` | PSR-7 → Symfony Response | `HttpFoundationFactory` bridge |
+| Method                                           | Purpose                           | Default                                         |
+| ------------------------------------------------ | --------------------------------- | ----------------------------------------------- |
+| `createPsrRequest($request)`                     | Illuminate → PSR-7 conversion     | `PsrHttpFactory` bridge                         |
+| `resolveGroups($adapter, $request, $psrRequest)` | Determine handler groups          | `[$adapter]`                                    |
+| `withGroupsAttribute($psrRequest, $groups)`      | Store groups as request attribute | `withAttribute('chat_groups', $groups)`         |
+| `createChat($groups, $psrRequest)`               | Build Chat for groups             | `$chatFactory->forGroups($groups, $psrRequest)` |
+| `handleWebhook($adapter, $chat, $psrRequest)`    | Delegates to Chat                 | `$chat->handleWebhook(...)`                     |
+| `createResponse($psrResponse)`                   | PSR-7 → Symfony Response          | `HttpFoundationFactory` bridge                  |
 
 Override `resolveGroups` to route different channels to different handler groups:
 
@@ -532,14 +536,14 @@ return [
 ];
 ```
 
-| Option               | Default    | Description                                              |
-| -------------------- | ---------- | -------------------------------------------------------- |
-| `enabled`            | `true`     | Enable/disable broadcasting globally                     |
-| `default`            | `'pusher'` | Broadcaster driver (pusher/redis/log/null)               |
-| `channel_prefix`     | `'chat'`   | Prefix for all channel names                             |
-| `thread_channel_type` | `'public'` | Thread channel type (public/private/presence)           |
-| `user_channel_type`  | `'private'` | User channel type (private/presence)                  |
-| `use_hash_channel`   | `false`    | Hash threadId via SHA-256 for broadcaster-safe names     |
+| Option                | Default     | Description                                          |
+| --------------------- | ----------- | ---------------------------------------------------- |
+| `enabled`             | `true`      | Enable/disable broadcasting globally                 |
+| `default`             | `'pusher'`  | Broadcaster driver (pusher/redis/log/null)           |
+| `channel_prefix`      | `'chat'`    | Prefix for all channel names                         |
+| `thread_channel_type` | `'public'`  | Thread channel type (public/private/presence)        |
+| `user_channel_type`   | `'private'` | User channel type (private/presence)                 |
+| `use_hash_channel`    | `false`     | Hash threadId via SHA-256 for broadcaster-safe names |
 
 ### Channel Types
 
@@ -554,6 +558,7 @@ Both thread channels and user channels can be configured as public, private, or 
 **User broadcasts** (DMs, typing in DMs, streaming): configured via `user_channel_type` (default: `private`)
 
 Set in `.env`:
+
 ```bash
 CHAT_BROADCASTING_THREAD_CHANNEL_TYPE=presence  # or public/private
 CHAT_BROADCASTING_USER_CHANNEL_TYPE=presence   # or private
@@ -579,34 +584,36 @@ $adapter = new WebAdapter(
 
 ### Broadcast Events
 
-| Event                   | Target      | Channel Type |
-| ----------------------- | ----------- | ------------ |
-| `MessagePostedEvent`    | Thread      | Public       |
-| `MessageEditedEvent`    | Thread      | Public       |
-| `MessageDeletedEvent`   | Thread      | Public       |
-| `ReactionAddedEvent`    | Thread      | Public       |
-| `ReactionRemovedEvent`  | Thread      | Public       |
-| `TypingStartedEvent`    | User (DM)   | Private      |
-| `StreamingChunkEvent`   | User (DM)   | Private      |
-| `DirectMessageRequestedEvent` | User | Private |
+| Event                         | Target    | Channel Type |
+| ----------------------------- | --------- | ------------ |
+| `MessagePostedEvent`          | Thread    | Public       |
+| `MessageEditedEvent`          | Thread    | Public       |
+| `MessageDeletedEvent`         | Thread    | Public       |
+| `ReactionAddedEvent`          | Thread    | Public       |
+| `ReactionRemovedEvent`        | Thread    | Public       |
+| `TypingStartedEvent`          | User (DM) | Private      |
+| `StreamingChunkEvent`         | User (DM) | Private      |
+| `DirectMessageRequestedEvent` | User      | Private      |
 
 ### Client-Side Example (Pusher)
 
 ```javascript
-const pusher = new Pusher('your-app-key', {
-    cluster: 'your-cluster',
+const pusher = new Pusher("your-app-key", {
+  cluster: "your-cluster",
 });
 
 // Thread channel
-const threadChannel = pusher.subscribe('chat.web:user123:conv456');
-threadChannel.bind('chat.message.posted', (data) => {
-    console.log('New message:', data.text);
+const threadChannel = pusher.subscribe("chat.web:user123:conv456");
+threadChannel.bind("chat.message.posted", (data) => {
+  console.log("New message:", data.text);
 });
 
 // Private user channel
-const userChannel = pusher.subscribe('private-chat.web:user123:conv456.user123');
-userChannel.bind('chat.typing.started', (data) => {
-    console.log('User is typing...');
+const userChannel = pusher.subscribe(
+  "private-chat.web:user123:conv456.user123",
+);
+userChannel.bind("chat.typing.started", (data) => {
+  console.log("User is typing...");
 });
 ```
 
@@ -651,4 +658,7 @@ public function register(): void
 ```
 
 The package uses `bindIf()`, so your binding takes priority.
+
+```
+
 ```

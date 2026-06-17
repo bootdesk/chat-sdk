@@ -13,13 +13,13 @@ export function MessageContent({ message, onActionClick }: MessageContentProps):
   return (
     <div data-chat-message-content="true">
       {message.content.text && !message.content.cards?.length && (
-        <div className="bdc-msg-text" data-chat-text="true">
+        <div className="bdesk-msg-text" data-chat-text="true">
           <MarkdownRenderer text={message.content.text} />
         </div>
       )}
 
       {message.content.cards?.map((card, index) => (
-        <div key={index} className={cn(index > 0 && "bdc-card-mt")}>
+        <div key={index} className={cn(index > 0 && "bdesk-card-mt")}>
           <CardRenderer
             card={card}
             onActionClick={(actionId, value) => onActionClick?.(message.id, actionId, value)}
@@ -31,13 +31,13 @@ export function MessageContent({ message, onActionClick }: MessageContentProps):
         const isImage = attachment.type === "image" || attachment.mimeType?.startsWith("image/");
 
         return (
-          <div key={attachment.id} className="bdc-attach-mt">
+          <div key={attachment.id} className="bdesk-attach-mt">
             {isImage ? (
               <a href={attachment.url} target="_blank" rel="noopener noreferrer">
                 <img
                   src={attachment.url}
                   alt={attachment.name || "Image"}
-                  className="bdc-img-attach"
+                  className="bdesk-img-attach"
                   loading="lazy"
                   data-chat-attachment={attachment.id}
                 />
@@ -47,7 +47,7 @@ export function MessageContent({ message, onActionClick }: MessageContentProps):
                 href={attachment.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bdc-file-attach"
+                className="bdesk-file-attach"
                 data-chat-attachment={attachment.id}
               >
                 <svg
@@ -59,7 +59,7 @@ export function MessageContent({ message, onActionClick }: MessageContentProps):
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="bdc-file-icon"
+                  className="bdesk-file-icon"
                 >
                   <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                 </svg>

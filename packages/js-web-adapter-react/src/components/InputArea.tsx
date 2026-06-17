@@ -85,7 +85,7 @@ export function InputArea({
 
   return (
     <div
-      className={cn("bdc-input-area", className)}
+      className={cn("bdesk-input-area", className)}
       data-chat-input-area="true"
       data-testid="chat-input-area"
     >
@@ -102,14 +102,14 @@ export function InputArea({
         />
       )}
 
-      <div className="bdc-input-area-row">
+      <div className="bdesk-input-area-row">
         {enableAttachments && uploadConfig && (
           <button
             onClick={() => setShowDropzone((prev) => !prev)}
             disabled={disabled}
             className={cn(
-              "bdc-input-area-attach",
-              showDropzone && "bdc-input-area-attach--active",
+              "bdesk-input-area-attach",
+              showDropzone && "bdesk-input-area-attach--active",
             )}
             data-chat-attachment-toggle="true"
             aria-label="Toggle file attachment"
@@ -135,7 +135,7 @@ export function InputArea({
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="bdc-input"
+          className="bdesk-input"
           data-chat-input="true"
           rows={1}
           name="chat-message"
@@ -144,7 +144,7 @@ export function InputArea({
         <button
           onClick={handleSubmit}
           disabled={disabled || !canSend}
-          className="bdc-send-btn"
+          className="bdesk-send-btn"
           data-chat-send-button="true"
           aria-label={t("inputArea.send")}
         >
@@ -158,7 +158,7 @@ export function InputArea({
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="bdc-spinner"
+              className="bdesk-spinner"
             >
               <path d="M21 12a9 9 0 1 1-6.219-8.56" />
             </svg>

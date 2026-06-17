@@ -114,9 +114,9 @@ export function Dropzone({
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       className={cn(
-        "bdc-dropzone",
-        isDragging && "bdc-dropzone--dragging",
-        disabled && "bdc-dropzone--disabled",
+        "bdesk-dropzone",
+        isDragging && "bdesk-dropzone--dragging",
+        disabled && "bdesk-dropzone--disabled",
         className,
       )}
       data-chat-dropzone="true"
@@ -128,11 +128,11 @@ export function Dropzone({
         accept={accept}
         multiple={multiple}
         onChange={handleInputChange}
-        className="bdc-dropzone-input"
+        className="bdesk-dropzone-input"
         disabled={disabled}
         aria-hidden="true"
       />
-      <div className="bdc-dropzone-center">
+      <div className="bdesk-dropzone-center">
         <svg
           width="20"
           height="20"
@@ -142,13 +142,13 @@ export function Dropzone({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="bdc-dropzone-icon"
+          className="bdesk-dropzone-icon"
         >
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
           <polyline points="17 8 12 3 7 8" />
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
-        <div className="bdc-dropzone-text">
+        <div className="bdesk-dropzone-text">
           {isDragging ? t("inputArea.dropzone.dropFiles") : t("inputArea.dropzone.dropOrClick")}
         </div>
       </div>

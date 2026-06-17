@@ -98,13 +98,13 @@ export function MessageList({
   return (
     <div
       ref={containerRef}
-      className={cn("bdc-message-list", className)}
+      className={cn("bdesk-message-list", className)}
       data-chat-message-list="true"
       data-testid="chat-message-list"
     >
       {groupedMessages.length === 0 && !isLoading && (
-        <div className="bdc-empty-state">
-          <div className="bdc-empty-state-text">{t("messageList.emptyState")}</div>
+        <div className="bdesk-empty-state">
+          <div className="bdesk-empty-state-text">{t("messageList.emptyState")}</div>
         </div>
       )}
 
@@ -113,40 +113,44 @@ export function MessageList({
         const firstMessage = group.messages[0]!;
 
         return (
-          <div key={`${group.user}-${groupIndex}`} className="bdc-message-group">
+          <div key={`${group.user}-${groupIndex}`} className="bdesk-message-group">
             {firstMessage.author.name && (
-              <div className="bdc-message-group-author">{firstMessage.author.name}</div>
+              <div className="bdesk-message-group-author">{firstMessage.author.name}</div>
             )}
 
             {group.messages.map((message, msgIndex) => (
-              <div key={message.id} className="bdc-message-item" data-chat-message-id={message.id}>
-                <div className={isOwn ? "bdc-message-bubble-own" : "bdc-message-bubble-other"}>
+              <div
+                key={message.id}
+                className="bdesk-message-item"
+                data-chat-message-id={message.id}
+              >
+                <div className={isOwn ? "bdesk-message-bubble-own" : "bdesk-message-bubble-other"}>
                   <MessageContent message={message} onActionClick={onActionClick} />
                 </div>
 
                 {message.reactions && message.reactions.length > 0 && (
-                  <div className="bdc-reactions">
+                  <div className="bdesk-reactions">
                     {message.reactions.map((reaction, rIndex) => (
                       <button
                         key={`${reaction.emoji}-${rIndex}`}
                         onClick={() => onReactionClick?.(message.id, reaction.emoji)}
                         className={cn(
-                          "bdc-reaction-btn",
-                          reaction.hasReacted ? "bdc-reaction-btn--active" : "bdc-reaction-btn--inactive",
+                          "bdesk-reaction-btn",
+                          reaction.hasReacted
+                            ? "bdesk-reaction-btn--active"
+                            : "bdesk-reaction-btn--inactive",
                         )}
                         data-chat-reaction={reaction.emoji}
                       >
                         <span>{reaction.emoji}</span>
-                        <span className="bdc-reaction-count">{reaction.count}</span>
+                        <span className="bdesk-reaction-count">{reaction.count}</span>
                       </button>
                     ))}
                   </div>
                 )}
 
                 {msgIndex === 0 && (
-                  <div className="bdc-msg-timestamp">
-                    {formatTimestamp(message.timestamp)}
-                  </div>
+                  <div className="bdesk-msg-timestamp">{formatTimestamp(message.timestamp)}</div>
                 )}
               </div>
             ))}
@@ -155,46 +159,28 @@ export function MessageList({
       })}
 
       {isLoading && groupedMessages.length === 0 && (
-        <div className="bdc-loading" data-chat-loading="true">
-          <div className="bdc-loading-dots">
-            <span
-              className="bdc-loading-dot"
-              style={{ animationDelay: "0ms" }}
-            />
-            <span
-              className="bdc-loading-dot"
-              style={{ animationDelay: "160ms" }}
-            />
-            <span
-              className="bdc-loading-dot"
-              style={{ animationDelay: "320ms" }}
-            />
+        <div className="bdesk-loading" data-chat-loading="true">
+          <div className="bdesk-loading-dots">
+            <span className="bdesk-loading-dot" style={{ animationDelay: "0ms" }} />
+            <span className="bdesk-loading-dot" style={{ animationDelay: "160ms" }} />
+            <span className="bdesk-loading-dot" style={{ animationDelay: "320ms" }} />
           </div>
         </div>
       )}
 
       {thinking && groupedMessages.length > 0 && (
-        <div className="bdc-thinking">
-          <div className="bdc-message-bubble-other">
-            <span className="bdc-thinking-dots">
-              <span
-                className="bdc-thinking-dot"
-                style={{ animationDelay: "0ms" }}
-              />
-              <span
-                className="bdc-thinking-dot"
-                style={{ animationDelay: "160ms" }}
-              />
-              <span
-                className="bdc-thinking-dot"
-                style={{ animationDelay: "320ms" }}
-              />
+        <div className="bdesk-thinking">
+          <div className="bdesk-message-bubble-other">
+            <span className="bdesk-thinking-dots">
+              <span className="bdesk-thinking-dot" style={{ animationDelay: "0ms" }} />
+              <span className="bdesk-thinking-dot" style={{ animationDelay: "160ms" }} />
+              <span className="bdesk-thinking-dot" style={{ animationDelay: "320ms" }} />
             </span>
           </div>
         </div>
       )}
 
-      <div ref={listEndRef} className="bdc-scroll-anchor" />
+      <div ref={listEndRef} className="bdesk-scroll-anchor" />
     </div>
   );
 }

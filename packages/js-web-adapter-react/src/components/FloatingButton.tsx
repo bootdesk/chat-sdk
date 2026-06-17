@@ -41,7 +41,7 @@ export function FloatingButton({
   return (
     <button
       onClick={onClick}
-      className={cn(positionClasses[position], "bdc-floating-btn", className)}
+      className={cn(positionClasses[position], "bdesk-floating-btn", className)}
       style={{ width: size, height: size, backgroundColor }}
       data-chat-floating-button="true"
       data-testid="chat-floating-button"
@@ -50,10 +50,7 @@ export function FloatingButton({
       }
     >
       {badgeCount && badgeCount > 0 && (
-        <span
-          className="bdc-floating-btn-badge"
-          data-chat-badge="true"
-        >
+        <span className="bdesk-floating-btn-badge" data-chat-badge="true">
           {badgeCount > 99 ? "99+" : badgeCount}
         </span>
       )}

@@ -108,7 +108,7 @@ describe("MessageList", () => {
       </LocaleProvider>,
     );
 
-    expect(container.querySelector('.bdc-message-bubble-other')).toBeInTheDocument();
+    expect(container.querySelector(".bdesk-message-bubble-other")).toBeInTheDocument();
   });
 
   it("renders empty state message when not loading", () => {

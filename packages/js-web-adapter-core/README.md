@@ -30,25 +30,25 @@ await client.connect();
 
 ### WebChatClient
 
-| Method | Description |
-|--------|-------------|
-| `connect()` | Initialize connection, start listening |
-| `disconnect()` | Cleanup, remove listeners |
-| `loadMessages(options?)` | Fetch paginated messages |
-| `sendMessage(text, attachments?)` | Send a new message |
-| `sendAction(messageId, actionId, value)` | Send a button action |
-| `editMessage(messageId, text)` | Edit an existing message |
-| `deleteMessage(messageId)` | Delete a message |
-| `addReaction(messageId, emoji)` | Add a reaction |
-| `removeReaction(messageId, emoji)` | Remove a reaction |
-| `onMessagePosted(cb)` | Subscribe to new messages |
-| `onMessageEdited(cb)` | Subscribe to edits |
-| `onMessageDeleted(cb)` | Subscribe to deletions |
-| `onReactionAdded(cb)` | Subscribe to reaction adds |
-| `onReactionRemoved(cb)` | Subscribe to reaction removes |
-| `onTypingStarted(cb)` | Subscribe to typing events |
-| `onStreamingChunk(cb)` | Subscribe to streaming chunks |
-| `reconfigure(config)` | Update identity (userId, userName, verifyToken, conversationId, headers) after construction |
+| Method                                   | Description                                                                                 |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `connect()`                              | Initialize connection, start listening                                                      |
+| `disconnect()`                           | Cleanup, remove listeners                                                                   |
+| `loadMessages(options?)`                 | Fetch paginated messages                                                                    |
+| `sendMessage(text, attachments?)`        | Send a new message                                                                          |
+| `sendAction(messageId, actionId, value)` | Send a button action                                                                        |
+| `editMessage(messageId, text)`           | Edit an existing message                                                                    |
+| `deleteMessage(messageId)`               | Delete a message                                                                            |
+| `addReaction(messageId, emoji)`          | Add a reaction                                                                              |
+| `removeReaction(messageId, emoji)`       | Remove a reaction                                                                           |
+| `onMessagePosted(cb)`                    | Subscribe to new messages                                                                   |
+| `onMessageEdited(cb)`                    | Subscribe to edits                                                                          |
+| `onMessageDeleted(cb)`                   | Subscribe to deletions                                                                      |
+| `onReactionAdded(cb)`                    | Subscribe to reaction adds                                                                  |
+| `onReactionRemoved(cb)`                  | Subscribe to reaction removes                                                               |
+| `onTypingStarted(cb)`                    | Subscribe to typing events                                                                  |
+| `onStreamingChunk(cb)`                   | Subscribe to streaming chunks                                                               |
+| `reconfigure(config)`                    | Update identity (userId, userName, verifyToken, conversationId, headers) after construction |
 
 ### Reconfiguration
 
@@ -84,6 +84,7 @@ const client = new WebChatClient({
 ```
 
 Channel name hashing (for threadIds with incompatible chars like `:`):
+
 ```typescript
 const broadcast = new PusherBroadcastClient(config, "chat", {
   useHashChannel: true,

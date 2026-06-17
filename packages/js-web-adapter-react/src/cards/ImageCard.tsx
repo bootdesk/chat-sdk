@@ -10,14 +10,14 @@ export function ImageCardComponent({ card: rawCard }: CardRendererProps): React.
   const card = rawCard as ImageCardType;
 
   return (
-    <div className="rounded-lg overflow-hidden max-w-full" data-chat-card="image">
+    <div className="bdesk-image-card" data-chat-card="image">
       <img
         src={card.url}
         alt={card.alt || ""}
-        className="block max-w-full h-auto"
+        className="bdesk-image-card-img"
         data-chat-image="true"
       />
-      {card.title && <div className="px-3 py-2 text-sm bg-chat-surface">{card.title}</div>}
+      {card.title && <div className="bdesk-image-card-title">{card.title}</div>}
     </div>
   );
 }

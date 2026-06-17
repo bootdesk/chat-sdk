@@ -63,5 +63,9 @@
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.59.4",
     "vitest": "^4.1.8"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.6.0"
   }
 }

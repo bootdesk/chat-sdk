@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocale } from "../i18n/LocaleProvider";
 import type { PushSubscriptionStatus } from "@bootdesk/js-web-adapter-core";
+import { cn } from "../lib/cn";
 
 interface HeaderProps {
   title?: string;
@@ -41,26 +42,29 @@ export function Header({
 
   return (
     <div
-      className={`chat-header ${className || ""}`}
+      className={cn("bdesk-header", className)}
       data-chat-header="true"
       data-testid="chat-header"
     >
-      <div className="flex items-center gap-2">
+      <div className="bdesk-header-left">
         {showConnectionStatus && (
           <div
-            className={`w-2 h-2 rounded-full ${isConnected ? "bg-chat-success" : "bg-chat-error"}`}
+            className={cn(
+              "bdesk-header-dot",
+              isConnected ? "bdesk-header-dot--connected" : "bdesk-header-dot--disconnected",
+            )}
             data-chat-connection-status="true"
             title={isConnected ? "Connected" : "Disconnected"}
           />
         )}
-        <h2 className="m-0 text-base font-semibold text-chat-text">{title}</h2>
+        <h2 className="bdesk-header-title">{title}</h2>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="bdesk-header-right">
         {onPushToggle && pushStatus && pushStatus !== "unsupported" && (
           <button
             onClick={onPushToggle}
-            className="p-1 bg-transparent border-none cursor-pointer text-chat-text-secondary rounded hover:bg-chat-surface transition"
+            className="bdesk-header-btn"
             data-chat-push-toggle="true"
             aria-label={pushLabel}
             title={pushLabel}
@@ -117,7 +121,7 @@ export function Header({
             onClick={() =>
               onThemeChange(theme === "light" ? "dark" : theme === "dark" ? "auto" : "light")
             }
-            className="p-1 bg-transparent border-none cursor-pointer text-chat-text-secondary rounded hover:bg-chat-surface transition"
+            className="bdesk-header-btn"
             data-chat-theme-toggle="true"
             aria-label={
               theme === "light"
@@ -190,7 +194,7 @@ export function Header({
         {onToggleFullscreen && (
           <button
             onClick={onToggleFullscreen}
-            className="p-1 bg-transparent border-none cursor-pointer text-chat-text-secondary rounded hover:bg-chat-surface transition"
+            className="bdesk-header-btn"
             data-chat-fullscreen-toggle="true"
             aria-label={isFullscreen ? t("header.exitFullscreen") : t("header.enterFullscreen")}
             title={isFullscreen ? t("header.exitFullscreen") : t("header.enterFullscreen")}
@@ -228,7 +232,7 @@ export function Header({
         {onClose && (
           <button
             onClick={onClose}
-            className="p-1 bg-transparent border-none cursor-pointer text-chat-text-secondary rounded hover:bg-chat-surface transition"
+            className="bdesk-header-btn"
             data-chat-close="true"
             aria-label={t("header.closeChat")}
           >

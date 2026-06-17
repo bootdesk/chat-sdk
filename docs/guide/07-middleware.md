@@ -4,14 +4,14 @@ The SDK has six middleware pipelines for intercepting and transforming messages 
 
 ## Pipelines
 
-| Pipeline                | Interface               | Purpose                                                      |
-| ----------------------- | ----------------------- | ------------------------------------------------------------- |
-| `WebhookMiddleware`     | `WebhookMiddleware`     | Intercept raw webhooks before any processing                 |
-| `ReceivingMiddleware`   | `ReceivingMiddleware`   | Transform incoming messages before handlers fire             |
-| `HeardMiddleware`       | `HeardMiddleware`       | Fire after a pattern matches, before the handler runs        |
-| `SendingMiddleware`     | `SendingMiddleware`     | Transform outgoing messages before they're sent              |
-| `SentMiddleware`        | `SentMiddleware`        | Act after a message has been sent                            |
-| `WebhookEventMiddleware` | `WebhookEventMiddleware` | Swap adapter per-event in batched webhooks                 |
+| Pipeline                 | Interface                | Purpose                                               |
+| ------------------------ | ------------------------ | ----------------------------------------------------- |
+| `WebhookMiddleware`      | `WebhookMiddleware`      | Intercept raw webhooks before any processing          |
+| `ReceivingMiddleware`    | `ReceivingMiddleware`    | Transform incoming messages before handlers fire      |
+| `HeardMiddleware`        | `HeardMiddleware`        | Fire after a pattern matches, before the handler runs |
+| `SendingMiddleware`      | `SendingMiddleware`      | Transform outgoing messages before they're sent       |
+| `SentMiddleware`         | `SentMiddleware`         | Act after a message has been sent                     |
+| `WebhookEventMiddleware` | `WebhookEventMiddleware` | Swap adapter per-event in batched webhooks            |
 
 ## Webhook Middleware
 

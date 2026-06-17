@@ -97,18 +97,18 @@ describe("MessageList", () => {
     expect(loadingEl).toBeInTheDocument();
   });
 
-  it("shows loading text when loading with existing messages", () => {
-    render(
+  it("shows thinking dots bubble when thinking with existing messages", () => {
+    const { container } = render(
       <LocaleProvider locale="en">
         <MessageList
           messages={[createMessage({ id: "m1", content: { text: "Hi" } })]}
           currentUserId="me"
-          isLoading
+          thinking
         />
       </LocaleProvider>,
     );
 
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    expect(container.querySelector(".bdesk-message-bubble-other")).toBeInTheDocument();
   });
 
   it("renders empty state message when not loading", () => {

@@ -1,55 +1,103 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{{TITLE}} — BootDesk Chat SDK</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=JetBrains+Mono&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/atom-one-dark.min.css">
-  <link rel="stylesheet" href="guides.css">
-</head>
-<body>
-  <div id="sidebar-overlay" class="overlay"></div>
-  <header class="header">
-    <div class="header-inner">
-      <a href="../" class="header-home">&larr; Home</a>
-      <nav class="breadcrumb">
-        <span>/</span>
-        <span class="breadcrumb-label">Guides</span>
-        <span>/</span>
-        <span class="breadcrumb-current">{{TITLE}}</span>
-      </nav>
-      <div class="header-actions">
-        <button id="theme-toggle" class="icon-btn" aria-label="Toggle theme">
-          <svg class="dark-hide" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-          <svg class="dark-show" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-        </button>
-        <button id="menu-toggle" class="icon-btn md-hidden" aria-label="Toggle menu">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-        </button>
-      </div>
-    </div>
-  </header>
-  <div class="layout">
-    <aside id="sidebar" class="sidebar" aria-label="Guide navigation">
-      <p class="sidebar-label">Guides</p>
-      <nav><a href="index.html" class="nav-link">Index</a>
-        {{SIDEBAR_LINKS}}</nav>
-      {{TOC}}
-    </aside>
-    <main class="main">
-      <div class="content">{{BODY}}</div>
-      <div class="nav-footer">
-        <div class="nav-footer-inner">
-          {{PREV_LINK}}
-          {{NEXT_LINK}}
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{{TITLE}} — BootDesk Chat SDK</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=JetBrains+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/atom-one-dark.min.css"
+    />
+    <link rel="stylesheet" href="guides.css" />
+  </head>
+  <body>
+    <div id="sidebar-overlay" class="overlay"></div>
+    <header class="header">
+      <div class="header-inner">
+        <a href="../" class="header-home">&larr; Home</a>
+        <nav class="breadcrumb">
+          <span>/</span>
+          <span class="breadcrumb-label">Guides</span>
+          <span>/</span>
+          <span class="breadcrumb-current">{{TITLE}}</span>
+        </nav>
+        <div class="header-actions">
+          <button id="theme-toggle" class="icon-btn" aria-label="Toggle theme">
+            <svg
+              class="dark-hide"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+              />
+            </svg>
+            <svg
+              class="dark-show"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+              />
+            </svg>
+          </button>
+          <button
+            id="menu-toggle"
+            class="icon-btn md-hidden"
+            aria-label="Toggle menu"
+          >
+            <svg
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
         </div>
       </div>
-    </main>
-  </div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
-  <script src="guides.js"></script>
-</body>
+    </header>
+    <div class="layout">
+      <aside id="sidebar" class="sidebar" aria-label="Guide navigation">
+        <p class="sidebar-label">Guides</p>
+        <nav>
+          <a href="index.html" class="nav-link">Index</a> {{SIDEBAR_LINKS}}
+        </nav>
+        {{TOC}}
+      </aside>
+      <main class="main">
+        <div class="content">{{BODY}}</div>
+        <div class="nav-footer">
+          <div class="nav-footer-inner">{{PREV_LINK}} {{NEXT_LINK}}</div>
+        </div>
+      </main>
+    </div>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
+      integrity="sha512-EBLzUL8XLl+va/zAsmXwS7Z2B1F9HUHkZwyS/VKwh3S7T/U0nF4BaU29EP/ZSf6zgiIxYAnKLu6bJ8dqpmX5uw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script src="guides.js"></script>
+  </body>
 </html>

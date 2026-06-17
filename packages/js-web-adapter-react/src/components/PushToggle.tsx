@@ -18,15 +18,15 @@ export function PushToggle({ getVapidPublicKey, onSubscribe, onUnsubscribe }: Pu
   });
 
   if (!isSupported) {
-    return <div className="text-sm text-chat-text-secondary">{t("push.unsupported")}</div>;
+    return <div className="bdesk-push-unsupported">{t("push.unsupported")}</div>;
   }
 
   if (status === "denied") {
-    return <div className="text-sm text-chat-text-secondary">{t("push.denied")}</div>;
+    return <div className="bdesk-push-denied">{t("push.denied")}</div>;
   }
 
   return (
-    <label className="flex items-center gap-2 cursor-pointer">
+    <label className="bdesk-push-toggle">
       <input
         type="checkbox"
         checked={isSubscribed}
@@ -35,9 +35,9 @@ export function PushToggle({ getVapidPublicKey, onSubscribe, onUnsubscribe }: Pu
           else await unsubscribe();
         }}
         disabled={status === "subscribing"}
-        className="w-4 h-4 cursor-pointer"
+        className="bdesk-push-toggle-input"
       />
-      <span className="text-sm">
+      <span className="bdesk-push-toggle-text">
         {status === "subscribing" ? t("push.subscribing") : t("push.notifications")}
       </span>
     </label>

@@ -87,9 +87,9 @@ Add capabilities by implementing optional contracts:
 
 Composite interfaces (in `BootDesk\ChatSDK\Core\Contracts\CompositeInterfaces`) group related contracts:
 
-| Composite                | Extends                                              |
-| ------------------------ | ---------------------------------------------------- |
-| `HandlesInteractions`    | `HandlesActions`, `HandlesReactions`, `HandlesSlashCommands` |
+| Composite                   | Extends                                                                |
+| --------------------------- | ---------------------------------------------------------------------- |
+| `HandlesInteractions`       | `HandlesActions`, `HandlesReactions`, `HandlesSlashCommands`           |
 | `SupportsMessageMutability` | `SupportsEditMessages`, `SupportsDeleteMessages`, `SupportsEditThread` |
 
 **Note:** Even if you don't implement a contract, the `Adapter` interface requires all methods (e.g., `editMessage`, `deleteMessage`). Throw `AdapterException` for unsupported operations.

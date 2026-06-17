@@ -3,6 +3,7 @@
 Framework-agnostic TypeScript SDK for BootDesk Chat. Real-time messaging via HTTP + broadcasting (Pusher/Laravel Echo).
 
 ## key commands
+
 ```
 npm run build           # tsup (ESM + CJS + DTS)
 npm run test            # vitest run
@@ -13,6 +14,7 @@ npm run typecheck       # tsc --noEmit
 ```
 
 ## files
+
 - `src/client/WebChatClient.ts` — main chat client (HTTP + event system); `reconfigure()` updates userId/userName/verifyToken after construction
 - `src/client/BroadcastClient.ts` — broadcast interface
 - `src/client/PusherBroadcastClient.ts` — Pusher implementation
@@ -24,27 +26,32 @@ npm run typecheck       # tsc --noEmit
 - `src/utils/eventIdGenerator.ts` — unique ID generation
 
 ## entrypoints
+
 - `WebChatClient` — primary client (connect, send, listen); `reconfigure()` for post-construction identity updates
 - `PusherBroadcastClient` / `LaravelEchoBroadcastClient` — real-time backends
 - `PushManager` — web push subscriptions
 
 ## peer deps (optional)
+
 - `laravel-echo` — Laravel Echo broadcasting
 - `pusher-js` — Pusher broadcasting
 
 ## testing
+
 - Vitest with `globals: true`, `environment: node`
 - Tests in `tests/` mirroring `src/` structure
 - Tests use explicit `vi.fn()` mocks (no real network)
 - Run: `npm test`
 
 ## conventions
+
 - All events extend `ChatEvent`
 - `on*` methods return `Unsubscribe` (callable to remove listener)
 - `generateId()` uses crypto.randomUUID with fallback
 - `format: ["esm", "cjs"]` with DTS, peer deps kept external
 
 ## broadcasting
+
 - `PusherBroadcastClient` / `LaravelEchoBroadcastClient` support `ChannelTypeConfig.useHashChannel` for SHA-256 hashed channel names (safe for Pusher char restrictions)
 - `subscribe()` / `subscribeToUser()` return `Promise<Unsubscribe>` (async due to Web Crypto hash)
 - Override `buildResolvedChannelName(threadId): Promise<string>` for custom channel naming

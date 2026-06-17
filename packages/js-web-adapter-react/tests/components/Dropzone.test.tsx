@@ -32,7 +32,7 @@ describe("Dropzone", () => {
     );
 
     const dropzone = screen.getByTestId("chat-dropzone");
-    expect(dropzone.className).toContain("opacity-50");
+    expect(dropzone.className).toContain("bdesk-dropzone--disabled");
   });
 
   it("accepts custom accept and maxSize props", () => {

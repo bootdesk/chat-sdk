@@ -20,18 +20,18 @@ User markdown text
 
 Every adapter has a dedicated `FormatConverter` that implements `BootDesk\ChatSDK\Core\Contracts\FormatConverter`:
 
-| Adapter   | Class                      | Output Format            |
-| --------- | -------------------------- | ------------------------ |
-| Slack     | `SlackFormatConverter`     | `mrkdwn`                 |
-| Telegram  | `TelegramFormatConverter`  | MarkdownV2               |
-| Discord   | `DiscordFormatConverter`   | Discord markdown         |
-| GitHub    | `GitHubFormatConverter`    | GitHub Flavored Markdown |
-| Linear    | `LinearFormatConverter`    | Linear rich text         |
-| Messenger | `MessengerFormatConverter` | `*bold*`, `_italic_`, `~strike~`, `` `code` `` |
-| Instagram | `InstagramFormatConverter` | `*bold*`, `_italic_`, `~strike~`, `` `code` `` |
+| Adapter   | Class                      | Output Format                                                              |
+| --------- | -------------------------- | -------------------------------------------------------------------------- |
+| Slack     | `SlackFormatConverter`     | `mrkdwn`                                                                   |
+| Telegram  | `TelegramFormatConverter`  | MarkdownV2                                                                 |
+| Discord   | `DiscordFormatConverter`   | Discord markdown                                                           |
+| GitHub    | `GitHubFormatConverter`    | GitHub Flavored Markdown                                                   |
+| Linear    | `LinearFormatConverter`    | Linear rich text                                                           |
+| Messenger | `MessengerFormatConverter` | `*bold*`, `_italic_`, `~strike~`, `` `code` ``                             |
+| Instagram | `InstagramFormatConverter` | `*bold*`, `_italic_`, `~strike~`, `` `code` ``                             |
 | WhatsApp  | `WhatsAppFormatConverter`  | `*bold*`, `_italic_`, `~strike~`, `` `code` ``, lists `*`/`1.`, `> quotes` |
-| Telnyx    | `TelnyxFormatConverter`    | Plain text               |
-| Web       | `WebFormatConverter`       | HTML                     |
+| Telnyx    | `TelnyxFormatConverter`    | Plain text                                                                 |
+| Web       | `WebFormatConverter`       | HTML                                                                       |
 
 ### Key Methods
 
@@ -57,15 +57,15 @@ interface FormatConverter
 
 ## Supported Markdown Features
 
-| Feature       | Markdown        | Slack           | Telegram        | Discord         | GitHub          | Linear          | Messenger/Instagram | WhatsApp       | Plain text   |
-| ------------- | --------------- | --------------- | --------------- | --------------- | --------------- | --------------- | ------------------- | -------------- | ------------ |
-| Bold          | `**text**`      | `*text*`        | `**text**`      | `**text**`      | `**text**`      | `**text**`      | `*text*`            | `*text*`       | `text`       |
-| Italic        | `_text_`        | `_text_`        | `__text__`      | `_text_`        | `_text_`        | `_text_`        | `_text_`            | `_text_`       | `text`       |
-| Strikethrough | `~~text~~`      | `~text~`        | `~text~`        | `~~text~~`      | `~~text~~`      | `~~text~~`      | `~text~`            | `~text~`       | `text`       |
-| Inline Code   | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``        | `` `code` ``   | `code`       |
-| Code Block    | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` `     | ` ``` ... ``` `| `...`        |
-| Links         | `[text](url)`   | `<url\|text>`   | `[text](url)`   | `[text](url)`   | `[text](url)`   | `[text](url)`   | `text` (no links)   | `text` (no links)| `text (url)` |
-| Lists         | `- item`        | `• item`        | `- item`        | `- item`        | `- item`        | `- item`        | `* item / 1. item`  | `* item / 1. item`| `• item`     |
+| Feature       | Markdown        | Slack           | Telegram        | Discord         | GitHub          | Linear          | Messenger/Instagram | WhatsApp           | Plain text   |
+| ------------- | --------------- | --------------- | --------------- | --------------- | --------------- | --------------- | ------------------- | ------------------ | ------------ |
+| Bold          | `**text**`      | `*text*`        | `**text**`      | `**text**`      | `**text**`      | `**text**`      | `*text*`            | `*text*`           | `text`       |
+| Italic        | `_text_`        | `_text_`        | `__text__`      | `_text_`        | `_text_`        | `_text_`        | `_text_`            | `_text_`           | `text`       |
+| Strikethrough | `~~text~~`      | `~text~`        | `~text~`        | `~~text~~`      | `~~text~~`      | `~~text~~`      | `~text~`            | `~text~`           | `text`       |
+| Inline Code   | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``    | `` `code` ``        | `` `code` ``       | `code`       |
+| Code Block    | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` ` | ` ``` ... ``` `     | ` ``` ... ``` `    | `...`        |
+| Links         | `[text](url)`   | `<url\|text>`   | `[text](url)`   | `[text](url)`   | `[text](url)`   | `[text](url)`   | `text` (no links)   | `text` (no links)  | `text (url)` |
+| Lists         | `- item`        | `• item`        | `- item`        | `- item`        | `- item`        | `- item`        | `* item / 1. item`  | `* item / 1. item` | `• item`     |
 
 ## Plain Text Adapters
 

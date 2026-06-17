@@ -19,4 +19,18 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-chat-primary: var(--chat-primary);
+    --color-chat-primary-hover: var(--chat-primary-hover);
+    --color-chat-secondary: var(--chat-secondary);
+    --color-chat-background: var(--chat-background);
+    --color-chat-surface: var(--chat-surface);
+    --color-chat-text: var(--chat-text);
+    --color-chat-text-secondary: var(--chat-text-secondary);
+    --color-chat-border: var(--chat-border);
+    --color-chat-own-message: var(--chat-own-message);
+    --color-chat-own-message-text: var(--chat-own-message-text);
+    --color-chat-other-message: var(--chat-other-message);
+    --color-chat-other-message-text: var(--chat-other-message-text);
+    --color-chat-error: var(--chat-error);
+    --color-chat-success: var(--chat-success);
 }

@@ -39,10 +39,10 @@ The `ChatServiceProvider` auto-binds `Psr\Http\Client\ClientInterface`.
 
 ## Thread ID Format
 
-| Format                               | Description                  |
-| ------------------------------------ | ---------------------------- |
-| `telegram:{chatId}`                  | Direct message or group chat |
-| `telegram:{chatId}:{messageThreadId}`| Topic within a forum         |
+| Format                                | Description                  |
+| ------------------------------------- | ---------------------------- |
+| `telegram:{chatId}`                   | Direct message or group chat |
+| `telegram:{chatId}:{messageThreadId}` | Topic within a forum         |
 
 ```php
 $adapter->postMessage('telegram:123456789', 'Hello!');
@@ -274,12 +274,12 @@ $adapter->editThread($info->id, $info->withParameters([
 
 Supported operations per context:
 
-| Context | Update method | Fields |
-|---------|---------------|--------|
-| Forum topic | `editForumTopic` | `title`, `iconCustomEmojiId` |
-| Forum topic | `closeForumTopic` / `reopenForumTopic` | `isArchived` |
-| Group/supergroup | `setChatTitle` | `title` |
-| Group/supergroup | `setChatDescription` | `topic` |
+| Context          | Update method                          | Fields                       |
+| ---------------- | -------------------------------------- | ---------------------------- |
+| Forum topic      | `editForumTopic`                       | `title`, `iconCustomEmojiId` |
+| Forum topic      | `closeForumTopic` / `reopenForumTopic` | `isArchived`                 |
+| Group/supergroup | `setChatTitle`                         | `title`                      |
+| Group/supergroup | `setChatDescription`                   | `topic`                      |
 
 ## Deleting Messages
 
@@ -291,39 +291,39 @@ $adapter->deleteMessage('telegram:12345', '100');
 
 All keyboard value objects implement `ReplyMarkup` interface.
 
-| Value object              | Fields |
-|---------------------------|--------|
-| `KeyboardButton`          | `text`, `requestContact` (`?bool`), `requestLocation` (`?bool`), `requestPoll` (`?KeyboardButtonPollType`), `webApp` (`?WebAppInfo`) |
-| `InlineKeyboardButton`    | `text`, `callbackData` (`?string`), `url` (`?string`), `webApp` (`?WebAppInfo`) |
-| `WebAppInfo`              | `url` (`string`) |
-| `ReplyKeyboardMarkup`     | `keyboard` (`KeyboardButton[][]`), `resizeKeyboard`, `oneTimeKeyboard`, `inputFieldPlaceholder`, `selective` |
-| `InlineKeyboardMarkup`    | `inlineKeyboard` (`InlineKeyboardButton[][]`) |
-| `ForceReply`              | `inputFieldPlaceholder`, `selective` |
-| `ReplyKeyboardRemove`     | `selective` |
-| `KeyboardButtonPollType`  | `type` — constants `QUIZ`, `REGULAR` |
+| Value object             | Fields                                                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `KeyboardButton`         | `text`, `requestContact` (`?bool`), `requestLocation` (`?bool`), `requestPoll` (`?KeyboardButtonPollType`), `webApp` (`?WebAppInfo`) |
+| `InlineKeyboardButton`   | `text`, `callbackData` (`?string`), `url` (`?string`), `webApp` (`?WebAppInfo`)                                                      |
+| `WebAppInfo`             | `url` (`string`)                                                                                                                     |
+| `ReplyKeyboardMarkup`    | `keyboard` (`KeyboardButton[][]`), `resizeKeyboard`, `oneTimeKeyboard`, `inputFieldPlaceholder`, `selective`                         |
+| `InlineKeyboardMarkup`   | `inlineKeyboard` (`InlineKeyboardButton[][]`)                                                                                        |
+| `ForceReply`             | `inputFieldPlaceholder`, `selective`                                                                                                 |
+| `ReplyKeyboardRemove`    | `selective`                                                                                                                          |
+| `KeyboardButtonPollType` | `type` — constants `QUIZ`, `REGULAR`                                                                                                 |
 
 Raw arrays are also accepted in `metadata.reply_markup` for power users.
 
 ## Feature Matrix
 
-| Feature              | Supported |
-| -------------------- | --------- |
-| Post messages        | ✓         |
-| Edit messages        | ✓         |
-| Delete messages      | ✓         |
-| Reactions            | ✓         |
-| Reply keyboards      | ✓         |
-| Inline keyboards     | ✓         |
-| Force reply          | ✓         |
-| Reply-to-message     | ✓         |
-| File uploads         | ✓         |
-| URL attachments      | ✓         |
-| Typing indicator     | ✓         |
-| Streaming            | ✓         |
-| Bot commands         | ✓         |
-| Group chats          | ✓         |
-| Topic forums         | ✓         |
-| Thread info & edit   | ✓         |
+| Feature            | Supported |
+| ------------------ | --------- |
+| Post messages      | ✓         |
+| Edit messages      | ✓         |
+| Delete messages    | ✓         |
+| Reactions          | ✓         |
+| Reply keyboards    | ✓         |
+| Inline keyboards   | ✓         |
+| Force reply        | ✓         |
+| Reply-to-message   | ✓         |
+| File uploads       | ✓         |
+| URL attachments    | ✓         |
+| Typing indicator   | ✓         |
+| Streaming          | ✓         |
+| Bot commands       | ✓         |
+| Group chats        | ✓         |
+| Topic forums       | ✓         |
+| Thread info & edit | ✓         |
 
 ## Webhook
 

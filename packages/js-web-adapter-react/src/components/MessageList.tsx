@@ -3,11 +3,13 @@ import { Message } from "@bootdesk/js-web-adapter-core";
 import { MessageContent } from "./MessageContent";
 import { useLocale } from "../i18n/LocaleProvider";
 import { formatTimestamp } from "../utils/formatTimestamp";
+import { cn } from "../lib/cn";
 
 interface MessageListProps {
   messages: Message[];
   currentUserId: string;
   isLoading?: boolean;
+  thinking?: boolean;
   onReactionClick?: (messageId: string, emoji: string) => void;
   onActionClick?: (messageId: string, actionId: string, value: string) => void;
   className?: string;
@@ -17,6 +19,7 @@ export function MessageList({
   messages,
   currentUserId,
   isLoading = false,
+  thinking = false,
   onReactionClick,
   onActionClick,
   className,
@@ -95,13 +98,13 @@ export function MessageList({
   return (
     <div
       ref={containerRef}
-      className={`chat-message-list flex-1 min-h-0 overflow-y-auto ${className || ""}`}
+      className={cn("bdesk-message-list", className)}
       data-chat-message-list="true"
       data-testid="chat-message-list"
     >
       {groupedMessages.length === 0 && !isLoading && (
-        <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center px-6">
-          <div className="text-chat-text-secondary text-sm">{t("messageList.emptyState")}</div>
+        <div className="bdesk-empty-state">
+          <div className="bdesk-empty-state-text">{t("messageList.emptyState")}</div>
         </div>
       )}
 
@@ -110,41 +113,44 @@ export function MessageList({
         const firstMessage = group.messages[0]!;
 
         return (
-          <div key={`${group.user}-${groupIndex}`} className="flex flex-col gap-1">
+          <div key={`${group.user}-${groupIndex}`} className="bdesk-message-group">
             {firstMessage.author.name && (
-              <div className="text-xs text-chat-text-secondary">{firstMessage.author.name}</div>
+              <div className="bdesk-message-group-author">{firstMessage.author.name}</div>
             )}
 
             {group.messages.map((message, msgIndex) => (
-              <div key={message.id} className="flex flex-col" data-chat-message-id={message.id}>
-                <div className={isOwn ? "chat-message-bubble-own" : "chat-message-bubble-other"}>
+              <div
+                key={message.id}
+                className="bdesk-message-item"
+                data-chat-message-id={message.id}
+              >
+                <div className={isOwn ? "bdesk-message-bubble-own" : "bdesk-message-bubble-other"}>
                   <MessageContent message={message} onActionClick={onActionClick} />
                 </div>
 
                 {message.reactions && message.reactions.length > 0 && (
-                  <div className="flex gap-1 mt-1">
+                  <div className="bdesk-reactions">
                     {message.reactions.map((reaction, rIndex) => (
                       <button
                         key={`${reaction.emoji}-${rIndex}`}
                         onClick={() => onReactionClick?.(message.id, reaction.emoji)}
-                        className={`flex items-center gap-1 px-2 py-0.5 border border-chat-border rounded-full text-sm cursor-pointer transition ${
+                        className={cn(
+                          "bdesk-reaction-btn",
                           reaction.hasReacted
-                            ? "bg-chat-surface"
-                            : "bg-transparent hover:bg-chat-surface"
-                        }`}
+                            ? "bdesk-reaction-btn--active"
+                            : "bdesk-reaction-btn--inactive",
+                        )}
                         data-chat-reaction={reaction.emoji}
                       >
                         <span>{reaction.emoji}</span>
-                        <span className="text-chat-text-secondary">{reaction.count}</span>
+                        <span className="bdesk-reaction-count">{reaction.count}</span>
                       </button>
                     ))}
                   </div>
                 )}
 
                 {msgIndex === 0 && (
-                  <div className="text-xs text-chat-text-secondary mt-1">
-                    {formatTimestamp(message.timestamp)}
-                  </div>
+                  <div className="bdesk-msg-timestamp">{formatTimestamp(message.timestamp)}</div>
                 )}
               </div>
             ))}
@@ -153,31 +159,28 @@ export function MessageList({
       })}
 
       {isLoading && groupedMessages.length === 0 && (
-        <div className="flex items-center justify-center min-h-[200px]" data-chat-loading="true">
-          <div className="flex gap-1.5">
-            <span
-              className="w-2 h-2 rounded-full bg-chat-text-secondary animate-bounce"
-              style={{ animationDelay: "0ms" }}
-            />
-            <span
-              className="w-2 h-2 rounded-full bg-chat-text-secondary animate-bounce"
-              style={{ animationDelay: "160ms" }}
-            />
-            <span
-              className="w-2 h-2 rounded-full bg-chat-text-secondary animate-bounce"
-              style={{ animationDelay: "320ms" }}
-            />
+        <div className="bdesk-loading" data-chat-loading="true">
+          <div className="bdesk-loading-dots">
+            <span className="bdesk-loading-dot" style={{ animationDelay: "0ms" }} />
+            <span className="bdesk-loading-dot" style={{ animationDelay: "160ms" }} />
+            <span className="bdesk-loading-dot" style={{ animationDelay: "320ms" }} />
           </div>
         </div>
       )}
 
-      {isLoading && groupedMessages.length > 0 && (
-        <div className="flex justify-center py-4" data-chat-loading="true">
-          <div className="text-chat-text-secondary">{t("common.loading")}</div>
+      {thinking && groupedMessages.length > 0 && (
+        <div className="bdesk-thinking">
+          <div className="bdesk-message-bubble-other">
+            <span className="bdesk-thinking-dots">
+              <span className="bdesk-thinking-dot" style={{ animationDelay: "0ms" }} />
+              <span className="bdesk-thinking-dot" style={{ animationDelay: "160ms" }} />
+              <span className="bdesk-thinking-dot" style={{ animationDelay: "320ms" }} />
+            </span>
+          </div>
         </div>
       )}
 
-      <div ref={listEndRef} className="h-px" />
+      <div ref={listEndRef} className="bdesk-scroll-anchor" />
     </div>
   );
 }

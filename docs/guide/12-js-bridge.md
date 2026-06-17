@@ -61,12 +61,12 @@ function ChatPage() {
 
 ### Return Values
 
-| Value | Type | Description |
-|---|---|---|
-| `config` | `BridgeConfig \| null` | Config from parent (`title?`, `locale?`, `placeholder?`, `theme.mode?`). `null` until received |
-| `isInIframe` | `boolean` | `true` when `window !== window.parent` |
-| `notifyMessage(text)` | `(text: string) => void` | Sends user message text to parent |
-| `onNotificationClicked(cb)` | `(cb: () => void) => void` | Registers callback for `chat-notification-clicked` from parent |
+| Value                       | Type                       | Description                                                                                    |
+| --------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------- |
+| `config`                    | `BridgeConfig \| null`     | Config from parent (`title?`, `locale?`, `placeholder?`, `theme.mode?`). `null` until received |
+| `isInIframe`                | `boolean`                  | `true` when `window !== window.parent`                                                         |
+| `notifyMessage(text)`       | `(text: string) => void`   | Sends user message text to parent                                                              |
+| `onNotificationClicked(cb)` | `(cb: () => void) => void` | Registers callback for `chat-notification-clicked` from parent                                 |
 
 The hook also provides `notifyViewportConfig(content)` internally — used by `ChatWidget` to manage the Android viewport (`interactive-widget=resizes-content`; iOS uses `dvh` units).
 
@@ -104,14 +104,14 @@ ChatSDK.initialize({
 
 ### Options
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `iframeSrc` | `string` | `"/chat-iframe"` | URL for the iframe |
-| `title` | `string` | `"Chat"` | Sent via `chat-config` |
-| `placeholder` | `string` | `"Type a message..."` | Sent via `chat-config` |
-| `buttonInnerHtml` | `string` | chat bubble SVG | HTML for the FAB |
-| `buttonStyle` | `object` | default position/size | CSS overrides for the button |
-| `overlayStyle` | `object` | semi-transparent black | CSS overrides for the overlay |
+| Option            | Type     | Default                | Description                   |
+| ----------------- | -------- | ---------------------- | ----------------------------- |
+| `iframeSrc`       | `string` | `"/chat-iframe"`       | URL for the iframe            |
+| `title`           | `string` | `"Chat"`               | Sent via `chat-config`        |
+| `placeholder`     | `string` | `"Type a message..."`  | Sent via `chat-config`        |
+| `buttonInnerHtml` | `string` | chat bubble SVG        | HTML for the FAB              |
+| `buttonStyle`     | `object` | default position/size  | CSS overrides for the button  |
+| `overlayStyle`    | `object` | semi-transparent black | CSS overrides for the overlay |
 
 The embed script also:
 
@@ -124,17 +124,17 @@ The embed script also:
 
 ### Parent → Child
 
-| `type` | Payload | When |
-|---|---|---|
-| `chat-config` | `{ title?, locale?, placeholder?, theme?: { mode? } }` | On iframe load & whenever config changes |
-| `chat-notification-clicked` | `{}` | User taps a push notification from outside the chat |
+| `type`                      | Payload                                                | When                                                |
+| --------------------------- | ------------------------------------------------------ | --------------------------------------------------- |
+| `chat-config`               | `{ title?, locale?, placeholder?, theme?: { mode? } }` | On iframe load & whenever config changes            |
+| `chat-notification-clicked` | `{}`                                                   | User taps a push notification from outside the chat |
 
 ### Child → Parent
 
-| `type` | Payload | When |
-|---|---|---|
-| `chat-message` | `{ text: string }` | User sends a message |
-| `chat-close` | `{}` | User clicks close button |
+| `type`                 | Payload               | When                                                                                                                                 |
+| ---------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `chat-message`         | `{ text: string }`    | User sends a message                                                                                                                 |
+| `chat-close`           | `{}`                  | User clicks close button                                                                                                             |
 | `chat-viewport-config` | `{ content: string }` | Android keyboard opens/closes; parent should add/remove `interactive-widget=resizes-content` on viewport meta (iOS uses `dvh` units) |
 
 ### Manual Parent Integration
@@ -143,12 +143,15 @@ The embed script also:
 const iframe = document.getElementById("chat-iframe");
 
 // Send config
-iframe.contentWindow.postMessage({
-  type: "chat-config",
-  title: "Support Chat",
-  locale: "pt-BR",
-  theme: { mode: "dark" },
-}, "*");
+iframe.contentWindow.postMessage(
+  {
+    type: "chat-config",
+    title: "Support Chat",
+    locale: "pt-BR",
+    theme: { mode: "dark" },
+  },
+  "*",
+);
 
 // Listen for child messages
 window.addEventListener("message", (event) => {
@@ -171,7 +174,7 @@ window.addEventListener("message", (event) => {
 When the chat widget is inside an iframe and the user focuses the text input, virtual keyboards can mess up layout:
 
 - **Android:** Requires `interactive-widget=resizes-content` on the viewport meta tag. Without it, the keyboard resizes the viewport, squishing the message input and breaking the widget layout.
-- **iOS:** Does *not* support `interactive-widget=resizes-content`. The fix is using `dvh` (dynamic viewport height) units in CSS — the viewport scrolls but the input stays in the correct position.
+- **iOS:** Does _not_ support `interactive-widget=resizes-content`. The fix is using `dvh` (dynamic viewport height) units in CSS — the viewport scrolls but the input stays in the correct position.
 
 The widget sends `chat-viewport-config` with the content string to the parent page, which applies it to its `<meta name="viewport">` tag. Android parents add `interactive-widget=resizes-content`; iOS parents do nothing (the widget handles it via `dvh`). When the keyboard closes, it sends an empty string and the parent restores the original value.
 
@@ -189,7 +192,10 @@ window.addEventListener("message", (event) => {
       if (!originalViewport) {
         originalViewport = meta.getAttribute("content");
       }
-      meta.setAttribute("content", originalViewport + ", " + event.data.content);
+      meta.setAttribute(
+        "content",
+        originalViewport + ", " + event.data.content,
+      );
     } else if (originalViewport) {
       meta.setAttribute("content", originalViewport);
       originalViewport = null;

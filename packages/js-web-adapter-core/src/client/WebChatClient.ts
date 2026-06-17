@@ -152,13 +152,14 @@ export class WebChatClient {
         threadEvents.onReactionRemoved = (event) => this.handleReactionRemoved(event);
       }
 
+      threadEvents.onTypingStarted = (event) => this.handleTypingStarted(event);
+
       await this.broadcastClient.subscribe(threadId, threadEvents);
 
       this.unsubscribeUserChannel = await this.broadcastClient.subscribeToUser(
         threadId,
         this.currentUserId,
         {
-          onTypingStarted: (event) => this.handleTypingStarted(event),
           onStreamingChunk: (event) => this.handleStreamingChunk(event),
           onDMRequested: (event) => this.handleDMRequested(event),
         },

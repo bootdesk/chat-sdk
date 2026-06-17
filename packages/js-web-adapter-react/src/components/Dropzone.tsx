@@ -1,5 +1,6 @@
 import React, { useCallback, useState, useRef } from "react";
 import { useLocale } from "../i18n/LocaleProvider";
+import { cn } from "../lib/cn";
 
 interface DropzoneProps {
   onFilesSelected: (files: FileList | File[]) => void;
@@ -112,9 +113,12 @@ export function Dropzone({
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className={`flex items-center justify-center p-2 border-2 border-dashed rounded-lg cursor-pointer transition ${
-        isDragging ? "border-chat-primary bg-chat-primary/10" : "border-chat-border"
-      } ${disabled ? "cursor-not-allowed opacity-50" : ""} ${className || ""}`}
+      className={cn(
+        "bdesk-dropzone",
+        isDragging && "bdesk-dropzone--dragging",
+        disabled && "bdesk-dropzone--disabled",
+        className,
+      )}
       data-chat-dropzone="true"
       data-testid="chat-dropzone"
     >
@@ -124,11 +128,11 @@ export function Dropzone({
         accept={accept}
         multiple={multiple}
         onChange={handleInputChange}
-        className="hidden"
+        className="bdesk-dropzone-input"
         disabled={disabled}
         aria-hidden="true"
       />
-      <div className="text-center">
+      <div className="bdesk-dropzone-center">
         <svg
           width="20"
           height="20"
@@ -138,13 +142,13 @@ export function Dropzone({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="mx-auto mb-1"
+          className="bdesk-dropzone-icon"
         >
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
           <polyline points="17 8 12 3 7 8" />
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
-        <div className="text-xs text-chat-text-secondary">
+        <div className="bdesk-dropzone-text">
           {isDragging ? t("inputArea.dropzone.dropFiles") : t("inputArea.dropzone.dropOrClick")}
         </div>
       </div>

@@ -11,23 +11,18 @@ export function FileCardComponent({ card: rawCard }: CardRendererProps): React.J
   const card = rawCard as FileCardType;
 
   return (
-    <div
-      className="flex items-center gap-3 p-3 border border-chat-border rounded-lg max-w-xs"
-      data-chat-card="file"
-    >
-      <div className="w-10 h-10 flex items-center justify-center bg-chat-surface rounded">📄</div>
+    <div className="bdesk-file-card" data-chat-card="file">
+      <div className="bdesk-file-card-icon">📄</div>
 
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium truncate">{card.name}</div>
-        {card.size && (
-          <div className="text-xs text-chat-text-secondary">{formatSize(card.size)}</div>
-        )}
+      <div className="bdesk-file-card-info">
+        <div className="bdesk-file-card-name">{card.name}</div>
+        {card.size && <div className="bdesk-file-card-size">{formatSize(card.size)}</div>}
       </div>
 
       <a
         href={card.url}
         download={card.name}
-        className="px-3 py-2 bg-chat-primary text-white rounded text-sm font-medium no-underline hover:opacity-90"
+        className="bdesk-file-card-download"
         data-chat-file-download="true"
       >
         Download

@@ -249,11 +249,14 @@ export class WebChatClient {
   private async processQueue(): Promise<void> {
     if (this.isProcessingQueue) return;
     this.isProcessingQueue = true;
-    while (this.sendQueue.length > 0) {
-      const task = this.sendQueue.shift()!;
-      await task();
+    try {
+      while (this.sendQueue.length > 0) {
+        const task = this.sendQueue.shift()!;
+        await task();
+      }
+    } finally {
+      this.isProcessingQueue = false;
     }
-    this.isProcessingQueue = false;
   }
 
   private async executeSend(text: string, attachments: AttachmentInput[] = []): Promise<void> {

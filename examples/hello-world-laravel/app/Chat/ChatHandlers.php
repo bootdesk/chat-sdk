@@ -13,6 +13,7 @@ use BootDesk\ChatSDK\Core\Cards\Card;
 use BootDesk\ChatSDK\Core\Cards\TableAlignment;
 use BootDesk\ChatSDK\Core\Cards\TextStyle;
 use BootDesk\ChatSDK\Core\Channel;
+use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\Chat;
 use BootDesk\ChatSDK\Core\FileUpload;
 use BootDesk\ChatSDK\Core\MemberJoinedChannelEvent;
@@ -41,17 +42,17 @@ class ChatHandlers implements ChatHandler
     {
         // Subscribed thread — every message goes here instead of Mention/Pattern.
         // Subscribe via the /subscribe slash command or the fallback.
-        $chat->onSubscribedMessage(function (MessageContext $ctx) {
+        $chat->onSubscribedMessage(function (MessageContext $ctx): void {
             $ctx->thread->post("You said in this subscribed thread: {$ctx->message->text}");
         });
 
         // Mention handler — fires when the bot is @-mentioned outside a subscribed thread.
-        $chat->onNewMention(function (MessageContext $ctx) {
+        $chat->onNewMention(function (MessageContext $ctx): void {
             $ctx->thread->post('You mentioned me! Use `/help` to see what I can do.');
         });
 
         // Pattern-matched messages (unsubscribed threads only — including DMs)
-        $chat->onNewMessage('/^(hello|hi|hey)$/i', function (MessageContext $ctx) {
+        $chat->onNewMessage('/^(hello|hi|hey)$/i', function (MessageContext $ctx): void {
             $ctx->thread->addReaction($ctx->message->id, '👍');
 
             $reply = $ctx->message->isDM
@@ -62,7 +63,7 @@ class ChatHandlers implements ChatHandler
                 $reply .= ' (Has Skipped messages: '.implode(
                     ', ',
                     \array_map(
-                        fn (Message $message) => $message->text,
+                        fn (Message $message): string => $message->text,
                         $ctx->skippedMessages
                     )
                 );
@@ -71,7 +72,7 @@ class ChatHandlers implements ChatHandler
             $ctx->thread->post($reply);
         });
 
-        $chat->onNewMessage('/^order\s+(.+)$/i', function (MessageContext $ctx) {
+        $chat->onNewMessage('/^order\s+(.+)$/i', function (MessageContext $ctx): void {
             $ctx->thread->addReaction($ctx->message->id, '👍');
 
             $item = trim(preg_replace('/^order\s+/i', '', $ctx->message->text));
@@ -87,7 +88,7 @@ class ChatHandlers implements ChatHandler
             $ctx->thread->post($card);
         });
 
-        $chat->onNewMessage('/^status$/i', function (MessageContext $ctx) {
+        $chat->onNewMessage('/^status$/i', function (MessageContext $ctx): void {
             $ctx->thread->addReaction($ctx->message->id, '👍');
             $card = Card::make()
                 ->header('System Status')
@@ -110,7 +111,7 @@ class ChatHandlers implements ChatHandler
             $ctx->thread->post($card);
         });
 
-        $chat->onNewMessage('/^photo\s+(.+)$/i', function (MessageContext $ctx) {
+        $chat->onNewMessage('/^photo\s+(.+)$/i', function (MessageContext $ctx): void {
             $ctx->thread->addReaction($ctx->message->id, '👍');
             $query = trim(preg_replace('/^photo\s+/i', '', $ctx->message->text));
             $seed = urlencode($query);
@@ -123,7 +124,7 @@ class ChatHandlers implements ChatHandler
             ));
         });
 
-        $chat->onNewMessage('/^photocard$/i', function (MessageContext $ctx) {
+        $chat->onNewMessage('/^photocard$/i', function (MessageContext $ctx): void {
             $ctx->thread->addReaction($ctx->message->id, '👍');
             $card = Card::make()
                 ->imageUrl('https://picsum.photos/seed/demo/800/600', 'Random demo photo')
@@ -133,7 +134,7 @@ class ChatHandlers implements ChatHandler
             $ctx->thread->post($card);
         });
 
-        $chat->onNewMessage('/^upload$/i', function (MessageContext $ctx) {
+        $chat->onNewMessage('/^upload$/i', function (MessageContext $ctx): void {
             $ctx->thread->addReaction($ctx->message->id, '👍');
             $path = sys_get_temp_dir().'/picsum_upload.jpg';
             file_put_contents($path, file_get_contents('https://picsum.photos/seed/upload/800/600'));
@@ -146,7 +147,7 @@ class ChatHandlers implements ChatHandler
             ));
         });
 
-        $chat->onNewMessage('/^bigtable$/i', function (MessageContext $ctx) {
+        $chat->onNewMessage('/^bigtable$/i', function (MessageContext $ctx): void {
             $ctx->thread->addReaction($ctx->message->id, '👍');
             $rows = [];
             for ($i = 1; $i <= 105; $i++) {
@@ -160,7 +161,7 @@ class ChatHandlers implements ChatHandler
             $ctx->thread->post($card);
         });
 
-        $chat->onNewMessage('/^feedback$/i', function (MessageContext $ctx) {
+        $chat->onNewMessage('/^feedback$/i', function (MessageContext $ctx): void {
             $ctx->thread->addReaction($ctx->message->id, '👍');
             $card = Card::make()
                 ->header('Feedback')
@@ -172,14 +173,14 @@ class ChatHandlers implements ChatHandler
             $ctx->thread->post($card);
         });
 
-        $chat->onNewMessage('/^channel$/i', function (MessageContext $ctx) {
+        $chat->onNewMessage('/^channel$/i', function (MessageContext $ctx): void {
             $ctx->thread->addReaction($ctx->message->id, '👍');
             $channelId = $ctx->thread->adapter->channelIdFromThreadId($ctx->thread->id);
 
             $channel = new Channel($channelId, $ctx->thread->adapter);
             $info = $channel->fetchMetadata();
 
-            if ($info === null) {
+            if (! $info instanceof ChannelInfo) {
                 $ctx->thread->post("Channel info not available for this platform.\n\n**Channel ID:** `{$channelId}`");
 
                 return;
@@ -201,7 +202,7 @@ class ChatHandlers implements ChatHandler
             $ctx->thread->post($card);
         });
 
-        $chat->onNewMessage('/^thread$/i', function (MessageContext $ctx) {
+        $chat->onNewMessage('/^thread$/i', function (MessageContext $ctx): void {
             $ctx->thread->addReaction($ctx->message->id, '👍');
             $info = $ctx->thread->adapter->fetchThread($ctx->thread->id);
 
@@ -223,36 +224,33 @@ class ChatHandlers implements ChatHandler
         // Slash commands — only use for platform-native features.
         // Prefer pattern-matched handlers above for cross-platform compatibility,
         // since some platforms don't support arbitrary slash command registration.
-        $chat->onSlashCommand('/help', function (SlashCommandEvent $event) {
+        $chat->onSlashCommand('/help', function (SlashCommandEvent $event): void {
             $event->channel->post("Available commands:\n- `hello` — greeting\n- `order <item>` — place an order\n- `photo <query>` — picsum photo\n- `photocard` — card with imageUrl\n- `upload` — binary file upload\n- `status` — system status card\n- `bigtable` — large data table\n- `/subscribe` — start listening in this thread\n- `/unsubscribe` — stop");
         });
 
-        $chat->onSlashCommand('/subscribe', function (SlashCommandEvent $event) {
+        $chat->onSlashCommand('/subscribe', function (SlashCommandEvent $event): void {
             $event->thread->subscribe();
             $event->channel->post('Subscribed to this thread. I\'ll listen to every message here.');
         });
 
-        $chat->onSlashCommand('/unsubscribe', function (SlashCommandEvent $event) {
+        $chat->onSlashCommand('/unsubscribe', function (SlashCommandEvent $event): void {
             $event->thread->unsubscribe();
             $event->channel->post('Unsubscribed.');
         });
 
         // Actions — button clicks on order cards
-        $chat->onAction('order_confirm', function (ActionEvent $event) {
+        $chat->onAction('order_confirm', function (ActionEvent $event): void {
             $event->thread->post("Order confirmed! We'll process it shortly.");
         });
 
-        $chat->onAction('order_cancel', function (ActionEvent $event) {
+        $chat->onAction('order_cancel', function (ActionEvent $event): void {
             $event->thread->post('Order cancelled.');
         });
 
-        $chat->onAction('feedback', function (ActionEvent $event) {
+        $chat->onAction('feedback', function (ActionEvent $event): void {
             $event->openModal(new Modal(
                 callbackId: 'feedback',
                 title: 'Submit Feedback',
-                submitLabel: 'Send',
-                closeLabel: 'Cancel',
-                notifyOnClose: true,
                 children: [
                     new TextInput(
                         id: 'comment',
@@ -267,27 +265,32 @@ class ChatHandlers implements ChatHandler
                         minQueryLength: 1,
                     ),
                 ],
+                submitLabel: 'Send',
+                closeLabel: 'Cancel',
+                notifyOnClose: true,
             ));
         });
 
         // Reactions — respond to emoji reactions (adds or removes)
-        $chat->onReaction(function (ReactionEvent $event) {
+        $chat->onReaction(function (ReactionEvent $event): void {
             if ($event->added) {
-                $event->thread->post("Thanks for the `:{$event->rawEmoji}:` reaction!");
+                $event->thread->post("Thanks for the {{emoji:$event->emoji}} reaction!");
+            } else {
+                $event->thread->post("Too bad you removed the {{emoji:$event->emoji}} reaction!");
             }
         });
 
         // Modals — Slack view_submission / view_closed
-        $chat->onModalSubmit(function (ModalSubmitEvent $event) {
+        $chat->onModalSubmit(function (ModalSubmitEvent $event): void {
             $event->relatedThread?->post("Form **{$event->callbackId}** submitted! Values: ".json_encode($event->values));
         });
 
-        $chat->onModalClose(function (ModalCloseEvent $event) {
+        $chat->onModalClose(function (ModalCloseEvent $event): void {
             $event->relatedThread?->post("Form **{$event->callbackId}** closed without submitting.");
         });
 
         // Options load — Slack external select menus
-        $chat->onOptionsLoad(function (OptionsLoadEvent $event) {
+        $chat->onOptionsLoad(function (OptionsLoadEvent $event): array {
             $prefix = strtolower($event->query);
             $all = [
                 ['text' => 'Bug Report', 'value' => 'bug'],
@@ -299,44 +302,44 @@ class ChatHandlers implements ChatHandler
 
             return $prefix === ''
                 ? $all
-                : array_values(array_filter($all, fn ($o) => str_starts_with(strtolower($o['text']), $prefix)));
+                : array_values(array_filter($all, fn (array $o): bool => str_starts_with(strtolower($o['text']), $prefix)));
         });
 
         // Slack Assistants API
-        $chat->onAssistantThreadStarted(function (AssistantThreadStartedEvent $event) {
+        $chat->onAssistantThreadStarted(function (AssistantThreadStartedEvent $event): void {
             $event->adapter->postMessage($event->threadId, PostableMessage::text('👋 Hello! How can I help you today?'));
         });
 
-        $chat->onAssistantContextChanged(function (AssistantContextChangedEvent $event) {
+        $chat->onAssistantContextChanged(function (AssistantContextChangedEvent $event): void {
             $event->adapter->postMessage($event->threadId, PostableMessage::text("🔄 Context updated — I'll adjust based on the new information."));
         });
 
         // App Home opened
-        $chat->onAppHomeOpened(function (AppHomeOpenedEvent $event) {
+        $chat->onAppHomeOpened(function (AppHomeOpenedEvent $event): void {
             // App Home doesn't have thread posting — log or handle silently.
             // For demonstration, the app can update the home tab view via Slack API.
         });
 
         // Member joined channel
-        $chat->onMemberJoinedChannel(function (MemberJoinedChannelEvent $event) {
+        $chat->onMemberJoinedChannel(function (MemberJoinedChannelEvent $event): void {
             $channel = new Channel($event->channelId, $event->adapter);
             $channel->post("Welcome <@{$event->userId}>! Type `/help` to see what I can do.");
         });
 
         // Message delivered/read — e.g. WhatsApp, Messenger
-        $chat->onMessageDelivered(function (MessageDeliveredEvent $event) {
+        $chat->onMessageDelivered(function (MessageDeliveredEvent $event): void {
             Log::info('Message has been delivered', [
                 'message' => $event,
             ]);
         });
 
-        $chat->onMessageRead(function (MessageReadEvent $event) {
+        $chat->onMessageRead(function (MessageReadEvent $event): void {
             Log::info('Message has been read', [
                 'message' => $event,
             ]);
         });
 
-        $chat->onMessageFailed(function (MessageFailedEvent $event) {
+        $chat->onMessageFailed(function (MessageFailedEvent $event): void {
             Log::error('Message failed to deliver', [
                 'message' => $event,
             ]);

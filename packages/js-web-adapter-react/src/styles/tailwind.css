@@ -450,7 +450,7 @@
 }
 
 .bdesk-typing-indicator {
-  @apply px-4 pl-6 text-sm italic text-[var(--chat-text-secondary)];
+  @apply px-4 pl-6 pb-1 text-sm italic text-[var(--chat-text-secondary)];
 }
 
 .bdesk-typing-wrapper {

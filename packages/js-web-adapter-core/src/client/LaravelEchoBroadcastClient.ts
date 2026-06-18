@@ -81,6 +81,7 @@ export class LaravelEchoBroadcastClient implements BroadcastClient {
       { type: "message.deleted", handler: "onMessageDeleted" },
       { type: "reaction.added", handler: "onReactionAdded" },
       { type: "reaction.removed", handler: "onReactionRemoved" },
+      { type: "typing.started", handler: "onTypingStarted" },
     ];
 
     threadEvents.forEach(({ type, handler }) => {

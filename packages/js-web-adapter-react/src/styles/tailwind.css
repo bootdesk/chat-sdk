@@ -259,6 +259,14 @@
   @apply p-1 bg-transparent border-none cursor-pointer text-[var(--chat-text-secondary)] rounded hover:bg-[var(--chat-surface)] transition;
 }
 
+.bdesk-header-btn:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.bdesk-header-btn:hover:disabled {
+  background-color: transparent;
+}
+
 .bdesk-message-list {
   @apply flex flex-1 flex-col gap-2 min-h-0 overflow-y-auto p-4 bg-[var(--chat-background)];
   -webkit-overflow-scrolling: touch;
@@ -555,8 +563,16 @@
   @apply px-3 py-1.5 bg-[var(--chat-primary)] text-white border-none rounded cursor-pointer text-sm hover:opacity-90;
 }
 
+.bdesk-push-prompt-enable:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
 .bdesk-push-prompt-disable {
   @apply px-3 py-1.5 bg-transparent text-[var(--chat-text-secondary)] border border-[var(--chat-border)] rounded cursor-pointer text-sm hover:bg-[var(--chat-surface)];
+}
+
+.bdesk-push-prompt-disable:disabled {
+  @apply opacity-50 cursor-not-allowed;
 }
 
 .bdesk-push-prompt-dismiss {

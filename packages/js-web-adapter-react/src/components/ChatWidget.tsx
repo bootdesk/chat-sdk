@@ -181,6 +181,7 @@ export function ChatWidget({
   });
 
   const handlePushToggle = useCallback(() => {
+    if (push.status === "subscribing") return;
     if (hasBridgePush) {
       if (bridgePushState === "subscribed") requestPushUnsubscribe();
       else requestPushSubscribe();
@@ -193,6 +194,7 @@ export function ChatWidget({
     bridgePushState,
     requestPushSubscribe,
     requestPushUnsubscribe,
+    push.status,
     push.isSubscribed,
     push.subscribe,
     push.unsubscribe,

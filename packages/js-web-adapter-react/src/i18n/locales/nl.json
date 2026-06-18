@@ -61,5 +61,9 @@
     "retry": "Opnieuw proberen",
     "cancel": "Annuleren",
     "download": "Downloaden"
+  },
+  "emojiPicker": {
+    "search": "Search emoji...",
+    "noResults": "No emoji found"
   }
 }

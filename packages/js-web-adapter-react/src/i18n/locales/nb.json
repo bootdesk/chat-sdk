@@ -61,5 +61,9 @@
     "retry": "Prøv igjen",
     "cancel": "Avbryt",
     "download": "Last ned"
+  },
+  "emojiPicker": {
+    "search": "Search emoji...",
+    "noResults": "No emoji found"
   }
 }

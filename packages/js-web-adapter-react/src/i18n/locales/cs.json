@@ -61,5 +61,9 @@
     "retry": "Zkusit znovu",
     "cancel": "Zrušit",
     "download": "Stáhnout"
+  },
+  "emojiPicker": {
+    "search": "Search emoji...",
+    "noResults": "No emoji found"
   }
 }

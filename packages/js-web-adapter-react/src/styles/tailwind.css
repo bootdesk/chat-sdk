@@ -344,6 +344,43 @@
   @apply text-[var(--chat-text-secondary)];
 }
 
+.bdesk-reaction-add-btn {
+  @apply flex items-center justify-center w-6 h-6 rounded-full border border-[var(--chat-border)] bg-transparent text-sm text-[var(--chat-text-secondary)] cursor-pointer hover:bg-[var(--chat-surface)] transition;
+  line-height: 1;
+}
+
+.bdesk-emoji-picker {
+  @apply bg-[var(--chat-background)] border border-[var(--chat-border)] rounded-lg shadow-xl p-3 overflow-y-auto;
+  width: 320px;
+  max-height: 360px;
+}
+
+.bdesk-emoji-picker-search {
+  @apply w-full border border-[var(--chat-border)] rounded px-2 py-1.5 text-sm text-[var(--chat-text)] bg-[var(--chat-background)] mb-2;
+  outline: none;
+}
+
+.bdesk-emoji-picker-search:focus {
+  @apply ring-2 ring-[var(--chat-primary)];
+}
+
+.bdesk-emoji-picker-empty {
+  @apply text-sm text-[var(--chat-text-secondary)] text-center py-4;
+}
+
+.bdesk-emoji-picker-grid {
+  @apply grid gap-1;
+  grid-template-columns: repeat(8, 1fr);
+}
+
+.bdesk-emoji-picker-item {
+  @apply flex items-center justify-center w-8 h-8 text-lg rounded cursor-pointer hover:bg-[var(--chat-surface)] transition;
+}
+
+.bdesk-emoji-picker-item--disabled {
+  @apply opacity-30 cursor-not-allowed;
+}
+
 .bdesk-msg-timestamp {
   @apply text-xs text-[var(--chat-text-secondary)] mt-1;
 }

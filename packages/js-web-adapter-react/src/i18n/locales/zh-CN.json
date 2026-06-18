@@ -61,5 +61,9 @@
     "retry": "重试",
     "cancel": "取消",
     "download": "下载"
+  },
+  "emojiPicker": {
+    "search": "Search emoji...",
+    "noResults": "No emoji found"
   }
 }

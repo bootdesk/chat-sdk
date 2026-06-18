@@ -61,5 +61,9 @@
     "retry": "पुनः प्रयास करें",
     "cancel": "रद्द करें",
     "download": "डाउनलोड करें"
+  },
+  "emojiPicker": {
+    "search": "Search emoji...",
+    "noResults": "No emoji found"
   }
 }

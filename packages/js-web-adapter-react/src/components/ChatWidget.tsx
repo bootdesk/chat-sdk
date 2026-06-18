@@ -164,8 +164,17 @@ export function ChatWidget({
     }
   }, [isOpen, displayMode, isSmallScreen, inBridge, notifyViewportConfig]);
 
-  const { messages, sendMessage, loading, thinking, isLoadingHistory, reloadMessages } =
-    useMessages(client, (isOpen || effectiveEmbedded) && !isPreEntry);
+  const {
+    messages,
+    sendMessage,
+    loading,
+    thinking,
+    isLoadingHistory,
+    reloadMessages,
+    addReaction,
+    removeReaction,
+    canReact,
+  } = useMessages(client, (isOpen || effectiveEmbedded) && !isPreEntry);
   const { isSomeoneTyping } = useTyping(client);
 
   const webPushEnabled = !!pushConfig && !hasBridgePush;
@@ -249,7 +258,19 @@ export function ChatWidget({
     [client],
   );
 
-  const handleReactionClick = useCallback((_messageId: string, _emoji: string) => {}, []);
+  const handleReactionClick = useCallback(
+    async (messageId: string, emoji: string) => {
+      if (!canReact) return;
+      const msg = messages.find((m) => m.id === messageId);
+      const existing = msg?.reactions?.find((r) => r.emoji === emoji);
+      if (existing?.hasReacted) {
+        await removeReaction(messageId, emoji);
+      } else {
+        await addReaction(messageId, emoji);
+      }
+    },
+    [messages, addReaction, removeReaction, canReact],
+  );
 
   const toggleOpen = useCallback(() => {
     setIsOpen((prev) => {
@@ -323,6 +344,7 @@ export function ChatWidget({
             currentUserId={currentUserId}
             isLoading={isLoadingHistory || loading}
             thinking={thinking}
+            canReact={canReact}
             onActionClick={handleActionClick}
             onReactionClick={handleReactionClick}
             className={className?.messageList}

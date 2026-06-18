@@ -34,6 +34,8 @@ new WebAdapter(
 
 If `$config` is a string, it must be a class name extending `WebAdapterConfig`. Throws `AdapterException` if class doesn't exist.
 
+**Important**: When created via Laravel's container (e.g., via `ChatFactory`), `$broadcaster` and `$psrFactory` are auto-resolved from the container. `$broadcaster` resolves to `LaravelBroadcastAdapter` if `BroadcastServiceProvider` is registered. In sync mode (`asyncMode=false`), events are accumulated into response `events` array but NOT broadcasted live. In async mode, events are broadcasted immediately.
+
 ## WebAdapterConfig
 
 Extend this class and override only the methods you need:
@@ -99,10 +101,10 @@ class MyAppConfig extends WebAdapterConfig
 
 ## broadcasting
 
-When `BroadcastAdapter` provided:
+When `BroadcastAdapter` provided (auto-resolved via container):
 
-- `asyncMode=false`: events accumulated in `getAccumulatedEvents()`, included in `createResponse`
-- `asyncMode=true`: events broadcast immediately via `broadcast()` or `broadcastToUser()`
+- **sync mode** (`asyncMode=false`, default): events accumulated in `getAccumulatedEvents()`, included in `createResponse` JSON. NOT broadcasted live — frontend processes them from webhook response.
+- **async mode** (`asyncMode=true`): events broadcast immediately via `broadcast()` or `broadcastToUser()`.
 - User-targeted: `DirectMessageRequestedEvent`, `TypingStartedEvent` (in DMs), `StreamingChunkEvent`
 - Thread-wide: `MessagePostedEvent`, `MessageEditedEvent`, `MessageDeletedEvent`, reaction events
 

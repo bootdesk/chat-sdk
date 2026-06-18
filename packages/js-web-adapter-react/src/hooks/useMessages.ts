@@ -128,7 +128,10 @@ export function useMessages(client: WebChatClient, enabled = true): UseMessagesR
       client.addEventListener("message:added", (message: Message) => {
         setMessages((prev) => {
           if (prev.some((m) => m.id === message.id)) return prev;
-          return [...prev, message];
+          return [
+            ...prev,
+            { ...message, reactions: message.reactions ? [...message.reactions] : undefined },
+          ];
         });
       }),
     );
@@ -158,25 +161,49 @@ export function useMessages(client: WebChatClient, enabled = true): UseMessagesR
     }
 
     if (features.reactions) {
+      const currentUserId = client.getCurrentUserId();
       unsubscribes.push(
         client.addEventListener(
           "reaction:added",
-          ({ messageId, emoji }: { messageId: string; emoji: string }) => {
+          ({
+            messageId,
+            emoji,
+            user,
+          }: {
+            messageId: string;
+            emoji: string;
+            user: { id: string };
+          }) => {
+            const userId = user?.id;
+            if (!userId) return;
             setMessages((prev) =>
               prev.map((msg) => {
-                if (msg.id !== messageId || !msg.reactions) return msg;
-                const existing = msg.reactions.find((r) => r.emoji === emoji);
+                if (msg.id !== messageId) return msg;
+                const reactions = msg.reactions ?? [];
+                const existing = reactions.find((r) => r.emoji === emoji);
                 if (existing) {
+                  const users = existing.users ?? [];
+                  if (users.includes(userId)) return msg;
                   return {
                     ...msg,
-                    reactions: msg.reactions.map((r) =>
-                      r.emoji === emoji ? { ...r, count: r.count + 1 } : r,
+                    reactions: reactions.map((r) =>
+                      r.emoji === emoji
+                        ? {
+                            ...r,
+                            count: r.count + 1,
+                            users: [...users, userId],
+                            hasReacted: userId === currentUserId,
+                          }
+                        : r,
                     ),
                   };
                 }
                 return {
                   ...msg,
-                  reactions: [...msg.reactions, { emoji, count: 1, users: [] }],
+                  reactions: [
+                    ...reactions,
+                    { emoji, count: 1, users: [userId], hasReacted: userId === currentUserId },
+                  ],
                 };
               }),
             );
@@ -187,17 +214,28 @@ export function useMessages(client: WebChatClient, enabled = true): UseMessagesR
       unsubscribes.push(
         client.addEventListener(
           "reaction:removed",
-          ({ messageId, emoji }: { messageId: string; emoji: string }) => {
+          ({
+            messageId,
+            emoji,
+            user,
+          }: {
+            messageId: string;
+            emoji: string;
+            user: { id: string };
+          }) => {
+            const userId = user?.id;
+            if (!userId) return;
             setMessages((prev) =>
               prev.map((msg) => {
                 if (msg.id !== messageId || !msg.reactions) return msg;
-                const idx = msg.reactions.findIndex((r) => r.emoji === emoji);
-                if (idx === -1) return msg;
                 const updated = [...msg.reactions];
-                if (updated[idx].count <= 1) {
+                const idx = updated.findIndex((r) => r.emoji === emoji);
+                if (idx === -1) return msg;
+                const users = (updated[idx].users ?? []).filter((id) => id !== userId);
+                if (users.length === 0) {
                   updated.splice(idx, 1);
                 } else {
-                  updated[idx] = { ...updated[idx], count: updated[idx].count - 1 };
+                  updated[idx] = { ...updated[idx], count: users.length, users, hasReacted: false };
                 }
                 return { ...msg, reactions: updated };
               }),

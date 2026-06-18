@@ -301,6 +301,8 @@ class WebAdapter implements Adapter, HandlesActions, HandlesReactions, HandlesSl
             ? $message->content->getFallbackText()
             : (string) $message->content;
 
+        $text = EmojiResolver::convertPlaceholders($text, 'gchat');
+
         // Store attachments for JSON response
         $this->bufferedAttachments = $message->attachments;
 
@@ -338,6 +340,8 @@ class WebAdapter implements Adapter, HandlesActions, HandlesReactions, HandlesSl
         $text = $message->isCard()
             ? $message->content->getFallbackText()
             : (string) $message->content;
+
+        $text = EmojiResolver::convertPlaceholders($text, 'gchat');
 
         $card = $message->isCard() ? $message->content : null;
 

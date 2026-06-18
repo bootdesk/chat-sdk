@@ -6,8 +6,8 @@ import { parseChatEvent } from "../events/ChatEventFactory";
 import type { MessagePostedEvent } from "../events/MessagePostedEvent";
 import type { MessageEditedEvent } from "../events/MessageEditedEvent";
 import type { MessageDeletedEvent } from "../events/MessageDeletedEvent";
-import type { ReactionAddedEvent } from "../events/ReactionAddedEvent";
-import type { ReactionRemovedEvent } from "../events/ReactionRemovedEvent";
+import { ReactionAddedEvent } from "../events/ReactionAddedEvent";
+import { ReactionRemovedEvent } from "../events/ReactionRemovedEvent";
 import type { TypingStartedEvent } from "../events/TypingStartedEvent";
 import type { StreamingChunkEvent } from "../events/StreamingChunkEvent";
 import type { DMRequestedEvent } from "../events/DMRequestedEvent";
@@ -366,6 +366,12 @@ export class WebChatClient {
     if (!this.config.features?.reactions) {
       throw new Error("Reactions not enabled. Set features.reactions = true in config.");
     }
+
+    // Optimistic local update
+    this.handleReactionAdded(
+      new ReactionAddedEvent(this.getThreadId(), messageId, emoji, { id: this.currentUserId }),
+    );
+
     const endpoint = this.config.endpoints?.sendMessage ?? "/api/webhooks/web";
     const response = (await this.httpClient.post(endpoint, {
       id: this.conversationId,
@@ -384,6 +390,12 @@ export class WebChatClient {
     if (!this.config.features?.reactions) {
       throw new Error("Reactions not enabled. Set features.reactions = true in config.");
     }
+
+    // Optimistic local update
+    this.handleReactionRemoved(
+      new ReactionRemovedEvent(this.getThreadId(), messageId, emoji, { id: this.currentUserId }),
+    );
+
     const endpoint = this.config.endpoints?.sendMessage ?? "/api/webhooks/web";
     const response = (await this.httpClient.post(endpoint, {
       id: this.conversationId,
@@ -502,29 +514,30 @@ export class WebChatClient {
 
   private handleReactionAdded(event: ReactionAddedEvent): void {
     const message = this.messages.find((m) => m.id === event.messageId);
-    if (!message) return;
-    if (!message.reactions) message.reactions = [];
+    if (message) {
+      if (!message.reactions) message.reactions = [];
 
-    const existing = message.reactions.find((r) => r.emoji === event.emoji);
-    if (existing) {
-      existing.count++;
-      existing.users.push(event.user.id);
-    } else {
-      message.reactions.push({ emoji: event.emoji, count: 1, users: [event.user.id] });
+      const existing = message.reactions.find((r) => r.emoji === event.emoji);
+      if (existing) {
+        existing.count++;
+        existing.users.push(event.user.id);
+      } else {
+        message.reactions.push({ emoji: event.emoji, count: 1, users: [event.user.id] });
+      }
     }
     this.notifySubscribers("reaction:added", event);
   }
 
   private handleReactionRemoved(event: ReactionRemovedEvent): void {
     const message = this.messages.find((m) => m.id === event.messageId);
-    if (!message?.reactions) return;
-
-    const index = message.reactions.findIndex((r) => r.emoji === event.emoji);
-    if (index !== -1) {
-      const reaction = message.reactions[index]!;
-      reaction.count--;
-      reaction.users = reaction.users.filter((id) => id !== event.user.id);
-      if (reaction.count === 0) message.reactions.splice(index, 1);
+    if (message?.reactions) {
+      const index = message.reactions.findIndex((r) => r.emoji === event.emoji);
+      if (index !== -1) {
+        const reaction = message.reactions[index]!;
+        reaction.count--;
+        reaction.users = reaction.users.filter((id) => id !== event.user.id);
+        if (reaction.count === 0) message.reactions.splice(index, 1);
+      }
     }
     this.notifySubscribers("reaction:removed", event);
   }

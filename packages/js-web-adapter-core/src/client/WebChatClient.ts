@@ -34,8 +34,6 @@ export interface WebChatClientConfig {
     loadMessages?: string;
     editMessage?: string;
     deleteMessage?: string;
-    addReaction?: string;
-    removeReaction?: string;
   };
   features?: {
     editMessages?: boolean;
@@ -368,17 +366,36 @@ export class WebChatClient {
     if (!this.config.features?.reactions) {
       throw new Error("Reactions not enabled. Set features.reactions = true in config.");
     }
-    const endpoint = this.config.endpoints?.addReaction ?? "/api/chat/messages/{id}/reactions";
-    await this.httpClient.addReaction(messageId, emoji, endpoint);
+    const endpoint = this.config.endpoints?.sendMessage ?? "/api/webhooks/web";
+    const response = (await this.httpClient.post(endpoint, {
+      id: this.conversationId,
+      reaction: { messageId, emoji, added: true },
+    })) as Record<string, unknown>;
+
+    if (response.events) {
+      (response.events as Array<Record<string, unknown>>).forEach((eventData) => {
+        const event = parseChatEvent(eventData);
+        this.dispatchEvent(event);
+      });
+    }
   }
 
   async removeReaction(messageId: string, emoji: string): Promise<void> {
     if (!this.config.features?.reactions) {
       throw new Error("Reactions not enabled. Set features.reactions = true in config.");
     }
-    const endpoint =
-      this.config.endpoints?.removeReaction ?? "/api/chat/messages/{id}/reactions/{emoji}";
-    await this.httpClient.removeReaction(messageId, emoji, endpoint);
+    const endpoint = this.config.endpoints?.sendMessage ?? "/api/webhooks/web";
+    const response = (await this.httpClient.post(endpoint, {
+      id: this.conversationId,
+      reaction: { messageId, emoji, added: false },
+    })) as Record<string, unknown>;
+
+    if (response.events) {
+      (response.events as Array<Record<string, unknown>>).forEach((eventData) => {
+        const event = parseChatEvent(eventData);
+        this.dispatchEvent(event);
+      });
+    }
   }
 
   onMessagePosted(handler: (event: MessagePostedEvent) => void): Unsubscribe {

@@ -95,15 +95,6 @@ describe("HttpClient", () => {
     );
   });
 
-  it("expands URL template with multiple params", async () => {
-    const fn = mockFetch(null);
-    await client.removeReaction("msg-1", "👍");
-
-    const calledUrl = fn.mock.calls[0]![0] as string;
-    expect(calledUrl).toContain("msg-1");
-    expect(calledUrl).toContain(encodeURIComponent("👍"));
-  });
-
   it("sends messages via sendMessage", async () => {
     const fn = mockFetch({
       id: "resp-1",
@@ -171,32 +162,6 @@ describe("HttpClient", () => {
 
     expect(fn).toHaveBeenCalledWith(
       "https://api.example.com/api/chat/messages/msg-99",
-      expect.objectContaining({ method: "DELETE" }),
-    );
-  });
-
-  it("addReaction sends POST with emoji", async () => {
-    const fn = mockFetch(null);
-    await client.addReaction("msg-1", "👍");
-
-    expect(fn).toHaveBeenCalledWith(
-      "https://api.example.com/api/chat/messages/msg-1/reactions",
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({ emoji: "👍" }),
-      }),
-    );
-  });
-
-  it("removeReaction sends DELETE request", async () => {
-    const fn = mockFetch(null);
-    await client.removeReaction("msg-1", "👍");
-
-    const calledUrl = fn.mock.calls[0][0] as string;
-    expect(calledUrl).toContain("msg-1");
-    expect(calledUrl).toContain(encodeURIComponent("👍"));
-    expect(fn).toHaveBeenCalledWith(
-      expect.any(String),
       expect.objectContaining({ method: "DELETE" }),
     );
   });

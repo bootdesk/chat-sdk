@@ -1,16 +1,25 @@
-import { defineConfig } from 'vite';
-import laravel from 'laravel-vite-plugin';
-import { bunny } from 'laravel-vite-plugin/fonts';
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import laravel from "laravel-vite-plugin";
+import { bunny } from "laravel-vite-plugin/fonts";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.jsx', 'resources/js/chat.jsx', 'resources/js/chat-iframe.jsx', 'resources/js/chat-iframe-floating.jsx', 'resources/js/chat-signed-upload.jsx', 'resources/js/embed-chat.js', 'resources/js/chat-service-worker.js'],
+            input: [
+                "resources/css/app.css",
+                "resources/js/app.jsx",
+                "resources/js/chat.jsx",
+                "resources/js/chat-iframe.jsx",
+                "resources/js/chat-iframe-floating.jsx",
+                "resources/js/chat-signed-upload.jsx",
+                "resources/js/embed-chat.js",
+                "resources/js/chat-service-worker.js",
+            ],
             refresh: true,
             fonts: [
-                bunny('Instrument Sans', {
+                bunny("Instrument Sans", {
                     weights: [400, 500, 600],
                 }),
             ],
@@ -19,11 +28,11 @@ export default defineConfig({
         react(),
     ],
     resolve: {
-        dedupe: ['react', 'react-dom'],
+        dedupe: ["react", "react-dom"],
     },
     server: {
         watch: {
-            ignored: ['**/storage/framework/views/**'],
+            ignored: ["**/storage/framework/views/**"],
         },
     },
 });

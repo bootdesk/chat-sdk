@@ -82,6 +82,8 @@ export class WebChatClient {
   private streamingMessages: Map<string, StreamingState> = new Map();
   private pendingTyping: ReturnType<typeof setTimeout> | null = null;
   private subscribers: Map<string, Array<(event: unknown) => void>> = new Map();
+  private sendQueue: Array<() => Promise<void>> = [];
+  private isProcessingQueue = false;
   private unsubscribeUserChannel?: Unsubscribe;
 
   constructor(config: WebChatClientConfig) {
@@ -231,6 +233,30 @@ export class WebChatClient {
   }
 
   async sendMessage(text: string, attachments: AttachmentInput[] = []): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.sendQueue.push(async () => {
+        try {
+          await this.executeSend(text, attachments);
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      });
+      this.processQueue();
+    });
+  }
+
+  private async processQueue(): Promise<void> {
+    if (this.isProcessingQueue) return;
+    this.isProcessingQueue = true;
+    while (this.sendQueue.length > 0) {
+      const task = this.sendQueue.shift()!;
+      await task();
+    }
+    this.isProcessingQueue = false;
+  }
+
+  private async executeSend(text: string, attachments: AttachmentInput[] = []): Promise<void> {
     const messageId = generateId();
 
     const userMessage: Message = {

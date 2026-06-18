@@ -3,7 +3,7 @@
         "enabled": true,
         "actions": [
             {
-                "action": "npm run format -w @bootdesk/js-web-adapter-core -w @bootdesk/js-web-adapter-react && composer format && git add -u"
+                "action": "bash scripts/format-staged.sh"
             },
             {
                 "action": "composer lint"

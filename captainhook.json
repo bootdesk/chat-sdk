@@ -6,6 +6,9 @@
                 "action": "bash scripts/format-staged.sh"
             },
             {
+                "action": "npm test -w @bootdesk/js-web-adapter-core -w @bootdesk/js-web-adapter-react"
+            },
+            {
                 "action": "composer lint"
             },
             {

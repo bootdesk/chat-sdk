@@ -6,15 +6,28 @@ interface PushToggleProps {
   getVapidPublicKey: () => Promise<string>;
   onSubscribe: (sub: PushSubscriptionJSON) => Promise<void>;
   onUnsubscribe: (sub: PushSubscriptionJSON) => Promise<void>;
+  serviceWorkerUrl?: string;
+  serviceWorkerScope?: string;
+  serviceWorkerType?: "classic" | "module";
+  notificationOptions?: {
+    icon?: string;
+    badge?: string;
+    sound?: string;
+    requireInteraction?: boolean;
+  };
 }
 
-export function PushToggle({ getVapidPublicKey, onSubscribe, onUnsubscribe }: PushToggleProps) {
+export function PushToggle({ getVapidPublicKey, onSubscribe, onUnsubscribe, serviceWorkerUrl, serviceWorkerScope, serviceWorkerType, notificationOptions }: PushToggleProps) {
   const { t } = useLocale();
   const { status, isSupported, isSubscribed, subscribe, unsubscribe } = usePushNotifications({
     enabled: true,
     getVapidPublicKey,
     onSubscribe,
     onUnsubscribe,
+    serviceWorkerUrl,
+    serviceWorkerScope,
+    serviceWorkerType,
+    notificationOptions,
   });
 
   if (!isSupported) {

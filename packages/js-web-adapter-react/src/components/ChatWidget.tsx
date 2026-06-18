@@ -333,6 +333,10 @@ export function ChatWidget({
               getVapidPublicKey={pushConfig.getVapidPublicKey}
               onSubscribe={pushConfig.onSubscribe}
               onUnsubscribe={pushConfig.onUnsubscribe}
+              serviceWorkerUrl={pushConfig.serviceWorkerUrl}
+              serviceWorkerScope={pushConfig.serviceWorkerScope}
+              serviceWorkerType={pushConfig.serviceWorkerType}
+              notificationOptions={pushConfig.notificationOptions}
             />
           ) : !hasBridgePush ? (
             renderPushPrompt?.()

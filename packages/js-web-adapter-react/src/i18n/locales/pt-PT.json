@@ -22,7 +22,7 @@
     "retry": "Tentar novamente"
   },
   "emojiPicker": {
-    "search": "Search emoji...",
-    "noResults": "No emoji found"
+    "search": "Pesquisar emoji...",
+    "noResults": "Nenhum emoji encontrado"
   }
 }

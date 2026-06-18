@@ -63,7 +63,7 @@
     "download": "Descargar"
   },
   "emojiPicker": {
-    "search": "Search emoji...",
-    "noResults": "No emoji found"
+    "search": "Buscar emoji...",
+    "noResults": "No se encontraron emojis"
   }
 }

@@ -63,7 +63,7 @@
     "download": "Lataa"
   },
   "emojiPicker": {
-    "search": "Search emoji...",
-    "noResults": "No emoji found"
+    "search": "Hae emoji...",
+    "noResults": "Emoji ei löytynyt"
   }
 }

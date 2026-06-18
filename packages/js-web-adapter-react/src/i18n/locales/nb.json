@@ -63,7 +63,7 @@
     "download": "Last ned"
   },
   "emojiPicker": {
-    "search": "Search emoji...",
-    "noResults": "No emoji found"
+    "search": "Søk etter emoji...",
+    "noResults": "Fant ingen emoji"
   }
 }

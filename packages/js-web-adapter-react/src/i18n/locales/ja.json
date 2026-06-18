@@ -63,7 +63,7 @@
     "download": "ダウンロード"
   },
   "emojiPicker": {
-    "search": "Search emoji...",
-    "noResults": "No emoji found"
+    "search": "絵文字を検索...",
+    "noResults": "絵文字が見つかりません"
   }
 }

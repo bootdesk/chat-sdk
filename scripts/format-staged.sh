@@ -8,8 +8,8 @@ if [ -z "$STAGED" ]; then
   exit 0
 fi
 
-# JS/TS: prettier (workspace-aware)
-JS_FILES=$(echo "$STAGED" | grep -E '\.(ts|tsx|js|mjs|cjs)$' || true)
+# JS/TS/MD/CSS: prettier (workspace-aware)
+JS_FILES=$(echo "$STAGED" | grep -E '\.(ts|tsx|js|mjs|cjs|md|css)$' || true)
 if [ -n "$JS_FILES" ]; then
   echo "$JS_FILES" | xargs npx -y prettier --write --ignore-unknown
 fi

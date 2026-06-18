@@ -16,6 +16,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions) {
   const { enabled = false } = options;
   const [status, setStatus] = useState<PushSubscriptionStatus>("unsupported");
   const pushManagerRef = useRef<PushManager | null>(null);
+  const busyRef = useRef(false);
 
   useEffect(() => {
     if (!enabled) return;
@@ -42,17 +43,30 @@ export function usePushNotifications(options: UsePushNotificationsOptions) {
   }, [enabled]);
 
   const subscribe = useCallback(async () => {
-    await pushManagerRef.current?.subscribe();
+    if (busyRef.current) return;
+    busyRef.current = true;
+    try {
+      await pushManagerRef.current?.subscribe();
+    } finally {
+      busyRef.current = false;
+    }
   }, []);
 
   const unsubscribe = useCallback(async () => {
-    await pushManagerRef.current?.unsubscribe();
+    if (busyRef.current) return;
+    busyRef.current = true;
+    try {
+      await pushManagerRef.current?.unsubscribe();
+    } finally {
+      busyRef.current = false;
+    }
   }, []);
 
   return {
     status,
     isSupported: PushManager.isSupported(),
     isSubscribed: status === "subscribed",
+    isBusy: status === "subscribing",
     subscribe,
     unsubscribe,
   };

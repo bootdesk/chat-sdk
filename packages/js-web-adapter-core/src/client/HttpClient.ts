@@ -134,24 +134,6 @@ export class HttpClient {
     await this.delete(url);
   }
 
-  async addReaction(
-    messageId: string,
-    emoji: string,
-    endpointTemplate: string = "/api/chat/messages/{id}/reactions",
-  ): Promise<void> {
-    const url = this.expandTemplate(endpointTemplate, { id: messageId });
-    await this.post(url, { emoji });
-  }
-
-  async removeReaction(
-    messageId: string,
-    emoji: string,
-    endpointTemplate: string = "/api/chat/messages/{id}/reactions/{emoji}",
-  ): Promise<void> {
-    const url = this.expandTemplate(endpointTemplate, { id: messageId, emoji });
-    await this.delete(url);
-  }
-
   async postFormData(url: string, formData: FormData, signal?: AbortSignal): Promise<unknown> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);

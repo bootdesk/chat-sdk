@@ -1,15 +1,17 @@
-import React, { useRef, useEffect, useMemo } from "react";
+import React, { useRef, useEffect, useMemo, useState } from "react";
 import { Message } from "@bootdesk/js-web-adapter-core";
 import { MessageContent } from "./MessageContent";
 import { useLocale } from "../i18n/LocaleProvider";
 import { formatTimestamp } from "../utils/formatTimestamp";
 import { cn } from "../lib/cn";
+import { EmojiPicker } from "./EmojiPicker";
 
 interface MessageListProps {
   messages: Message[];
   currentUserId: string;
   isLoading?: boolean;
   thinking?: boolean;
+  canReact?: boolean;
   onReactionClick?: (messageId: string, emoji: string) => void;
   onActionClick?: (messageId: string, actionId: string, value: string) => void;
   className?: string;
@@ -20,6 +22,7 @@ export function MessageList({
   currentUserId,
   isLoading = false,
   thinking = false,
+  canReact = false,
   onReactionClick,
   onActionClick,
   className,
@@ -29,6 +32,11 @@ export function MessageList({
   const listEndRef = useRef<HTMLDivElement>(null);
   const hasInitiallyScrolled = useRef(false);
   const isNearBottom = useRef(true);
+  const [pickerTarget, setPickerTarget] = useState<{
+    messageId: string;
+    el: HTMLElement;
+    existing: string[];
+  } | null>(null);
 
   useEffect(() => {
     if (!hasInitiallyScrolled.current && messages.length > 0) {
@@ -146,6 +154,39 @@ export function MessageList({
                         <span className="bdesk-reaction-count">{reaction.count}</span>
                       </button>
                     ))}
+                    {canReact && (
+                      <button
+                        className="bdesk-reaction-add-btn"
+                        onClick={(e) =>
+                          setPickerTarget({
+                            messageId: message.id,
+                            el: e.currentTarget,
+                            existing: message.reactions?.map((r) => r.emoji) ?? [],
+                          })
+                        }
+                        aria-label="Add reaction"
+                      >
+                        +
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {canReact && !message.reactions?.length && (
+                  <div className="bdesk-reactions">
+                    <button
+                      className="bdesk-reaction-add-btn"
+                      onClick={(e) =>
+                        setPickerTarget({
+                          messageId: message.id,
+                          el: e.currentTarget,
+                          existing: [],
+                        })
+                      }
+                      aria-label="Add reaction"
+                    >
+                      +
+                    </button>
                   </div>
                 )}
 
@@ -181,6 +222,18 @@ export function MessageList({
       )}
 
       <div ref={listEndRef} className="bdesk-scroll-anchor" />
+      {pickerTarget && (
+        <EmojiPicker
+          messageId={pickerTarget.messageId}
+          existingEmojis={pickerTarget.existing}
+          anchorEl={pickerTarget.el}
+          onSelect={(msgId, emoji) => {
+            onReactionClick?.(msgId, emoji);
+            setPickerTarget(null);
+          }}
+          onClose={() => setPickerTarget(null)}
+        />
+      )}
     </div>
   );
 }

@@ -58,6 +58,9 @@ const client = new WebChatClient({
     endpoints: {
         sendMessage: "/api/chats/web",
     },
+    features: {
+        reactions: true,
+    },
 });
 
 async function getVapidPublicKey() {
@@ -158,7 +161,9 @@ function PreEntryForm({ start }) {
             <input
                 type="text"
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                onChange={(e) =>
+                    setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                }
                 placeholder="000000"
                 maxLength={6}
                 required
@@ -205,9 +210,15 @@ export function ChatApp() {
                 enableAttachments
                 uploadConfig={{ endpoint: "/api/chat/upload" }}
                 initialMode="floating"
-                preEntry={saved ? undefined : {
-                    render: ({ start }) => <PreEntryForm start={start} />,
-                }}
+                preEntry={
+                    saved
+                        ? undefined
+                        : {
+                              render: ({ start }) => (
+                                  <PreEntryForm start={start} />
+                              ),
+                          }
+                }
                 onChatStart={saveSession}
                 pushConfig={{
                     getVapidPublicKey,

@@ -61,5 +61,9 @@
     "retry": "Tekrar dene",
     "cancel": "İptal",
     "download": "İndir"
+  },
+  "emojiPicker": {
+    "search": "Emoji ara...",
+    "noResults": "Emoji bulunamadı"
   }
 }

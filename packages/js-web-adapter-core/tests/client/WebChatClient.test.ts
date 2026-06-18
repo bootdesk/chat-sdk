@@ -282,6 +282,46 @@ describe("WebChatClient", () => {
     await expect(client.removeReaction("msg-1", "👍")).rejects.toThrow("Reactions not enabled");
   });
 
+  it("addReaction sends POST to webhook endpoint with reaction payload", async () => {
+    const fn = mockFetch({ events: [] });
+    const client = createClient({
+      features: { reactions: true },
+      conversationId: "conv-1",
+    });
+    await client.addReaction("msg-1", "👍");
+
+    expect(fn).toHaveBeenCalledWith(
+      "https://api.example.com/api/webhooks/web",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          id: "conv-1",
+          reaction: { messageId: "msg-1", emoji: "👍", added: true },
+        }),
+      }),
+    );
+  });
+
+  it("removeReaction sends POST to webhook endpoint with added:false", async () => {
+    const fn = mockFetch({ events: [] });
+    const client = createClient({
+      features: { reactions: true },
+      conversationId: "conv-1",
+    });
+    await client.removeReaction("msg-1", "👍");
+
+    expect(fn).toHaveBeenCalledWith(
+      "https://api.example.com/api/webhooks/web",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          id: "conv-1",
+          reaction: { messageId: "msg-1", emoji: "👍", added: false },
+        }),
+      }),
+    );
+  });
+
   it("tracks typing state", () => {
     const client = createClient();
     const states: string[] = [];

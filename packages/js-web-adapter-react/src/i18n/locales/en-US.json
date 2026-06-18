@@ -2,5 +2,9 @@
   "direction": "ltr",
   "chatWidget": {
     "title": "Chat"
+  },
+  "emojiPicker": {
+    "search": "Search emoji...",
+    "noResults": "No emoji found"
   }
 }

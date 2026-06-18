@@ -65,8 +65,6 @@ const client = new WebChatClient({
     loadMessages: "/api/chat/messages",
     editMessage: "/api/chat/messages/{id}/edit",
     deleteMessage: "/api/chat/messages/{id}",
-    addReaction: "/api/chat/messages/{id}/reactions",
-    removeReaction: "/api/chat/messages/{id}/reactions/{emoji}",
   },
 });
 ```

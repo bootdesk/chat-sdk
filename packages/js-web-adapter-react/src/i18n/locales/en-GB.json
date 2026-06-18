@@ -5,5 +5,9 @@
   },
   "common": {
     "loading": "Loading..."
+  },
+  "emojiPicker": {
+    "search": "Search emoji...",
+    "noResults": "No emoji found"
   }
 }

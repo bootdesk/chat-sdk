@@ -61,5 +61,9 @@
     "retry": "Proovi uuesti",
     "cancel": "Tühista",
     "download": "Laadi alla"
+  },
+  "emojiPicker": {
+    "search": "Otsi emotikoni...",
+    "noResults": "Emotikoni ei leitud"
   }
 }

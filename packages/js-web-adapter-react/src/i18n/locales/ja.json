@@ -61,5 +61,9 @@
     "retry": "再試行",
     "cancel": "キャンセル",
     "download": "ダウンロード"
+  },
+  "emojiPicker": {
+    "search": "絵文字を検索...",
+    "noResults": "絵文字が見つかりません"
   }
 }

@@ -61,5 +61,9 @@
     "retry": "Réessayer",
     "cancel": "Annuler",
     "download": "Télécharger"
+  },
+  "emojiPicker": {
+    "search": "Rechercher un émoji...",
+    "noResults": "Aucun émoji trouvé"
   }
 }

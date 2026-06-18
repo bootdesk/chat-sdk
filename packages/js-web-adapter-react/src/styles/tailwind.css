@@ -259,6 +259,14 @@
   @apply p-1 bg-transparent border-none cursor-pointer text-[var(--chat-text-secondary)] rounded hover:bg-[var(--chat-surface)] transition;
 }
 
+.bdesk-header-btn:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.bdesk-header-btn:hover:disabled {
+  background-color: transparent;
+}
+
 .bdesk-message-list {
   @apply flex flex-1 flex-col gap-2 min-h-0 overflow-y-auto p-4 bg-[var(--chat-background)];
   -webkit-overflow-scrolling: touch;
@@ -334,6 +342,43 @@
 
 .bdesk-reaction-count {
   @apply text-[var(--chat-text-secondary)];
+}
+
+.bdesk-reaction-add-btn {
+  @apply flex items-center justify-center w-6 h-6 rounded-full border border-[var(--chat-border)] bg-transparent text-sm text-[var(--chat-text-secondary)] cursor-pointer hover:bg-[var(--chat-surface)] transition;
+  line-height: 1;
+}
+
+.bdesk-emoji-picker {
+  @apply bg-[var(--chat-background)] border border-[var(--chat-border)] rounded-lg shadow-xl p-3 overflow-y-auto;
+  width: 320px;
+  max-height: 360px;
+}
+
+.bdesk-emoji-picker-search {
+  @apply w-full border border-[var(--chat-border)] rounded px-2 py-1.5 text-sm text-[var(--chat-text)] bg-[var(--chat-background)] mb-2;
+  outline: none;
+}
+
+.bdesk-emoji-picker-search:focus {
+  @apply ring-2 ring-[var(--chat-primary)];
+}
+
+.bdesk-emoji-picker-empty {
+  @apply text-sm text-[var(--chat-text-secondary)] text-center py-4;
+}
+
+.bdesk-emoji-picker-grid {
+  @apply grid gap-1;
+  grid-template-columns: repeat(8, 1fr);
+}
+
+.bdesk-emoji-picker-item {
+  @apply flex items-center justify-center w-8 h-8 text-lg rounded cursor-pointer hover:bg-[var(--chat-surface)] transition;
+}
+
+.bdesk-emoji-picker-item--disabled {
+  @apply opacity-30 cursor-not-allowed;
 }
 
 .bdesk-msg-timestamp {
@@ -442,7 +487,7 @@
 }
 
 .bdesk-typing-indicator {
-  @apply px-4 pl-6 text-sm italic text-[var(--chat-text-secondary)];
+  @apply px-4 pl-6 pb-1 text-sm italic text-[var(--chat-text-secondary)];
 }
 
 .bdesk-typing-wrapper {
@@ -555,8 +600,16 @@
   @apply px-3 py-1.5 bg-[var(--chat-primary)] text-white border-none rounded cursor-pointer text-sm hover:opacity-90;
 }
 
+.bdesk-push-prompt-enable:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
 .bdesk-push-prompt-disable {
   @apply px-3 py-1.5 bg-transparent text-[var(--chat-text-secondary)] border border-[var(--chat-border)] rounded cursor-pointer text-sm hover:bg-[var(--chat-surface)];
+}
+
+.bdesk-push-prompt-disable:disabled {
+  @apply opacity-50 cursor-not-allowed;
 }
 
 .bdesk-push-prompt-dismiss {

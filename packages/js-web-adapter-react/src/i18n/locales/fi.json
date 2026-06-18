@@ -61,5 +61,9 @@
     "retry": "Yritä uudelleen",
     "cancel": "Peruuta",
     "download": "Lataa"
+  },
+  "emojiPicker": {
+    "search": "Hae emoji...",
+    "noResults": "Emoji ei löytynyt"
   }
 }

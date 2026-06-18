@@ -61,5 +61,9 @@
     "retry": "Reîncearcă",
     "cancel": "Anulează",
     "download": "Descarcă"
+  },
+  "emojiPicker": {
+    "search": "Caută emoji...",
+    "noResults": "Niciun emoji găsit"
   }
 }

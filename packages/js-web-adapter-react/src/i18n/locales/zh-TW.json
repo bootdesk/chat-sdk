@@ -61,5 +61,9 @@
     "retry": "重試",
     "cancel": "取消",
     "download": "下載"
+  },
+  "emojiPicker": {
+    "search": "搜尋表情符號...",
+    "noResults": "找不到表情符號"
   }
 }

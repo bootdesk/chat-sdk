@@ -61,5 +61,9 @@
     "retry": "Coba lagi",
     "cancel": "Batal",
     "download": "Unduh"
+  },
+  "emojiPicker": {
+    "search": "Cari emoji...",
+    "noResults": "Emoji tidak ditemukan"
   }
 }

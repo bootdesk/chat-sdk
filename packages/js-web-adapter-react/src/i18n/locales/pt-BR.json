@@ -20,5 +20,9 @@
   "common": {
     "loading": "Carregando...",
     "retry": "Tentar novamente"
+  },
+  "emojiPicker": {
+    "search": "Pesquisar emoji...",
+    "noResults": "Nenhum emoji encontrado"
   }
 }

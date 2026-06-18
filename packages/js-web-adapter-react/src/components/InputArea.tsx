@@ -32,7 +32,6 @@ export function InputArea({
   const [text, setText] = useState("");
   const [showDropzone, setShowDropzone] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const sendingRef = useRef(false);
 
   const { attachments, addFiles, removeAttachment, clearAttachments, isUploading } =
     useAttachmentUpload(uploadConfig);
@@ -46,12 +45,10 @@ export function InputArea({
     textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
   }, [text]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const trimmed = text.trim();
-    if ((!trimmed && attachments.length === 0) || disabled || sendingRef.current) return;
+    if ((!trimmed && attachments.length === 0) || disabled) return;
     if (isUploading) return;
-
-    sendingRef.current = true;
 
     const uploadedAttachments = attachments
       .filter((a) => a.status === "uploaded" && a.url)
@@ -65,11 +62,7 @@ export function InputArea({
     setText("");
     setShowDropzone(false);
     clearAttachments();
-    try {
-      await onSend(trimmed, uploadedAttachments);
-    } finally {
-      sendingRef.current = false;
-    }
+    onSend(trimmed, uploadedAttachments);
     setTimeout(() => textareaRef.current?.focus(), 0);
   };
 

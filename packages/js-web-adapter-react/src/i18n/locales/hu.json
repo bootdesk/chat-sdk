@@ -61,5 +61,9 @@
     "retry": "Újrapróbálkozás",
     "cancel": "Mégse",
     "download": "Letöltés"
+  },
+  "emojiPicker": {
+    "search": "Emoji keresése...",
+    "noResults": "Nem található emoji"
   }
 }

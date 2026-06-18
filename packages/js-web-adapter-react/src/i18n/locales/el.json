@@ -61,5 +61,9 @@
     "retry": "Δοκιμή ξανά",
     "cancel": "Ακύρωση",
     "download": "Λήψη"
+  },
+  "emojiPicker": {
+    "search": "Αναζήτηση emoji...",
+    "noResults": "Δεν βρέθηκε emoji"
   }
 }

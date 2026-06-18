@@ -62,6 +62,10 @@ export interface LocaleStrings {
     cancel: string;
     download: string;
   };
+  emojiPicker: {
+    search: string;
+    noResults: string;
+  };
 }
 
 export type SupportedLocale =
@@ -124,6 +128,7 @@ export type PartialLocaleStrings = Partial<{
   push?: Partial<LocaleStrings["push"]>;
   notification?: Partial<LocaleStrings["notification"]>;
   common?: Partial<LocaleStrings["common"]>;
+  emojiPicker?: Partial<LocaleStrings["emojiPicker"]>;
 };
 
 export interface LocaleConfig {

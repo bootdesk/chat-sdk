@@ -94,8 +94,6 @@ const client = new WebChatClient({
     loadMessages: "/api/chat/messages",
     editMessage: "/api/chat/messages/{id}/edit",
     deleteMessage: "/api/chat/messages/{id}",
-    addReaction: "/api/chat/messages/{id}/reactions",
-    removeReaction: "/api/chat/messages/{id}/reactions/{emoji}",
   },
   features: {
     editMessages: true, // enable edit UI
@@ -686,7 +684,7 @@ const broadcastClient = new LaravelEchoBroadcastClient(echo);
 interface ChannelTypeConfig {
   threadChannel?: "public" | "private" | "presence";
   userChannel?: "private" | "presence";
-  useHashChannel?: boolean;  // SHA-256 hash threadId for broadcaster-safe names
+  useHashChannel?: boolean; // SHA-256 hash threadId for broadcaster-safe names
 }
 ```
 

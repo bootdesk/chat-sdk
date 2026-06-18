@@ -6,8 +6,8 @@ import { parseChatEvent } from "../events/ChatEventFactory";
 import type { MessagePostedEvent } from "../events/MessagePostedEvent";
 import type { MessageEditedEvent } from "../events/MessageEditedEvent";
 import type { MessageDeletedEvent } from "../events/MessageDeletedEvent";
-import type { ReactionAddedEvent } from "../events/ReactionAddedEvent";
-import type { ReactionRemovedEvent } from "../events/ReactionRemovedEvent";
+import { ReactionAddedEvent } from "../events/ReactionAddedEvent";
+import { ReactionRemovedEvent } from "../events/ReactionRemovedEvent";
 import type { TypingStartedEvent } from "../events/TypingStartedEvent";
 import type { StreamingChunkEvent } from "../events/StreamingChunkEvent";
 import type { DMRequestedEvent } from "../events/DMRequestedEvent";
@@ -34,8 +34,6 @@ export interface WebChatClientConfig {
     loadMessages?: string;
     editMessage?: string;
     deleteMessage?: string;
-    addReaction?: string;
-    removeReaction?: string;
   };
   features?: {
     editMessages?: boolean;
@@ -82,6 +80,8 @@ export class WebChatClient {
   private streamingMessages: Map<string, StreamingState> = new Map();
   private pendingTyping: ReturnType<typeof setTimeout> | null = null;
   private subscribers: Map<string, Array<(event: unknown) => void>> = new Map();
+  private sendQueue: Array<() => Promise<void>> = [];
+  private isProcessingQueue = false;
   private unsubscribeUserChannel?: Unsubscribe;
 
   constructor(config: WebChatClientConfig) {
@@ -231,6 +231,33 @@ export class WebChatClient {
   }
 
   async sendMessage(text: string, attachments: AttachmentInput[] = []): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.sendQueue.push(async () => {
+        try {
+          await this.executeSend(text, attachments);
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      });
+      this.processQueue();
+    });
+  }
+
+  private async processQueue(): Promise<void> {
+    if (this.isProcessingQueue) return;
+    this.isProcessingQueue = true;
+    try {
+      while (this.sendQueue.length > 0) {
+        const task = this.sendQueue.shift()!;
+        await task();
+      }
+    } finally {
+      this.isProcessingQueue = false;
+    }
+  }
+
+  private async executeSend(text: string, attachments: AttachmentInput[] = []): Promise<void> {
     const messageId = generateId();
 
     const userMessage: Message = {
@@ -339,17 +366,48 @@ export class WebChatClient {
     if (!this.config.features?.reactions) {
       throw new Error("Reactions not enabled. Set features.reactions = true in config.");
     }
-    const endpoint = this.config.endpoints?.addReaction ?? "/api/chat/messages/{id}/reactions";
-    await this.httpClient.addReaction(messageId, emoji, endpoint);
+
+    // Optimistic local update
+    this.handleReactionAdded(
+      new ReactionAddedEvent(this.getThreadId(), messageId, emoji, { id: this.currentUserId }),
+    );
+
+    const endpoint = this.config.endpoints?.sendMessage ?? "/api/webhooks/web";
+    const response = (await this.httpClient.post(endpoint, {
+      id: this.conversationId,
+      reaction: { messageId, emoji, added: true },
+    })) as Record<string, unknown>;
+
+    if (response.events) {
+      (response.events as Array<Record<string, unknown>>).forEach((eventData) => {
+        const event = parseChatEvent(eventData);
+        this.dispatchEvent(event);
+      });
+    }
   }
 
   async removeReaction(messageId: string, emoji: string): Promise<void> {
     if (!this.config.features?.reactions) {
       throw new Error("Reactions not enabled. Set features.reactions = true in config.");
     }
-    const endpoint =
-      this.config.endpoints?.removeReaction ?? "/api/chat/messages/{id}/reactions/{emoji}";
-    await this.httpClient.removeReaction(messageId, emoji, endpoint);
+
+    // Optimistic local update
+    this.handleReactionRemoved(
+      new ReactionRemovedEvent(this.getThreadId(), messageId, emoji, { id: this.currentUserId }),
+    );
+
+    const endpoint = this.config.endpoints?.sendMessage ?? "/api/webhooks/web";
+    const response = (await this.httpClient.post(endpoint, {
+      id: this.conversationId,
+      reaction: { messageId, emoji, added: false },
+    })) as Record<string, unknown>;
+
+    if (response.events) {
+      (response.events as Array<Record<string, unknown>>).forEach((eventData) => {
+        const event = parseChatEvent(eventData);
+        this.dispatchEvent(event);
+      });
+    }
   }
 
   onMessagePosted(handler: (event: MessagePostedEvent) => void): Unsubscribe {
@@ -456,29 +514,30 @@ export class WebChatClient {
 
   private handleReactionAdded(event: ReactionAddedEvent): void {
     const message = this.messages.find((m) => m.id === event.messageId);
-    if (!message) return;
-    if (!message.reactions) message.reactions = [];
+    if (message) {
+      if (!message.reactions) message.reactions = [];
 
-    const existing = message.reactions.find((r) => r.emoji === event.emoji);
-    if (existing) {
-      existing.count++;
-      existing.users.push(event.user.id);
-    } else {
-      message.reactions.push({ emoji: event.emoji, count: 1, users: [event.user.id] });
+      const existing = message.reactions.find((r) => r.emoji === event.emoji);
+      if (existing) {
+        existing.count++;
+        existing.users.push(event.user.id);
+      } else {
+        message.reactions.push({ emoji: event.emoji, count: 1, users: [event.user.id] });
+      }
     }
     this.notifySubscribers("reaction:added", event);
   }
 
   private handleReactionRemoved(event: ReactionRemovedEvent): void {
     const message = this.messages.find((m) => m.id === event.messageId);
-    if (!message?.reactions) return;
-
-    const index = message.reactions.findIndex((r) => r.emoji === event.emoji);
-    if (index !== -1) {
-      const reaction = message.reactions[index]!;
-      reaction.count--;
-      reaction.users = reaction.users.filter((id) => id !== event.user.id);
-      if (reaction.count === 0) message.reactions.splice(index, 1);
+    if (message?.reactions) {
+      const index = message.reactions.findIndex((r) => r.emoji === event.emoji);
+      if (index !== -1) {
+        const reaction = message.reactions[index]!;
+        reaction.count--;
+        reaction.users = reaction.users.filter((id) => id !== event.user.id);
+        if (reaction.count === 0) message.reactions.splice(index, 1);
+      }
     }
     this.notifySubscribers("reaction:removed", event);
   }

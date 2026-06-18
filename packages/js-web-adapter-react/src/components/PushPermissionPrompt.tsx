@@ -10,6 +10,15 @@ interface PushPermissionPromptProps {
   getVapidPublicKey: () => Promise<string>;
   onSubscribe: (sub: PushSubscriptionJSON) => Promise<void>;
   onUnsubscribe: (sub: PushSubscriptionJSON) => Promise<void>;
+  serviceWorkerUrl?: string;
+  serviceWorkerScope?: string;
+  serviceWorkerType?: "classic" | "module";
+  notificationOptions?: {
+    icon?: string;
+    badge?: string;
+    sound?: string;
+    requireInteraction?: boolean;
+  };
 }
 
 export function PushPermissionPrompt({
@@ -20,6 +29,10 @@ export function PushPermissionPrompt({
   getVapidPublicKey,
   onSubscribe,
   onUnsubscribe,
+  serviceWorkerUrl,
+  serviceWorkerScope,
+  serviceWorkerType,
+  notificationOptions,
 }: PushPermissionPromptProps) {
   const { t } = useLocale();
   const { status, isSupported, isSubscribed, subscribe, unsubscribe } = usePushNotifications({
@@ -27,6 +40,10 @@ export function PushPermissionPrompt({
     getVapidPublicKey,
     onSubscribe,
     onUnsubscribe,
+    serviceWorkerUrl,
+    serviceWorkerScope,
+    serviceWorkerType,
+    notificationOptions,
   });
 
   const [dismissed, setDismissed] = useState(false);

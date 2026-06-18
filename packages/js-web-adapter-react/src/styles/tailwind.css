@@ -13,7 +13,7 @@
 
 .bdesk-widget ::before,
 .bdesk-widget ::after {
-  --tw-content: '';
+  --tw-content: "";
 }
 
 .bdesk-widget {
@@ -49,7 +49,9 @@
 }
 
 .bdesk-widget :where(code, kbd, samp, pre) {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
   font-size: 1em;
 }
 
@@ -95,7 +97,13 @@
   text-transform: none;
 }
 
-.bdesk-widget :where(button, input:where([type='button']), input:where([type='reset']), input:where([type='submit'])) {
+.bdesk-widget
+  :where(
+    button,
+    input:where([type="button"]),
+    input:where([type="reset"]),
+    input:where([type="submit"])
+  ) {
   -webkit-appearance: button;
   background-color: transparent;
   background-image: none;
@@ -110,7 +118,7 @@
   height: auto;
 }
 
-.bdesk-widget :where(input[type='search']) {
+.bdesk-widget :where(input[type="search"]) {
   -webkit-appearance: textfield;
   outline-offset: -2px;
 }

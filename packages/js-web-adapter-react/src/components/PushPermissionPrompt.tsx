@@ -3,7 +3,13 @@ import { usePushNotifications } from "../hooks/usePushNotifications";
 import { useLocale } from "../i18n/LocaleProvider";
 
 const Spinner = () => (
-  <svg className="bdesk-spinner -ml-0.5 mr-1.5" width="14" height="14" viewBox="0 0 24 24" fill="none">
+  <svg
+    className="bdesk-spinner -ml-0.5 mr-1.5"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+  >
     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
     <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
   </svg>
@@ -81,12 +87,26 @@ export function PushPermissionPrompt({
       <div className="bdesk-push-prompt-actions">
         {!isSubscribed && status !== "denied" && (
           <button onClick={handleEnable} className="bdesk-push-prompt-enable" disabled={isBusy}>
-            {isBusy ? <><Spinner />{t("push.subscribing")}</> : t("push.enable")}
+            {isBusy ? (
+              <>
+                <Spinner />
+                {t("push.subscribing")}
+              </>
+            ) : (
+              t("push.enable")
+            )}
           </button>
         )}
         {isSubscribed && (
           <button onClick={handleDisable} className="bdesk-push-prompt-disable" disabled={isBusy}>
-            {isBusy ? <><Spinner />{t("push.subscribing")}</> : t("push.disable")}
+            {isBusy ? (
+              <>
+                <Spinner />
+                {t("push.subscribing")}
+              </>
+            ) : (
+              t("push.disable")
+            )}
           </button>
         )}
         <button onClick={() => setDismissed(true)} className="bdesk-push-prompt-dismiss">

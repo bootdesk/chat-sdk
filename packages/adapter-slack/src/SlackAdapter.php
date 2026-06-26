@@ -868,8 +868,16 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
     public function openDM(string $userId): ?string
     {
         $response = $this->apiCall('conversations.open', ['users' => $userId]);
+        $channelId = $response['channel']['id'] ?? null;
 
-        return $response['channel']['id'] ?? null;
+        if ($channelId === null) {
+            return null;
+        }
+
+        return $this->encodeThreadId([
+            'channel' => $channelId,
+            'thread_ts' => '',
+        ]);
     }
 
     public function getFormatConverter(): ?FormatConverter

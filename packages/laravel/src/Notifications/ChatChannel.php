@@ -48,13 +48,13 @@ class ChatChannel
                 return null;
             }
 
-            $channelId = $adapter->openDM($route->userId);
+            $threadId = $adapter->openDM($route->userId);
 
-            if ($channelId === null) {
+            if ($threadId === null) {
                 return null;
             }
 
-            return $adapter->postMessage("{$route->adapter}:{$channelId}", $message);
+            return $adapter->postMessage($threadId, $message);
         }
 
         return null;

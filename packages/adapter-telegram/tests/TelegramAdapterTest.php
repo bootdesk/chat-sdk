@@ -440,9 +440,9 @@ class TelegramAdapterTest extends TestCase
         $this->assertSame('John Doe', $user->name);
     }
 
-    public function test_open_dm_returns_user_id(): void
+    public function test_open_dm_returns_thread_id(): void
     {
-        $this->assertSame('999', $this->adapter->openDM('999'));
+        $this->assertSame('telegram:999', $this->adapter->openDM('999'));
     }
 
     public function test_get_format_converter(): void

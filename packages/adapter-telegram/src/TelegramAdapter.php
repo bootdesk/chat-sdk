@@ -815,7 +815,7 @@ class TelegramAdapter implements Adapter, HandlesInteractions, HasAuthorInfo, Mu
     public function openDM(string $userId): ?string
     {
         // Telegram doesn't need explicit DM opening — just send to user ID
-        return $userId;
+        return $this->encodeThreadId(['chatId' => $userId]);
     }
 
     public function getFormatConverter(): ?FormatConverter

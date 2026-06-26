@@ -557,8 +557,8 @@ class SlackAdapterTest extends TestCase
 
     public function test_open_dm(): void
     {
-        $dmChannelId = $this->adapter->openDM('U123');
-        $this->assertSame('D999', $dmChannelId);
+        $threadId = $this->adapter->openDM('U123');
+        $this->assertSame('slack:D999:', $threadId);
     }
 
     public function test_get_format_converter(): void

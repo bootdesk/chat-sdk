@@ -214,7 +214,11 @@ export class WebChatClient {
         mimeType: a.mime_type as string,
         size: a.size as number,
       })),
-      reactions: (msg.reactions as { emoji: string; count: number; users: string[] }[]) ?? [],
+      reactions:
+        (msg.reactions as { emoji: string; count: number; users: string[] }[])?.map((r) => ({
+          ...r,
+          hasReacted: r.users?.includes(this.currentUserId) ?? false,
+        })) ?? [],
     }));
 
     if (!options?.before && !options?.after && !options?.skipStateSeed) {

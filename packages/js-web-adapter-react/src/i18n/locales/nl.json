@@ -23,7 +23,7 @@
     "isTyping": "typt..."
   },
   "messageList": {
-    "emptyState": "Nog geen berichten. Start het gesprek!"
+    "emptyState": "Nog geen berichten. Stuur de eerste om te beginnen."
   },
   "attachmentList": {
     "remove": "Verwijderen",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Zoek emoji...",
     "noResults": "Geen emoji gevonden"
+  },
+  "time": {
+    "justNow": "Zojuist",
+    "minutesAgo": "{n}min geleden",
+    "hoursAgo": "{n}u geleden"
   }
 }

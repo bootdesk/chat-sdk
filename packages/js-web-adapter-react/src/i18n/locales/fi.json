@@ -23,7 +23,7 @@
     "isTyping": "kirjoittaa..."
   },
   "messageList": {
-    "emptyState": "Ei viestejä vielä. Aloita keskustelu!"
+    "emptyState": "Ei viestejä vielä. Lähetä ensimmäinen aloittaaksesi."
   },
   "attachmentList": {
     "remove": "Poista",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Hae emoji...",
     "noResults": "Emoji ei löytynyt"
+  },
+  "time": {
+    "justNow": "Juuri nyt",
+    "minutesAgo": "{n}min sitten",
+    "hoursAgo": "{n}t sitten"
   }
 }

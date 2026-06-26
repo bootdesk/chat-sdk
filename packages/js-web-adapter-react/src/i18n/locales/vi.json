@@ -23,7 +23,7 @@
     "isTyping": "đang nhập..."
   },
   "messageList": {
-    "emptyState": "Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!"
+    "emptyState": "Chưa có tin nhắn nào. Hãy gửi tin nhắn đầu tiên để bắt đầu."
   },
   "attachmentList": {
     "remove": "Xóa",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Tìm emoji...",
     "noResults": "Không tìm thấy emoji"
+  },
+  "time": {
+    "justNow": "Vừa xong",
+    "minutesAgo": "{n}phút trước",
+    "hoursAgo": "{n}giờ trước"
   }
 }

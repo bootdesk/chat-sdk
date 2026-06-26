@@ -191,40 +191,44 @@
 @tailwind utilities;
 
 :root {
-  --chat-primary: #6366f1;
-  --chat-primary-hover: #4f46e5;
-  --chat-secondary: #8b5cf6;
-  --chat-background: #ffffff;
-  --chat-surface: #f9fafb;
-  --chat-text: #111827;
-  --chat-text-secondary: #6b7280;
-  --chat-border: #e5e7eb;
-  --chat-own-message: #6366f1;
+  --chat-primary: #c2463a;
+  --chat-primary-hover: #a8392e;
+  --chat-secondary: #d4846a;
+  --chat-background: #faf8f6;
+  --chat-surface: #f3efec;
+  --chat-text: #2c241e;
+  --chat-text-secondary: #8a7e75;
+  --chat-border: #ddd5ce;
+  --chat-own-message: #c2463a;
   --chat-own-message-text: #ffffff;
-  --chat-other-message: #f3f4f6;
-  --chat-other-message-text: #111827;
-  --chat-error: #ef4444;
-  --chat-success: #10b981;
+  --chat-other-message: #f0ebe6;
+  --chat-other-message-text: #2c241e;
+  --chat-error: #d94a4a;
+  --chat-success: #3da06e;
+  --chat-accent: #3a9d9d;
+  --chat-accent-hover: #2e8585;
   --chat-font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
 }
 
 [data-chat-theme="dark"] {
-  --chat-primary: #818cf8;
-  --chat-primary-hover: #6366f1;
-  --chat-secondary: #a78bfa;
-  --chat-background: #1e1e2e;
-  --chat-surface: #2a2a3c;
-  --chat-text: #e2e8f0;
-  --chat-text-secondary: #94a3b8;
-  --chat-border: #3e3e5c;
-  --chat-own-message: #818cf8;
+  --chat-primary: #d6695a;
+  --chat-primary-hover: #bf5547;
+  --chat-secondary: #c48a75;
+  --chat-background: #1c1816;
+  --chat-surface: #2b2522;
+  --chat-text: #e8e0d8;
+  --chat-text-secondary: #a0968d;
+  --chat-border: #403933;
+  --chat-own-message: #d6695a;
   --chat-own-message-text: #ffffff;
-  --chat-other-message: #2a2a3c;
-  --chat-other-message-text: #e2e8f0;
-  --chat-error: #f87171;
-  --chat-success: #4ade80;
+  --chat-other-message: #2b2522;
+  --chat-other-message-text: #e8e0d8;
+  --chat-error: #f06060;
+  --chat-success: #4dbf84;
+  --chat-accent: #4da8a8;
+  --chat-accent-hover: #3d9090;
 }
 /* ── bdesk-* component classes ── */
 .bdesk-header {
@@ -319,9 +323,27 @@
 }
 
 .bdesk-message-bubble-other {
-  @apply rounded-2xl rounded-bl-sm bg-[var(--chat-other-message)] px-3 py-2 text-[var(--chat-other-message-text)];
+  @apply rounded-2xl rounded-bl-sm px-3 py-2;
+  background-color: var(--chat-other-message);
+  color: var(--chat-other-message-text);
   overflow-wrap: break-word;
   word-break: break-word;
+}
+
+.bdesk-message-bubble-other[data-chat-user-color="1"] {
+  background-color: color-mix(in srgb, var(--chat-primary) 7%, var(--chat-background));
+}
+
+.bdesk-message-bubble-other[data-chat-user-color="2"] {
+  background-color: color-mix(
+    in srgb,
+    var(--chat-accent, var(--chat-secondary)) 7%,
+    var(--chat-background)
+  );
+}
+
+.bdesk-message-bubble-other[data-chat-user-color="3"] {
+  background-color: color-mix(in srgb, var(--chat-secondary) 10%, var(--chat-background));
 }
 
 .bdesk-reactions {
@@ -437,6 +459,30 @@
   @apply shrink-0;
 }
 
+.bdesk-audio-attach {
+  @apply flex flex-col gap-1;
+}
+
+.bdesk-audio-attach-player {
+  @apply w-full h-10;
+}
+
+.bdesk-audio-attach-name {
+  @apply text-xs text-[var(--chat-text-secondary)];
+}
+
+.bdesk-video-attach {
+  @apply flex flex-col gap-1;
+}
+
+.bdesk-video-attach-player {
+  @apply w-full max-h-60 rounded object-cover;
+}
+
+.bdesk-video-attach-name {
+  @apply text-xs text-[var(--chat-text-secondary)];
+}
+
 .bdesk-input-area {
   @apply flex flex-col gap-2 border-t border-[var(--chat-border)] bg-[var(--chat-surface)] p-4;
 }
@@ -503,7 +549,12 @@
 }
 
 .bdesk-floating-btn {
-  @apply flex items-center justify-center rounded-full bg-[var(--chat-primary)] shadow-lg transition hover:scale-105;
+  @apply flex items-center justify-center rounded-full bg-[var(--chat-accent,var(--chat-primary))] shadow-lg transition-transform hover:scale-105;
+  filter: brightness(1);
+}
+
+.bdesk-floating-btn:hover {
+  filter: brightness(0.9);
 }
 
 .bdesk-floating-btn-badge {
@@ -574,6 +625,51 @@
 
 .bdesk-attachment-remove {
   @apply bg-none border-none cursor-pointer text-[var(--chat-text-secondary)] p-0.5 leading-none hover:text-[var(--chat-error)];
+}
+
+.bdesk-toast-container {
+  @apply absolute bottom-0 left-0 right-0 flex flex-col gap-2 p-4 pointer-events-none;
+  z-index: 20;
+}
+
+.bdesk-toast {
+  @apply flex items-center gap-3 rounded-lg px-4 py-3 text-sm shadow-lg;
+  pointer-events: auto;
+  animation: bdesk-toast-slide-up 0.25s ease-out;
+}
+
+.bdesk-toast--error {
+  background-color: color-mix(in srgb, var(--chat-error) 14%, var(--chat-background));
+  border: 1px solid var(--chat-error);
+}
+
+.bdesk-toast--success {
+  background-color: color-mix(in srgb, var(--chat-success) 14%, var(--chat-background));
+  border: 1px solid var(--chat-success);
+}
+
+.bdesk-toast--info {
+  background-color: color-mix(in srgb, var(--chat-primary) 10%, var(--chat-background));
+  border: 1px solid var(--chat-primary);
+}
+
+.bdesk-toast-message {
+  @apply flex-1 text-sm leading-relaxed text-[var(--chat-text)];
+}
+
+.bdesk-toast-dismiss {
+  @apply shrink-0 bg-transparent border-none cursor-pointer text-[var(--chat-text-secondary)] p-1 rounded hover:text-[var(--chat-text)] transition;
+}
+
+@keyframes bdesk-toast-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .bdesk-push-prompt {
@@ -792,8 +888,186 @@
   @apply px-3 py-2 bg-[var(--chat-primary)] text-white rounded text-sm font-medium no-underline hover:opacity-90;
 }
 
+.bdesk-video-card {
+  @apply rounded-lg overflow-hidden max-w-xs bg-[var(--chat-surface)];
+}
+
+.bdesk-video-card-embed {
+  @apply relative w-full aspect-video;
+}
+
+.bdesk-video-card-iframe {
+  @apply absolute inset-0 w-full h-full border-0;
+}
+
+.bdesk-video-card-player {
+  @apply block w-full max-h-64;
+}
+
+.bdesk-video-card-title {
+  @apply px-3 py-2 text-sm font-medium;
+}
+
+.bdesk-video-card-duration {
+  @apply px-3 pb-2 text-xs text-[var(--chat-text-secondary)];
+}
+
+.bdesk-audio-card {
+  @apply p-3 rounded-lg max-w-xs bg-[var(--chat-surface)];
+}
+
+.bdesk-audio-card-title {
+  @apply text-sm font-medium mb-2;
+}
+
+.bdesk-audio-card-player {
+  @apply w-full h-10;
+}
+
+.bdesk-audio-card-duration {
+  @apply text-xs text-[var(--chat-text-secondary)] mt-1;
+}
+
+.bdesk-location-card {
+  @apply rounded-lg overflow-hidden max-w-xs bg-[var(--chat-surface)];
+}
+
+.bdesk-location-card-map {
+  @apply block;
+}
+
+.bdesk-location-card-img {
+  @apply block w-full h-auto;
+}
+
+.bdesk-location-card-info {
+  @apply p-3;
+}
+
+.bdesk-location-card-title {
+  @apply text-sm font-medium;
+}
+
+.bdesk-location-card-address {
+  @apply text-xs text-[var(--chat-text-secondary)] mt-1;
+}
+
+.bdesk-location-card-directions {
+  @apply inline-block mt-2 text-xs text-[var(--chat-primary)] no-underline hover:underline;
+}
+
+.bdesk-product-card {
+  @apply rounded-lg overflow-hidden max-w-xs bg-[var(--chat-surface)];
+}
+
+.bdesk-product-card-img {
+  @apply block w-full h-auto;
+}
+
+.bdesk-product-card-body {
+  @apply p-3;
+}
+
+.bdesk-product-card-header {
+  @apply flex items-start justify-between gap-2;
+}
+
+.bdesk-product-card-title {
+  @apply text-sm font-medium flex-1;
+}
+
+.bdesk-product-card-price {
+  @apply text-sm font-semibold text-[var(--chat-primary)] whitespace-nowrap;
+}
+
+.bdesk-product-card-badge {
+  @apply inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded bg-[var(--chat-primary)] text-white;
+}
+
+.bdesk-product-card-actions {
+  @apply flex flex-wrap gap-2 mt-3;
+}
+
+.bdesk-product-card-btn {
+  @apply px-3 py-1.5 text-xs font-medium rounded border border-[var(--chat-primary)] text-[var(--chat-primary)] bg-transparent cursor-pointer hover:bg-[var(--chat-primary)] hover:text-white;
+}
+
+.bdesk-poll-card {
+  @apply p-3 rounded-lg max-w-xs bg-[var(--chat-surface)];
+}
+
+.bdesk-poll-card-question {
+  @apply text-sm font-medium mb-3;
+}
+
+.bdesk-poll-card-options {
+  @apply flex flex-col gap-2;
+}
+
+.bdesk-poll-card-option {
+  @apply flex items-center gap-2 px-3 py-2 rounded border border-[var(--chat-border)] text-sm text-left cursor-pointer bg-[var(--chat-background)] hover:border-[var(--chat-primary)] transition-colors;
+}
+
+.bdesk-poll-card-option--selected {
+  @apply border-[var(--chat-primary)];
+  background-color: color-mix(in srgb, var(--chat-primary) 7%, transparent);
+}
+
+.bdesk-poll-card-option--voted {
+  @apply cursor-default;
+}
+
+.bdesk-poll-card-option-label {
+  @apply flex-1;
+}
+
+.bdesk-poll-card-option-bar-wrap {
+  @apply relative flex items-center gap-1;
+}
+
+.bdesk-poll-card-option-bar {
+  @apply absolute left-0 top-0 h-full rounded;
+  background-color: color-mix(in srgb, var(--chat-primary) 10%, transparent);
+}
+
+.bdesk-poll-card-option-pct {
+  @apply text-xs font-medium text-[var(--chat-text-secondary)] min-w-[2.5rem] text-right;
+}
+
+.bdesk-poll-card-vote-btn {
+  @apply w-full mt-3 px-4 py-2 text-sm font-medium rounded bg-[var(--chat-primary)] text-white border-0 cursor-pointer hover:opacity-90;
+}
+
+.bdesk-poll-card-total {
+  @apply text-xs text-[var(--chat-text-secondary)] mt-2 text-center;
+}
+
+.bdesk-carousel-card {
+  @apply min-w-0;
+}
+
+.bdesk-carousel-card-track {
+  @apply flex gap-3 overflow-x-auto pb-2 snap-x snap-proximity cursor-grab;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.bdesk-carousel-card-track::-webkit-scrollbar {
+  display: none;
+}
+
+.bdesk-carousel-card-item {
+  @apply flex-shrink-0 w-72 snap-start;
+}
+
 .bdesk-widget {
   @apply flex flex-col h-full min-h-[300px] overflow-hidden bg-[var(--chat-background)];
+  position: relative;
+}
+
+.bdesk-widget-panel {
+  @apply flex flex-col flex-1 min-h-0 relative;
 }
 
 .bdesk-pre-entry {

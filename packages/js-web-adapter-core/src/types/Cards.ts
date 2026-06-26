@@ -90,7 +90,80 @@ export interface FileCard extends BaseCard {
   mimeType?: string;
 }
 
-export type Card = PHPCard | ImageCard | FileCard;
+export interface VideoCard extends BaseCard {
+  type: "video";
+  url: string;
+  thumbnail?: string;
+  title?: string;
+  duration?: number;
+  platform?: string;
+}
+
+export interface AudioCard extends BaseCard {
+  type: "audio";
+  url: string;
+  title?: string;
+  duration?: number;
+}
+
+export interface LocationCard extends BaseCard {
+  type: "location";
+  lat: number;
+  lng: number;
+  title?: string;
+  address?: string;
+  zoom?: number;
+}
+
+export interface ProductCardAction {
+  label: string;
+  actionId: string;
+  value?: string;
+}
+
+export interface ProductCard extends BaseCard {
+  type: "product";
+  url: string;
+  title: string;
+  price: number;
+  currency?: string;
+  badge?: string;
+  actions?: ProductCardAction[];
+}
+
+export interface PollCardOption {
+  id: string;
+  label: string;
+}
+
+export interface PollCardResult {
+  optionId: string;
+  count: number;
+}
+
+export interface PollCard extends BaseCard {
+  type: "poll";
+  question: string;
+  options: PollCardOption[];
+  allowMultiple?: boolean;
+  results?: PollCardResult[];
+}
+
+export interface CarouselCard extends BaseCard {
+  type: "carousel";
+  items: Card[];
+}
+
+export type Card =
+  | PHPCard
+  | ImageCard
+  | FileCard
+  | VideoCard
+  | AudioCard
+  | LocationCard
+  | ProductCard
+  | PollCard
+  | CarouselCard;
 
 export interface CustomCard extends BaseCard {
   type: string;

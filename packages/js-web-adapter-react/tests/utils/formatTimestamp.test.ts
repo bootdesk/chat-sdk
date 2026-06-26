@@ -18,4 +18,16 @@ describe("formatTimestamp", () => {
     const now = Date.now();
     expect(formatTimestamp(now - 2 * 60 * 60 * 1000)).toBe("2h ago");
   });
+
+  it("accepts custom locale strings", () => {
+    const now = Date.now();
+    const custom = {
+      justNow: "juuri nyt",
+      minutesAgo: "{n} minuuttia sitten",
+      hoursAgo: "{n} tuntia sitten",
+    };
+    expect(formatTimestamp(now, custom)).toBe("juuri nyt");
+    expect(formatTimestamp(now - 5 * 60 * 1000, custom)).toBe("5 minuuttia sitten");
+    expect(formatTimestamp(now - 2 * 60 * 60 * 1000, custom)).toBe("2 tuntia sitten");
+  });
 });

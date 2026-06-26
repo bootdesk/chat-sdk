@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import React from "react";
 import { MessageContent } from "../../src/components/MessageContent";
 import { CardProvider } from "../../src/cards/CardContext";
 
@@ -107,6 +108,104 @@ describe("MessageContent", () => {
     const link = container.querySelector('[data-chat-attachment="att-1"]');
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "https://example.com/file.pdf");
+  });
+
+  it("renders audio attachment inline", () => {
+    const msg = createMessage({
+      content: { text: "", cards: [] },
+      attachments: [
+        {
+          id: "att-audio",
+          url: "https://example.com/audio.mp3",
+          name: "podcast.mp3",
+          type: "audio",
+          mimeType: "audio/mpeg",
+        },
+      ],
+    });
+    const { container } = render(
+      <CardProvider>
+        <MessageContent message={msg} />
+      </CardProvider>,
+    );
+
+    const audio = container.querySelector("audio");
+    expect(audio).not.toBeNull();
+    expect(audio?.querySelector("source")?.getAttribute("src")).toBe(
+      "https://example.com/audio.mp3",
+    );
+    expect(screen.getByText("podcast.mp3")).toBeInTheDocument();
+  });
+
+  it("renders audio attachment by mimeType alone", () => {
+    const msg = createMessage({
+      content: { text: "", cards: [] },
+      attachments: [
+        {
+          id: "att-audio-2",
+          url: "https://example.com/record.ogg",
+          name: "record.ogg",
+          type: "file",
+          mimeType: "audio/ogg",
+        },
+      ],
+    });
+    const { container } = render(
+      <CardProvider>
+        <MessageContent message={msg} />
+      </CardProvider>,
+    );
+
+    expect(container.querySelector("audio")).not.toBeNull();
+  });
+
+  it("renders video attachment inline", () => {
+    const msg = createMessage({
+      content: { text: "", cards: [] },
+      attachments: [
+        {
+          id: "att-video",
+          url: "https://example.com/video.mp4",
+          name: "demo.mp4",
+          type: "video",
+          mimeType: "video/mp4",
+        },
+      ],
+    });
+    const { container } = render(
+      <CardProvider>
+        <MessageContent message={msg} />
+      </CardProvider>,
+    );
+
+    const video = container.querySelector("video");
+    expect(video).not.toBeNull();
+    expect(video?.querySelector("source")?.getAttribute("src")).toBe(
+      "https://example.com/video.mp4",
+    );
+    expect(screen.getByText("demo.mp4")).toBeInTheDocument();
+  });
+
+  it("renders video attachment by mimeType alone", () => {
+    const msg = createMessage({
+      content: { text: "", cards: [] },
+      attachments: [
+        {
+          id: "att-video-2",
+          url: "https://example.com/clip.webm",
+          name: "clip.webm",
+          type: "file",
+          mimeType: "video/webm",
+        },
+      ],
+    });
+    const { container } = render(
+      <CardProvider>
+        <MessageContent message={msg} />
+      </CardProvider>,
+    );
+
+    expect(container.querySelector("video")).not.toBeNull();
   });
 
   it("renders nothing when no text, cards, or attachments", () => {

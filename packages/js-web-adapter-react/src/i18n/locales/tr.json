@@ -23,7 +23,7 @@
     "isTyping": "yazıyor..."
   },
   "messageList": {
-    "emptyState": "Henüz mesaj yok. Sohbeti başlatın!"
+    "emptyState": "Henüz mesaj yok. Başlamak için ilk mesajı gönderin."
   },
   "attachmentList": {
     "remove": "Kaldır",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Emoji ara...",
     "noResults": "Emoji bulunamadı"
+  },
+  "time": {
+    "justNow": "Az önce",
+    "minutesAgo": "{n}dk önce",
+    "hoursAgo": "{n}s önce"
   }
 }

@@ -67,21 +67,24 @@ const pushHandlers = {
 export function ChatFullscreen() {
     return (
         <ChatProvider client={client}>
-            <ChatWidget
-                client={client}
-                title="Chat"
-                placeholder="Type a message..."
-                enableAttachments
-                uploadConfig={{ endpoint: "/api/chat/upload" }}
-                embedded
-                pushConfig={{
-                    getVapidPublicKey,
-                    onSubscribe: pushHandlers.onSubscribe,
-                    onUnsubscribe: pushHandlers.onUnsubscribe,
-                    serviceWorkerUrl: swUrl,
-                    serviceWorkerType: "module",
-                }}
-            />
+                <ChatWidget
+                    client={client}
+                    title="Chat"
+                    placeholder="Type a message..."
+                    enableAttachments
+                    uploadConfig={{ endpoint: "/api/chat/upload" }}
+                    embedded
+                    pushConfig={{
+                        getVapidPublicKey,
+                        onSubscribe: pushHandlers.onSubscribe,
+                        onUnsubscribe: pushHandlers.onUnsubscribe,
+                        serviceWorkerUrl: swUrl,
+                        serviceWorkerType: "module",
+                    }}
+                    mapConfig={{
+                        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+                    }}
+                />
         </ChatProvider>
     );
 }

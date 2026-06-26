@@ -29,6 +29,8 @@ export function MessageContent({ message, onActionClick }: MessageContentProps):
 
       {message.attachments?.map((attachment) => {
         const isImage = attachment.type === "image" || attachment.mimeType?.startsWith("image/");
+        const isAudio = attachment.type === "audio" || attachment.mimeType?.startsWith("audio/");
+        const isVideo = attachment.type === "video" || attachment.mimeType?.startsWith("video/");
 
         return (
           <div key={attachment.id} className="bdesk-attach-mt">
@@ -42,6 +44,24 @@ export function MessageContent({ message, onActionClick }: MessageContentProps):
                   data-chat-attachment={attachment.id}
                 />
               </a>
+            ) : isAudio ? (
+              <div className="bdesk-audio-attach" data-chat-attachment={attachment.id}>
+                <audio controls className="bdesk-audio-attach-player">
+                  <source src={attachment.url} type={attachment.mimeType} />
+                </audio>
+                {attachment.name ? (
+                  <div className="bdesk-audio-attach-name">{attachment.name}</div>
+                ) : null}
+              </div>
+            ) : isVideo ? (
+              <div className="bdesk-video-attach" data-chat-attachment={attachment.id}>
+                <video controls className="bdesk-video-attach-player">
+                  <source src={attachment.url} type={attachment.mimeType} />
+                </video>
+                {attachment.name ? (
+                  <div className="bdesk-video-attach-name">{attachment.name}</div>
+                ) : null}
+              </div>
             ) : (
               <a
                 href={attachment.url}

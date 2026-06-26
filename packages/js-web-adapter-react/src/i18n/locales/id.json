@@ -23,7 +23,7 @@
     "isTyping": "sedang mengetik..."
   },
   "messageList": {
-    "emptyState": "Belum ada pesan. Mulai percakapan!"
+    "emptyState": "Belum ada pesan. Kirim pesan pertama untuk memulai."
   },
   "attachmentList": {
     "remove": "Hapus",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Cari emoji...",
     "noResults": "Emoji tidak ditemukan"
+  },
+  "time": {
+    "justNow": "Baru saja",
+    "minutesAgo": "{n}menit lalu",
+    "hoursAgo": "{n}jam lalu"
   }
 }

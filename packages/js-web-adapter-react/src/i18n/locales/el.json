@@ -23,7 +23,7 @@
     "isTyping": "γράφει..."
   },
   "messageList": {
-    "emptyState": "Δεν υπάρχουν ακόμη μηνύματα. Ξεκινήστε τη συνομιλία!"
+    "emptyState": "Δεν υπάρχουν ακόμη μηνύματα. Στείλτε το πρώτο για να ξεκινήσετε."
   },
   "attachmentList": {
     "remove": "Αφαίρεση",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Αναζήτηση emoji...",
     "noResults": "Δεν βρέθηκε emoji"
+  },
+  "time": {
+    "justNow": "Μόλις τώρα",
+    "minutesAgo": "πριν {n}λ",
+    "hoursAgo": "πριν {n}ώ"
   }
 }

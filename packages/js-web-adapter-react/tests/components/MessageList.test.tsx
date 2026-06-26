@@ -118,7 +118,9 @@ describe("MessageList", () => {
       </LocaleProvider>,
     );
 
-    expect(screen.getByText("No messages yet. Start the conversation!")).toBeInTheDocument();
+    expect(
+      screen.getByText("No messages yet. Send the first one to get started."),
+    ).toBeInTheDocument();
   });
 
   it("renders empty state without crashing", () => {

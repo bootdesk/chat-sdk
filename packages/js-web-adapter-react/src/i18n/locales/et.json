@@ -23,7 +23,7 @@
     "isTyping": "kirjutab..."
   },
   "messageList": {
-    "emptyState": "Veel pole sõnumeid. Alusta vestlust!"
+    "emptyState": "Veel pole sõnumeid. Saada esimene alustamiseks."
   },
   "attachmentList": {
     "remove": "Eemalda",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Otsi emotikoni...",
     "noResults": "Emotikoni ei leitud"
+  },
+  "time": {
+    "justNow": "Just nüüd",
+    "minutesAgo": "{n}min tagasi",
+    "hoursAgo": "{n}t tagasi"
   }
 }

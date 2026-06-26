@@ -23,7 +23,7 @@
     "isTyping": "입력 중..."
   },
   "messageList": {
-    "emptyState": "아직 메시지가 없습니다. 대화를 시작하세요!"
+    "emptyState": "아직 메시지가 없습니다. 첫 번째 메시지를 보내보세요."
   },
   "attachmentList": {
     "remove": "제거",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "이모지 검색...",
     "noResults": "이모지를 찾을 수 없습니다"
+  },
+  "time": {
+    "justNow": "방금",
+    "minutesAgo": "{n}분 전",
+    "hoursAgo": "{n}시간 전"
   }
 }

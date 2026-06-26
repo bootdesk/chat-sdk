@@ -23,7 +23,7 @@
     "isTyping": "scrie..."
   },
   "messageList": {
-    "emptyState": "Încă nu există mesaje. Începe conversația!"
+    "emptyState": "Niciun mesaj încă. Trimite primul pentru a începe."
   },
   "attachmentList": {
     "remove": "Elimină",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Caută emoji...",
     "noResults": "Niciun emoji găsit"
+  },
+  "time": {
+    "justNow": "Chiar acum",
+    "minutesAgo": "acum {n}min",
+    "hoursAgo": "acum {n}h"
   }
 }

@@ -24,5 +24,10 @@
   "emojiPicker": {
     "search": "Pesquisar emoji...",
     "noResults": "Nenhum emoji encontrado"
+  },
+  "time": {
+    "justNow": "Agora mesmo",
+    "minutesAgo": "há {n}min",
+    "hoursAgo": "há {n}h"
   }
 }

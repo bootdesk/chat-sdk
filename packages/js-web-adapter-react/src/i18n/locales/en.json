@@ -23,7 +23,7 @@
     "isTyping": "is typing..."
   },
   "messageList": {
-    "emptyState": "No messages yet. Start the conversation!"
+    "emptyState": "No messages yet. Send the first one to get started."
   },
   "attachmentList": {
     "remove": "Remove",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Search emoji...",
     "noResults": "No emoji found"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{n}m ago",
+    "hoursAgo": "{n}h ago"
   }
 }

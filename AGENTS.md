@@ -1,10 +1,12 @@
 # agents.md
 
 ## repo
+
 bootdesk/chat-sdk -- PHP multi-platform chat bot SDK.
 Monorepo (`packages/`): core, laravel, adapter-{slack,telegram,whatsapp,discord,messenger,web,github,linear,telnyx}, botman-compat.
 
 ## key commands
+
 ```
 composer docs                     # phpDocumentor (generates docs/_build/php/)
 npm run docs:js                   # TypeDoc for all JS packages (docs/_build/js/{core,react,bridge})
@@ -15,6 +17,7 @@ npm run docs                      # runs all three (composer docs + docs:js + do
 CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> format:check (PHP), then js job: format:check -> lint -> test (core/bridge/react). Min coverage 75%, PHP 8.2/8.3/8.4/8.5, Node 22.
 
 ## architecture
+
 - `core` is framework-agnostic, never depends on adapters
 - `laravel` depends on core only; discovers adapters at runtime via `class_exists()` + config
 - adapters implement `BootDesk\ChatSDK\Core\Contracts\Adapter`
@@ -27,6 +30,7 @@ CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> forma
 - attachments: URL-based `Attachment` objects handled by all adapters; binary `FileUpload` objects handled natively by Slack/TG/Discord, converted via `FileUploadConverter` on others
 - multipart uploads use `php-http/multipart-stream-builder`
 - Modals: platform-agnostic `Modals\Modal`, `Modals\TextInput`, `Modals\Select`, `Modals\ExternalSelect`, `Modals\RadioSelect` value objects; converted to platform-native via each adapter (Slack uses `SlackModalConverter`)
+- Web cards: 6 custom card types extend `Card` in `packages/adapter-web/src/Cards/` (`WebVideoCard`, `WebAudioCard`, `WebLocationCard`, `WebProductCard`, `WebPollCard`, `WebCarouselCard`). Each overrides `toArray()`/`getFallbackText()`. JS-side renderers in `packages/js-web-adapter-react/src/cards/`. Polymorphic with `PostableMessage::card()` / `isCard()`.
 - cost tracking: `Message` and `SentMessage` both expose `?Money\Money $price`. Incoming cost is parsed in the adapter's `parseWebhook()`. Outgoing cost is returned in `SentMessage` from `postMessage()`. The `HandlesMessageCosts` contract (via `parseMessageCost()`) allows adapters to extract cost from webhooks independently of message/status parsing — **non-terminal** in the webhook pipeline (fires `MessageCostEvent` then continues to other handlers). Price is nullable — platforms like WhatsApp provide pricing metadata (category, billable, model) without monetary amounts (`price: null`). For batched adapters, cost events are emitted via `WebhookEvent::TYPE_MESSAGE_COST`.
 - unsupported operations: when no adapter contract matches a webhook and `parseWebhook()` throws `UnsupportedOperationException`, or when a batched adapter encounters an unrecognized entry, `Chat` dispatches `UnsupportedOperationEvent` with the raw payload. Developer listens: `$chat->listen(UnsupportedOperationEvent::class, fn($e) => ...)`. Fires via `WebhookEvent::TYPE_UNSUPPORTED`. Non-terminal, non-stoppable.
 - attachment rehydration: `MustRehydrateAttachments` (core contract) marks adapters that need `Attachment::fetchData` restored after queue deserialization. `Chat::dispatchIncomingMessage()` auto-calls `rehydrateAttachment()` for each attachment before handler dispatch. Implemented by Twilio, Telegram, WhatsApp, Slack — `fetchData: [$adapter, 'fetchMedia']` (callable array, not closure).
@@ -40,6 +44,7 @@ CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> forma
 - `ActionEvent` and `SlashCommandEvent` expose `openModal(Modal $modal)` via the `OpensModals` trait`
 
 ## entrypoints
+
 - `BootDesk\ChatSDK\Core\Chat` -- orchestrator (handleWebhook, processMessage, onNewMessage, etc.)
 - `BootDesk\ChatSDK\Core\Thread` -- primary send/receive interface
 - `BootDesk\ChatSDK\Laravel\ChatServiceProvider` -- registers Chat singleton, `Chat::class` alias, `chat` alias
@@ -48,11 +53,13 @@ CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> forma
 - `@bootdesk/chat-widget-bridge` -- iframe embedding bridge
 
 ## JS packages
+
 - `WebChatClient.reconfigure(config)` updates userId/userName/verifyToken after construction — used with pre-entry flows
 - `ChatWidget` supports `preEntry` prop: renders a custom form before messages load; `start(config)` reconfigures the client and transitions to chat
 - Pre-entry example in `examples/hello-world-laravel/`: email verification flow with 6-digit code, `Log::debug`, encrypted verifyToken
 
 ## testing
+
 - PHPUnit with TestCase; 12 named suites (one per package), bootstrapped via `vendor/autoload.php`
 - core tests use `MemoryStateAdapter` + `MockAdapter` from `packages/core/tests/Helpers/`
 - `createTestMessage(text:, threadId:, author:, isMention:, isDM:)` helper in `tests/Helpers/functions.php`
@@ -64,20 +71,26 @@ CI order (`.github/workflows/ci.yml`): analyse -> lint -> test:coverage -> forma
   - Add `<directory>packages/adapter-{name}/src</directory>` to `<source><include>`
 
 ## coverage (local Docker)
+
 ```
 docker run --rm -v $PWD:/app -w /app php:8.4-cli bash -c "pecl install pcov && docker-php-ext-enable pcov && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && composer install --quiet && composer test:coverage"
 ```
+
 Parse per-package coverage from clover.xml:
+
 ```
 grep -A3 'file name="/app/packages/adapter-<name>/' coverage/clover.xml | grep 'metrics'
 ```
+
 statements = `coveredstatements`/`statements` from each file's metrics line.
 
 ## dependencies
+
 - `CLAUDE.md` is a symlink to `AGENTS.md` — edit `AGENTS.md` only
 - PHP packages are required at **both** the root `composer.json` and the relevant package's `composer.json`. Run `composer require <package>` at the root (updates root `composer.json` + lock file), then manually add the same dependency to the package's `composer.json`.
 
 ## style
+
 - PHP 8.2+ features (readonly properties, enums, match, etc.)
 - `declare(strict_types=1)` in contracts and adapters (inconsistent across codebase)
 - Pint enforces Laravel preset

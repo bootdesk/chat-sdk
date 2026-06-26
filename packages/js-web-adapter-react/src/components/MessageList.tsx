@@ -6,6 +6,15 @@ import { formatTimestamp } from "../utils/formatTimestamp";
 import { cn } from "../lib/cn";
 import { EmojiPicker } from "./EmojiPicker";
 
+function hashUserId(id: string, max: number): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash << 5) - hash + id.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) % max;
+}
+
 interface MessageListProps {
   messages: Message[];
   currentUserId: string;
@@ -27,7 +36,7 @@ export function MessageList({
   onActionClick,
   className,
 }: MessageListProps): React.JSX.Element {
-  const { t } = useLocale();
+  const { t, strings } = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
   const listEndRef = useRef<HTMLDivElement>(null);
   const hasInitiallyScrolled = useRef(false);
@@ -59,7 +68,7 @@ export function MessageList({
     if (!el) return;
 
     const handleScroll = () => {
-      const threshold = 100;
+      const threshold = 50;
       isNearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
     };
 
@@ -119,6 +128,7 @@ export function MessageList({
       {groupedMessages.map((group, groupIndex) => {
         const isOwn = group.user === currentUserId;
         const firstMessage = group.messages[0]!;
+        const userColorIndex = isOwn ? -1 : hashUserId(group.user, 4);
 
         return (
           <div key={`${group.user}-${groupIndex}`} className="bdesk-message-group">
@@ -132,7 +142,10 @@ export function MessageList({
                 className="bdesk-message-item"
                 data-chat-message-id={message.id}
               >
-                <div className={isOwn ? "bdesk-message-bubble-own" : "bdesk-message-bubble-other"}>
+                <div
+                  className={isOwn ? "bdesk-message-bubble-own" : "bdesk-message-bubble-other"}
+                  {...(isOwn ? {} : { "data-chat-user-color": String(userColorIndex) })}
+                >
                   <MessageContent message={message} onActionClick={onActionClick} />
                 </div>
 
@@ -191,7 +204,9 @@ export function MessageList({
                 )}
 
                 {msgIndex === 0 && (
-                  <div className="bdesk-msg-timestamp">{formatTimestamp(message.timestamp)}</div>
+                  <div className="bdesk-msg-timestamp">
+                    {formatTimestamp(message.timestamp, strings.time)}
+                  </div>
                 )}
               </div>
             ))}
@@ -229,9 +244,13 @@ export function MessageList({
           anchorEl={pickerTarget.el}
           onSelect={(msgId, emoji) => {
             onReactionClick?.(msgId, emoji);
+            pickerTarget.el.focus();
             setPickerTarget(null);
           }}
-          onClose={() => setPickerTarget(null)}
+          onClose={() => {
+            pickerTarget.el.focus();
+            setPickerTarget(null);
+          }}
         />
       )}
     </div>

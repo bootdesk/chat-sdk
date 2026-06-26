@@ -23,7 +23,7 @@
     "isTyping": "друкує..."
   },
   "messageList": {
-    "emptyState": "Повідомлень ще немає. Почніть розмову!"
+    "emptyState": "Ще немає повідомлень. Надішліть перше, щоб почати."
   },
   "attachmentList": {
     "remove": "Видалити",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Пошук емодзі...",
     "noResults": "Емодзі не знайдено"
+  },
+  "time": {
+    "justNow": "Щойно",
+    "minutesAgo": "{n}хв тому",
+    "hoursAgo": "{n}год тому"
   }
 }

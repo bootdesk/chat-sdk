@@ -2,15 +2,30 @@ import React, { useState, useCallback, useEffect } from "react";
 
 import { useBridge, useMessages, useTyping, usePushNotifications } from "../hooks";
 import { LocaleProvider, mergeLocale, useLocale } from "../i18n";
+import { MapConfigProvider } from "../providers/MapConfigContext";
 import { FloatingButton } from "./FloatingButton";
 import { Header } from "./Header";
 import { MessageList } from "./MessageList";
 import { InputArea } from "./InputArea";
 import { TypingIndicator } from "./TypingIndicator";
 import { PushPermissionPrompt } from "./PushPermissionPrompt";
+import { ToastContainer } from "./Toast";
+import type { ToastItem, ToastType } from "./Toast";
 import type { ReconfigureConfig } from "@bootdesk/js-web-adapter-core";
+import type { LocaleConfig } from "../i18n";
 import type { ChatWidgetProps, DisplayMode, ThemeMode } from "../types/components";
 import { cn } from "../lib/cn";
+
+function PreEntryRenderer({
+  render,
+  onStart,
+}: {
+  render: (helpers: import("../types/components").PreEntryHelpers) => React.ReactNode;
+  onStart: (config?: ReconfigureConfig) => void;
+}): React.JSX.Element {
+  const { t, locale } = useLocale();
+  return <>{render({ start: onStart, t, locale })}</>;
+}
 
 export function ChatWidget({
   client,
@@ -36,6 +51,7 @@ export function ChatWidget({
   preEntry,
   onChatStart,
   pushConfig,
+  mapConfig,
 }: ChatWidgetProps): React.JSX.Element {
   const {
     config: iframeConfig,
@@ -52,15 +68,27 @@ export function ChatWidget({
   const hasBridgePush = (isInIframe || isInWebView) && bridgePushState !== null;
   const inBridge = isInIframe || isInWebView;
 
-  const effectiveLocale =
-    localeProp ?? (inBridge ? iframeConfig?.locale : undefined) ?? useLocale().locale;
-  const merged = mergeLocale(effectiveLocale);
+  const localeConfig = React.useMemo<LocaleConfig>(() => {
+    if (!localeProp) {
+      const fallback = inBridge && iframeConfig?.locale ? iframeConfig.locale : "en";
+      return { locale: fallback };
+    }
+    if (typeof localeProp === "string") {
+      return { locale: localeProp };
+    }
+    return localeProp;
+  }, [localeProp, inBridge, iframeConfig]);
+
+  const merged = React.useMemo(
+    () => mergeLocale(localeConfig.locale, localeConfig.overrides),
+    [localeConfig],
+  );
   const dir = merged.direction;
 
   useEffect(() => {
-    client.setLocaleHeader(effectiveLocale);
+    client.setLocaleHeader(localeConfig.locale);
     client.setTimezoneHeader(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  }, [client, effectiveLocale]);
+  }, [client, localeConfig.locale]);
 
   const autoEmbedded = inBridge && embedded !== false;
   const effectiveEmbedded = embedded === true || autoEmbedded;
@@ -236,26 +264,44 @@ export function ChatWidget({
 
   const currentUserId = "getCurrentUserId" in client ? client.getCurrentUserId() : "";
 
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const showToast = useCallback((message: string, type: ToastType = "error") => {
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 5000);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
   const handleSend = useCallback(
     async (
       text: string,
       attachments: Array<{ url: string; name: string; mimeType: string; size: number }> = [],
     ) => {
-      await sendMessage(text, attachments);
-      if (inBridge) {
-        notifyMessage(text);
+      try {
+        await sendMessage(text, attachments);
+        if (inBridge) {
+          notifyMessage(text);
+        }
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : "Failed to send", "error");
       }
     },
-    [sendMessage, inBridge, notifyMessage],
+    [sendMessage, inBridge, notifyMessage, showToast],
   );
 
   const handleActionClick = useCallback(
     (messageId: string, actionId: string, value: string) => {
       client.sendAction(messageId, actionId, value).catch((err) => {
-        console.error("Action failed:", err);
+        showToast(err instanceof Error ? err.message : "Action failed", "error");
       });
     },
-    [client],
+    [client, showToast],
   );
 
   const handleReactionClick = useCallback(
@@ -304,7 +350,7 @@ export function ChatWidget({
   }, [isInIframe, isInWebView]);
 
   const panelContent = (
-    <>
+    <div className="bdesk-widget-panel">
       <Header
         title={effectiveTitle}
         onClose={
@@ -336,7 +382,9 @@ export function ChatWidget({
       />
 
       {isPreEntry && preEntry ? (
-        <div className="bdesk-pre-entry">{preEntry.render({ start: handleStart })}</div>
+        <div className="bdesk-pre-entry">
+          <PreEntryRenderer render={preEntry.render} onStart={handleStart} />
+        </div>
       ) : (
         <>
           <MessageList
@@ -378,7 +426,9 @@ export function ChatWidget({
           />
         </>
       )}
-    </>
+
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+    </div>
   );
 
   const widget = effectiveEmbedded ? (
@@ -437,5 +487,9 @@ export function ChatWidget({
     </>
   );
 
-  return <LocaleProvider locale={effectiveLocale}>{widget}</LocaleProvider>;
+  return (
+    <LocaleProvider locale={localeConfig}>
+      <MapConfigProvider config={mapConfig}>{widget}</MapConfigProvider>
+    </LocaleProvider>
+  );
 }

@@ -23,7 +23,7 @@
     "isTyping": "skriver..."
   },
   "messageList": {
-    "emptyState": "Inga meddelanden än. Starta konversationen!"
+    "emptyState": "Inga meddelanden än. Skicka det första för att komma igång."
   },
   "attachmentList": {
     "remove": "Ta bort",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Sök emoji...",
     "noResults": "Ingen emoji hittades"
+  },
+  "time": {
+    "justNow": "Nyss",
+    "minutesAgo": "för {n}min sedan",
+    "hoursAgo": "för {n}t sedan"
   }
 }

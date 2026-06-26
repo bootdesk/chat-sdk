@@ -23,7 +23,7 @@
     "isTyping": "يكتب..."
   },
   "messageList": {
-    "emptyState": "لا توجد رسائل بعد. ابدأ المحادثة!"
+    "emptyState": "لا توجد رسائل بعد. أرسل الأولى لبدء المحادثة."
   },
   "attachmentList": {
     "remove": "إزالة",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "ابحث عن رمز تعبيري...",
     "noResults": "لم يتم العثور على رمز تعبيري"
+  },
+  "time": {
+    "justNow": "الآن",
+    "minutesAgo": "منذ {n}د",
+    "hoursAgo": "منذ {n}س"
   }
 }

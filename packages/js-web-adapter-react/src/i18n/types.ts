@@ -66,6 +66,11 @@ export interface LocaleStrings {
     search: string;
     noResults: string;
   };
+  time: {
+    justNow: string;
+    minutesAgo: string;
+    hoursAgo: string;
+  };
 }
 
 export type SupportedLocale =

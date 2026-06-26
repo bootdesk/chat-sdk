@@ -52,13 +52,36 @@ function App() {
 
 ## i18n
 
+33 built-in locales. Set locale as string or with runtime overrides:
+
 ```tsx
 <ChatWidget locale="pt-BR" />
-// or with overrides:
+
+// with overrides:
 <ChatWidget locale={{ locale: "en", overrides: { chatWidget: { title: "Support" } } }} />
 ```
 
-Built-in: `en`, `en-US`, `en-GB`, `pt`, `pt-BR`, `pt-PT`, `es`.
+Register custom locales:
+
+```tsx
+import { registerLocale } from "@bootdesk/js-web-adapter-react";
+
+registerLocale("my-lang", {
+  /* full LocaleStrings */
+});
+<ChatWidget client={client} locale="my-lang" />;
+```
+
+Access translations in your components with `useLocale()`:
+
+```tsx
+import { useLocale } from "@bootdesk/js-web-adapter-react";
+
+function MyComponent() {
+  const { t, locale } = useLocale();
+  return <div>{t("chatWidget.title")}</div>;
+}
+```
 
 ## Cards
 
@@ -74,16 +97,35 @@ The card system renders platform-agnostic `PHPCard` objects (sections, fields, a
 
 Show a custom form (name, email, verification code, etc.) before the conversation starts. The developer controls all logic — validation, API calls, waiting for user confirmation. Call `start(config?)` when ready, and the widget reconfigures the client and transitions to normal chat.
 
+The render function also receives `t(path)` for translations and `locale` for the current locale code:
+
 ```tsx
 <ChatWidget
   client={client}
-  preEntry={({ start }) => (
-    <PreEntryForm
-      onReady={(data) => {
-        start({ userId: data.id, userName: data.name, verifyToken: data.token });
-      }}
-    />
-  )}
+  locale="pt-BR"
+  preEntry={{
+    render: ({ start, t, locale }) => (
+      <form>
+        <h1>{t("chatWidget.title")}</h1>
+        <button onClick={() => start()}>Start</button>
+      </form>
+    ),
+  }}
+/>
+```
+
+```tsx
+<ChatWidget
+  client={client}
+  preEntry={{
+    render: ({ start }) => (
+      <PreEntryForm
+        onReady={(data) => {
+          start({ userId: data.id, userName: data.name, verifyToken: data.token });
+        }}
+      />
+    ),
+  }}
 />
 ```
 

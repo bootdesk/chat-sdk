@@ -23,7 +23,7 @@
     "isTyping": "tape..."
   },
   "messageList": {
-    "emptyState": "Aucun message pour l'instant. Lancez la conversation !"
+    "emptyState": "Aucun message pour l'instant. Envoyez le premier pour commencer."
   },
   "attachmentList": {
     "remove": "Supprimer",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Rechercher un émoji...",
     "noResults": "Aucun émoji trouvé"
+  },
+  "time": {
+    "justNow": "À l'instant",
+    "minutesAgo": "il y a {n}min",
+    "hoursAgo": "il y a {n}h"
   }
 }

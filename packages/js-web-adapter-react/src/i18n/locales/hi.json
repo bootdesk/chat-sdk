@@ -23,7 +23,7 @@
     "isTyping": "लिख रहा है..."
   },
   "messageList": {
-    "emptyState": "अभी तक कोई संदेश नहीं। बातचीत शुरू करें!"
+    "emptyState": "अभी तक कोई संदेश नहीं। शुरू करने के लिए पहला संदेश भेजें।"
   },
   "attachmentList": {
     "remove": "हटाएं",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "इमोजी खोजें...",
     "noResults": "कोई इमोजी नहीं मिला"
+  },
+  "time": {
+    "justNow": "अभी",
+    "minutesAgo": "{n}मिनट पहले",
+    "hoursAgo": "{n}घंटे पहले"
   }
 }

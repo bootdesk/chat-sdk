@@ -23,7 +23,7 @@
     "isTyping": "กำลังพิมพ์..."
   },
   "messageList": {
-    "emptyState": "ยังไม่มีข้อความ เริ่มการสนทนา!"
+    "emptyState": "ยังไม่มีข้อความ ส่งข้อความแรกเพื่อเริ่มต้น"
   },
   "attachmentList": {
     "remove": "ลบ",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "ค้นหาอีโมจิ...",
     "noResults": "ไม่พบอีโมจิ"
+  },
+  "time": {
+    "justNow": "เมื่อกี้",
+    "minutesAgo": "{n}นาทีที่แล้ว",
+    "hoursAgo": "{n}ชั่วโมงที่แล้ว"
   }
 }

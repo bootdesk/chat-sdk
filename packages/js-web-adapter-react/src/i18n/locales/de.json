@@ -23,7 +23,7 @@
     "isTyping": "schreibt..."
   },
   "messageList": {
-    "emptyState": "Noch keine Nachrichten. Starten Sie die Unterhaltung!"
+    "emptyState": "Noch keine Nachrichten. Senden Sie die erste, um zu starten."
   },
   "attachmentList": {
     "remove": "Entfernen",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Emoji suchen...",
     "noResults": "Kein Emoji gefunden"
+  },
+  "time": {
+    "justNow": "Gerade eben",
+    "minutesAgo": "vor {n}Min",
+    "hoursAgo": "vor {n}Std"
   }
 }

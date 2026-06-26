@@ -29,6 +29,9 @@ export { useCardRegistry as useCardRendererRegistry } from "./cards/CardContext"
 
 export { MarkdownRenderer, renderMarkdown } from "./utils/markdown";
 
+export { ToastContainer } from "./components/Toast";
+export type { ToastItem, ToastType } from "./components/Toast";
+
 export { ErrorBoundary } from "./components/ErrorBoundary";
 export { Dropzone } from "./components/Dropzone";
 export { AttachmentList } from "./components/AttachmentList";

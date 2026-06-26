@@ -23,7 +23,7 @@
     "isTyping": "печатает..."
   },
   "messageList": {
-    "emptyState": "Сообщений пока нет. Начните разговор!"
+    "emptyState": "Пока нет сообщений. Отправьте первое, чтобы начать."
   },
   "attachmentList": {
     "remove": "Удалить",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Поиск эмодзи...",
     "noResults": "Эмодзи не найдены"
+  },
+  "time": {
+    "justNow": "Только что",
+    "minutesAgo": "{n}мин назад",
+    "hoursAgo": "{n}ч назад"
   }
 }

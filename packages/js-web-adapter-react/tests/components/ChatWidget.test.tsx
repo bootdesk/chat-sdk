@@ -93,7 +93,9 @@ describe("ChatWidget", () => {
     const client = createMockClient();
     render(<ChatWidget client={client} embedded />);
 
-    expect(await screen.findByText("No messages yet. Start the conversation!")).toBeInTheDocument();
+    expect(
+      await screen.findByText("No messages yet. Send the first one to get started."),
+    ).toBeInTheDocument();
   });
 
   it("uses custom placeholder text", async () => {
@@ -253,6 +255,74 @@ describe("ChatWidget", () => {
       btn.click();
 
       expect(onChatStart).toHaveBeenCalledWith({ userId: "u2" });
+    });
+
+    it("provides t function in pre-entry helpers for translation", async () => {
+      const client = createMockClient();
+      render(
+        <ChatWidget
+          client={client}
+          embedded
+          preEntry={{
+            render: ({ t }) => (
+              <div>
+                <span data-testid="pre-title">{t("chatWidget.title")}</span>
+                <span data-testid="pre-placeholder">{t("inputArea.send")}</span>
+                <span data-testid="pre-unknown">{t("nonexistent.path")}</span>
+              </div>
+            ),
+          }}
+        />,
+      );
+
+      expect(await screen.findByTestId("pre-title")).toHaveTextContent("Chat");
+      expect(screen.getByTestId("pre-placeholder")).toHaveTextContent("Send");
+      expect(screen.getByTestId("pre-unknown")).toHaveTextContent("nonexistent.path");
+    });
+
+    it("provides locale string in pre-entry helpers", async () => {
+      const client = createMockClient();
+      render(
+        <ChatWidget
+          client={client}
+          embedded
+          locale="pt-BR"
+          preEntry={{
+            render: ({ locale }) => <span data-testid="pre-locale">{locale}</span>,
+          }}
+        />,
+      );
+
+      expect(await screen.findByTestId("pre-locale")).toHaveTextContent("pt-BR");
+    });
+
+    it("applies locale overrides to pre-entry translations", async () => {
+      const client = createMockClient();
+      render(
+        <ChatWidget
+          client={client}
+          embedded
+          locale={{ locale: "en", overrides: { chatWidget: { title: "Suporte" } } }}
+          preEntry={{
+            render: ({ t }) => <span data-testid="pre-override">{t("chatWidget.title")}</span>,
+          }}
+        />,
+      );
+
+      expect(await screen.findByTestId("pre-override")).toHaveTextContent("Suporte");
+    });
+
+    it("passes locale overrides to chat widget placeholder", async () => {
+      const client = createMockClient();
+      render(
+        <ChatWidget
+          client={client}
+          embedded
+          locale={{ locale: "en", overrides: { chatWidget: { placeholder: "Ask me anything" } } }}
+        />,
+      );
+
+      expect(await screen.findByPlaceholderText("Ask me anything")).toBeInTheDocument();
     });
   });
 });

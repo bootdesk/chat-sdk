@@ -1,5 +1,6 @@
 import type { PushConfig, ReconfigureConfig } from "@bootdesk/js-web-adapter-core";
 import type { UploadConfig } from "./AttachmentUpload";
+import type { LocaleConfig } from "../i18n";
 
 export type DisplayMode = "floating" | "fullscreen" | "embedded";
 
@@ -7,6 +8,8 @@ export type ThemeMode = "light" | "dark" | "auto";
 
 export interface PreEntryHelpers {
   start: (config?: ReconfigureConfig) => void;
+  t: (path: string) => string;
+  locale: string;
 }
 
 export interface PreEntryConfig {
@@ -15,7 +18,7 @@ export interface PreEntryConfig {
 
 export interface ChatWidgetProps {
   client: import("@bootdesk/js-web-adapter-core").WebChatClient;
-  locale?: string;
+  locale?: string | LocaleConfig;
   initialMode?: DisplayMode;
   theme?: ThemeMode;
   onThemeChange?: (theme: ThemeMode) => void;

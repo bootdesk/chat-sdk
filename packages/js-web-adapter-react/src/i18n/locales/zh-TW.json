@@ -23,7 +23,7 @@
     "isTyping": "正在輸入..."
   },
   "messageList": {
-    "emptyState": "尚無訊息。開始對話吧！"
+    "emptyState": "暫無訊息。發送第一條訊息開始對話。"
   },
   "attachmentList": {
     "remove": "移除",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "搜尋表情符號...",
     "noResults": "找不到表情符號"
+  },
+  "time": {
+    "justNow": "剛剛",
+    "minutesAgo": "{n}分鐘前",
+    "hoursAgo": "{n}小時前"
   }
 }

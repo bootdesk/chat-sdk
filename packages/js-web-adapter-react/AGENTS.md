@@ -18,7 +18,7 @@ npm run typecheck       # tsc --noEmit
 - `src/components/` — `ChatWidget`, `Header`, `MessageList`, `MessageContent`, `InputArea`, `TypingIndicator`, `FloatingButton`, `Dropzone`, `AttachmentList`, `PushPermissionPrompt`, `PushToggle`, `ErrorBoundary`
 - `src/hooks/` — `useBridge`, `useChatClient`, `useMessages`, `useStreaming`, `useTyping`, `useAttachmentUpload`, `usePushNotifications`
 - `src/cards/` — `CardProvider`/`CardContext`, `CardRenderer`, `DefaultCard`, `ImageCard`, `FileCard`
-- `src/i18n/` — `LocaleProvider`, `mergeLocale`, 7 locale files (en, en-US, en-GB, pt, pt-BR, pt-PT, es)
+- `src/i18n/` — `LocaleProvider`, `mergeLocale`, 33 locale files (en, en-US, en-GB, pt, pt-BR, pt-PT, es, fr, de, it, nl, ...)
 - `src/providers/` — `ChatProvider` (combines CardProvider + ChatContext)
 - `src/utils/` — `markdown` (marked + DOMPurify), `formatSize`, `formatTimestamp` (relative time)
 - `src/styles/` — `tailwind.css` (Tailwind component classes; safe-area & mobile styles injected at runtime)
@@ -52,9 +52,10 @@ npm run typecheck       # tsc --noEmit
 - Props follow React conventions (className, children, event handlers)
 - `formatTimestamp` returns relative time ("Just now", "5m ago", "2h ago")
 - Card context uses `CardProvider` with registry pattern for custom renderers
-- Locale override chain: en → en-X → runtime overrides via `mergeLocale`
+- Locale override chain: en → en-X → runtime overrides via `mergeLocale` or `LocaleConfig.overrides`
+- Pre-entry translations: `PreEntryRenderer` wrapper (inside ChatWidget) calls `useLocale()` and passes `t`, `locale` to render function — pre-screen gets i18n without additional hooks
 - Build: tsup for JS, tailwindcss for CSS, both outputs in `dist/`
-- Pre-entry: `preEntry.render({ start })` receives a `start(config?)` callback; calling it calls `client.reconfigure(config)` and transitions to normal chat
+- Pre-entry: `preEntry.render({ start, t, locale })` receives `start(config?)`, `t(path)` for translation, and `locale` string; calling `start()` calls `client.reconfigure(config)` and transitions to normal chat
 
 ## WebView bridge (useBridge.ts)
 

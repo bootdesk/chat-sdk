@@ -23,7 +23,7 @@
     "isTyping": "pisze..."
   },
   "messageList": {
-    "emptyState": "Brak wiadomości. Rozpocznij rozmowę!"
+    "emptyState": "Brak wiadomości. Wyślij pierwszą, aby rozpocząć."
   },
   "attachmentList": {
     "remove": "Usuń",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Szukaj emoji...",
     "noResults": "Nie znaleziono emoji"
+  },
+  "time": {
+    "justNow": "Teraz",
+    "minutesAgo": "{n}min temu",
+    "hoursAgo": "{n}h temu"
   }
 }

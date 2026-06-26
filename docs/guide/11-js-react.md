@@ -65,37 +65,54 @@ Auto-detects iframe — when inside an `<iframe>`, switches to embedded mode aut
 
 ### Props
 
-| Prop                             | Type                                                                | Default               |
-| -------------------------------- | ------------------------------------------------------------------- | --------------------- |
-| `client`                         | `WebChatClient`                                                     | required              |
-| `initialMode`                    | `"floating" \| "fullscreen"`                                        | `"floating"`          |
-| `theme`                          | `"light" \| "dark" \| "auto"`                                       | `"auto"`              |
-| `title`                          | `string`                                                            | `"Chat"`              |
-| `placeholder`                    | `string`                                                            | `"Type a message..."` |
-| `position`                       | `"bottom-right" \| "bottom-left" \| "top-right" \| "top-left"`      | `"bottom-right"`      |
-| `embedded`                       | `boolean`                                                           | `false`               |
-| `showClose`                      | `boolean`                                                           | `true`                |
-| `showFullscreenToggle`           | `boolean`                                                           | `true`                |
-| `enableAttachments`              | `boolean`                                                           | `false`               |
-| `uploadConfig`                   | `UploadConfig?`                                                     | —                     |
-| `accept`                         | `string?`                                                           | —                     |
-| `maxFileSize`                    | `number?`                                                           | —                     |
-| `onOpen`                         | `() => void?`                                                       | —                     |
-| `onClose`                        | `() => void?`                                                       | —                     |
-| `onThemeChange`                  | `(theme) => void?`                                                  | —                     |
-| `floatingButton.icon`            | `ReactNode?`                                                        | chat bubble SVG       |
-| `floatingButton.badgeCount`      | `number?`                                                           | —                     |
-| `floatingButton.size`            | `number`                                                            | `56`                  |
-| `floatingButton.backgroundColor` | `string?`                                                           | `var(--chat-primary)` |
-| `className`                      | `{ container?, header?, messageList?, inputArea? }?`                | —                     |
-| `preEntry`                       | `{ render: (helpers: { start: (config?) => void }) => ReactNode }?` | —                     |
-| `onChatStart`                    | `(config?: ReconfigureConfig) => void?`                             | —                     |
+| Prop                             | Type                                                             | Default               |
+| -------------------------------- | ---------------------------------------------------------------- | --------------------- |
+| `client`                         | `WebChatClient`                                                  | required              |
+| `locale`                         | `string \| { locale: string, overrides?: PartialLocaleStrings }` | `"en"`                |
+| `initialMode`                    | `"floating" \| "fullscreen"`                                     | `"floating"`          |
+| `theme`                          | `"light" \| "dark" \| "auto"`                                    | `"auto"`              |
+| `title`                          | `string`                                                         | `"Chat"`              |
+| `placeholder`                    | `string`                                                         | `"Type a message..."` |
+| `position`                       | `"bottom-right" \| "bottom-left" \| "top-right" \| "top-left"`   | `"bottom-right"`      |
+| `embedded`                       | `boolean`                                                        | `false`               |
+| `showClose`                      | `boolean`                                                        | `true`                |
+| `showFullscreenToggle`           | `boolean`                                                        | `true`                |
+| `enableAttachments`              | `boolean`                                                        | `false`               |
+| `uploadConfig`                   | `UploadConfig?`                                                  | —                     |
+| `accept`                         | `string?`                                                        | —                     |
+| `maxFileSize`                    | `number?`                                                        | —                     |
+| `onOpen`                         | `() => void?`                                                    | —                     |
+| `onClose`                        | `() => void?`                                                    | —                     |
+| `onThemeChange`                  | `(theme) => void?`                                               | —                     |
+| `floatingButton.icon`            | `ReactNode?`                                                     | chat bubble SVG       |
+| `floatingButton.badgeCount`      | `number?`                                                        | —                     |
+| `floatingButton.size`            | `number`                                                         | `56`                  |
+| `floatingButton.backgroundColor` | `string?`                                                        | `var(--chat-primary)` |
+| `className`                      | `{ container?, header?, messageList?, inputArea? }?`             | —                     |
+| `preEntry`                       | `{ render: (helpers: { start, t, locale }) => ReactNode }?`      | —                     |
+| `onChatStart`                    | `(config?: ReconfigureConfig) => void?`                          | —                     |
 
 ### Pre-Entry Screen
 
 Show a custom form before the conversation starts — useful for collecting a name, email, verification code, or terms acceptance. The developer controls all logic; call `start(config)` when ready.
 
 The `config` passed to `start()` is forwarded to `client.reconfigure()` (see [JS Core → Reconfiguration](/guide/10-js-core.md#reconfiguration)), updating the client's identity before messages load.
+
+The render function also receives `t(path)` for translating strings and `locale` for the current locale code — useful when your pre-entry form needs localized text:
+
+```tsx
+<ChatWidget
+  locale="pt-BR"
+  preEntry={{
+    render: ({ start, t, locale }) => (
+      <form>
+        <h1>{t("chatWidget.title")}</h1>
+        <button onClick={() => start()}>{t("common.start")}</button>
+      </form>
+    ),
+  }}
+/>
+```
 
 ```tsx
 function EmailVerificationForm({ start }) {
@@ -163,7 +180,9 @@ function App() {
       client={client}
       title="Support"
       preEntry={{
-        render: ({ start }) => <EmailVerificationForm start={start} />,
+        render: ({ start, t }) => (
+          <EmailVerificationForm start={start} title={t("chatWidget.title")} />
+        ),
       }}
       onChatStart={(config) => {
         // Persist session so returning users skip the form
@@ -309,27 +328,54 @@ import { ChatProvider, ChatWidget } from "@bootdesk/js-web-adapter-react";
 
 ## Internationalisation
 
-Seven built-in locales: `en`, `en-US`, `en-GB`, `pt`, `pt-BR`, `pt-PT`, `es`.
+33 built-in locales including `en`, `en-US`, `en-GB`, `pt`, `pt-BR`, `pt-PT`, `es`, `fr`, `de`, `it`, `nl`, `ja`, `zh-CN`, `zh-TW`, `ko`, `ar`, and more.
+
+Set locale on `ChatWidget` directly:
 
 ```tsx
-import {
-  LocaleProvider,
-  useLocale,
-  registerLocale,
-} from "@bootdesk/js-web-adapter-react";
+<ChatWidget client={client} locale="pt-BR" />
+```
 
-// Override a locale at runtime
-registerLocale("pt-BR", {
-  "chat.header.title": "Atendimento",
-  "chat.input.placeholder": "Digite sua mensagem...",
+Pass runtime overrides via `LocaleConfig`:
+
+```tsx
+<ChatWidget
+  client={client}
+  locale={{
+    locale: "en",
+    overrides: { chatWidget: { title: "Support" } },
+  }}
+/>
+```
+
+Register a completely custom locale with `registerLocale`:
+
+```tsx
+import { registerLocale } from "@bootdesk/js-web-adapter-react";
+
+registerLocale("my-custom", {
+  direction: "ltr",
+  chatWidget: {
+    title: "Suporte",
+    placeholder: "Digite sua mensagem...",
+    // ... all required fields
+  },
+  // ...
 });
 
-function App() {
-  return (
-    <LocaleProvider locale="pt-BR">
-      <ChatWidget client={client} />
-    </LocaleProvider>
-  );
+<ChatWidget client={client} locale="my-custom" />;
+```
+
+`registerLocale` uses the same `LocaleStrings` type — your IDE will autocomplete required fields.
+
+Access translations inside components with `useLocale()`:
+
+```tsx
+import { useLocale } from "@bootdesk/js-web-adapter-react";
+
+function MyComponent() {
+  const { t, locale, dir, strings } = useLocale();
+  return <div dir={dir}>{t("chatWidget.title")}</div>;
 }
 ```
 

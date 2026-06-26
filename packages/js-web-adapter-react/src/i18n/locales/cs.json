@@ -23,7 +23,7 @@
     "isTyping": "píše..."
   },
   "messageList": {
-    "emptyState": "Zatím žádné zprávy. Zahajte konverzaci!"
+    "emptyState": "Zatím žádné zprávy. Pošlete první a začněte."
   },
   "attachmentList": {
     "remove": "Odebrat",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Hledat emoji...",
     "noResults": "Nenalezen žádný emoji"
+  },
+  "time": {
+    "justNow": "Právě teď",
+    "minutesAgo": "před {n}min",
+    "hoursAgo": "před {n}h"
   }
 }

@@ -191,40 +191,44 @@
 @tailwind utilities;
 
 :root {
-  --chat-primary: #6366f1;
-  --chat-primary-hover: #4f46e5;
-  --chat-secondary: #8b5cf6;
-  --chat-background: #ffffff;
-  --chat-surface: #f9fafb;
-  --chat-text: #111827;
-  --chat-text-secondary: #6b7280;
-  --chat-border: #e5e7eb;
-  --chat-own-message: #6366f1;
+  --chat-primary: #c2463a;
+  --chat-primary-hover: #a8392e;
+  --chat-secondary: #d4846a;
+  --chat-background: #faf8f6;
+  --chat-surface: #f3efec;
+  --chat-text: #2c241e;
+  --chat-text-secondary: #8a7e75;
+  --chat-border: #ddd5ce;
+  --chat-own-message: #c2463a;
   --chat-own-message-text: #ffffff;
-  --chat-other-message: #f3f4f6;
-  --chat-other-message-text: #111827;
-  --chat-error: #ef4444;
-  --chat-success: #10b981;
+  --chat-other-message: #f0ebe6;
+  --chat-other-message-text: #2c241e;
+  --chat-error: #d94a4a;
+  --chat-success: #3da06e;
+  --chat-accent: #3a9d9d;
+  --chat-accent-hover: #2e8585;
   --chat-font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
 }
 
 [data-chat-theme="dark"] {
-  --chat-primary: #818cf8;
-  --chat-primary-hover: #6366f1;
-  --chat-secondary: #a78bfa;
-  --chat-background: #1e1e2e;
-  --chat-surface: #2a2a3c;
-  --chat-text: #e2e8f0;
-  --chat-text-secondary: #94a3b8;
-  --chat-border: #3e3e5c;
-  --chat-own-message: #818cf8;
+  --chat-primary: #d6695a;
+  --chat-primary-hover: #bf5547;
+  --chat-secondary: #c48a75;
+  --chat-background: #1c1816;
+  --chat-surface: #2b2522;
+  --chat-text: #e8e0d8;
+  --chat-text-secondary: #a0968d;
+  --chat-border: #403933;
+  --chat-own-message: #d6695a;
   --chat-own-message-text: #ffffff;
-  --chat-other-message: #2a2a3c;
-  --chat-other-message-text: #e2e8f0;
-  --chat-error: #f87171;
-  --chat-success: #4ade80;
+  --chat-other-message: #2b2522;
+  --chat-other-message-text: #e8e0d8;
+  --chat-error: #f06060;
+  --chat-success: #4dbf84;
+  --chat-accent: #4da8a8;
+  --chat-accent-hover: #3d9090;
 }
 /* ── bdesk-* component classes ── */
 .bdesk-header {
@@ -257,6 +261,11 @@
 
 .bdesk-header-btn {
   @apply p-1 bg-transparent border-none cursor-pointer text-[var(--chat-text-secondary)] rounded hover:bg-[var(--chat-surface)] transition;
+}
+
+.bdesk-header-btn-label {
+  @apply text-[10px] font-semibold leading-none ml-0.5;
+  color: var(--chat-text-secondary);
 }
 
 .bdesk-header-btn:disabled {
@@ -319,9 +328,27 @@
 }
 
 .bdesk-message-bubble-other {
-  @apply rounded-2xl rounded-bl-sm bg-[var(--chat-other-message)] px-3 py-2 text-[var(--chat-other-message-text)];
+  @apply rounded-2xl rounded-bl-sm px-3 py-2;
+  background-color: var(--chat-other-message);
+  color: var(--chat-other-message-text);
   overflow-wrap: break-word;
   word-break: break-word;
+}
+
+.bdesk-message-bubble-other[data-chat-user-color="1"] {
+  background-color: color-mix(in srgb, var(--chat-primary) 7%, var(--chat-background));
+}
+
+.bdesk-message-bubble-other[data-chat-user-color="2"] {
+  background-color: color-mix(
+    in srgb,
+    var(--chat-accent, var(--chat-secondary)) 7%,
+    var(--chat-background)
+  );
+}
+
+.bdesk-message-bubble-other[data-chat-user-color="3"] {
+  background-color: color-mix(in srgb, var(--chat-secondary) 10%, var(--chat-background));
 }
 
 .bdesk-reactions {
@@ -503,7 +530,12 @@
 }
 
 .bdesk-floating-btn {
-  @apply flex items-center justify-center rounded-full bg-[var(--chat-primary)] shadow-lg transition hover:scale-105;
+  @apply flex items-center justify-center rounded-full bg-[var(--chat-accent,var(--chat-primary))] shadow-lg transition-transform hover:scale-105;
+  filter: brightness(1);
+}
+
+.bdesk-floating-btn:hover {
+  filter: brightness(0.9);
 }
 
 .bdesk-floating-btn-badge {
@@ -574,6 +606,51 @@
 
 .bdesk-attachment-remove {
   @apply bg-none border-none cursor-pointer text-[var(--chat-text-secondary)] p-0.5 leading-none hover:text-[var(--chat-error)];
+}
+
+.bdesk-toast-container {
+  @apply absolute bottom-0 left-0 right-0 flex flex-col gap-2 p-4 pointer-events-none;
+  z-index: 20;
+}
+
+.bdesk-toast {
+  @apply flex items-center gap-3 rounded-lg px-4 py-3 text-sm shadow-lg;
+  pointer-events: auto;
+  animation: bdesk-toast-slide-up 0.25s ease-out;
+}
+
+.bdesk-toast--error {
+  background-color: color-mix(in srgb, var(--chat-error) 14%, var(--chat-background));
+  border: 1px solid var(--chat-error);
+}
+
+.bdesk-toast--success {
+  background-color: color-mix(in srgb, var(--chat-success) 14%, var(--chat-background));
+  border: 1px solid var(--chat-success);
+}
+
+.bdesk-toast--info {
+  background-color: color-mix(in srgb, var(--chat-primary) 10%, var(--chat-background));
+  border: 1px solid var(--chat-primary);
+}
+
+.bdesk-toast-message {
+  @apply flex-1 text-sm leading-relaxed text-[var(--chat-text)];
+}
+
+.bdesk-toast-dismiss {
+  @apply shrink-0 bg-transparent border-none cursor-pointer text-[var(--chat-text-secondary)] p-1 rounded hover:text-[var(--chat-text)] transition;
+}
+
+@keyframes bdesk-toast-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .bdesk-push-prompt {
@@ -794,6 +871,11 @@
 
 .bdesk-widget {
   @apply flex flex-col h-full min-h-[300px] overflow-hidden bg-[var(--chat-background)];
+  position: relative;
+}
+
+.bdesk-widget-panel {
+  @apply flex flex-col flex-1 min-h-0 relative;
 }
 
 .bdesk-pre-entry {

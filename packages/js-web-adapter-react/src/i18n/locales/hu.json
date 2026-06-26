@@ -23,7 +23,7 @@
     "isTyping": "ír..."
   },
   "messageList": {
-    "emptyState": "Még nincsenek üzenetek. Indítsa el a beszélgetést!"
+    "emptyState": "Még nincsenek üzenetek. Küldd el az elsőt a kezdéshez."
   },
   "attachmentList": {
     "remove": "Eltávolítás",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Emoji keresése...",
     "noResults": "Nem található emoji"
+  },
+  "time": {
+    "justNow": "Épp most",
+    "minutesAgo": "{n}perce",
+    "hoursAgo": "{n}órája"
   }
 }

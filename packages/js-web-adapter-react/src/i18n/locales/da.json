@@ -23,7 +23,7 @@
     "isTyping": "skriver..."
   },
   "messageList": {
-    "emptyState": "Ingen beskeder endnu. Start samtalen!"
+    "emptyState": "Ingen beskeder endnu. Send den første for at komme i gang."
   },
   "attachmentList": {
     "remove": "Fjern",
@@ -65,5 +65,10 @@
   "emojiPicker": {
     "search": "Søg efter emoji...",
     "noResults": "Ingen emoji fundet"
+  },
+  "time": {
+    "justNow": "Lige nu",
+    "minutesAgo": "for {n}min siden",
+    "hoursAgo": "for {n}t siden"
   }
 }

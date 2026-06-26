@@ -9,5 +9,10 @@
   "emojiPicker": {
     "search": "Search emoji...",
     "noResults": "No emoji found"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{n}m ago",
+    "hoursAgo": "{n}h ago"
   }
 }

@@ -15,6 +15,7 @@ use BootDesk\ChatSDK\Core\Cards\TextStyle;
 use BootDesk\ChatSDK\Core\Channel;
 use BootDesk\ChatSDK\Core\ChannelInfo;
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Events\OutgoingReactionEvent;
 use BootDesk\ChatSDK\Core\FileUpload;
 use BootDesk\ChatSDK\Core\MemberJoinedChannelEvent;
 use BootDesk\ChatSDK\Core\Message;
@@ -32,6 +33,13 @@ use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\ReactionEvent;
 use BootDesk\ChatSDK\Core\SlashCommandEvent;
 use BootDesk\ChatSDK\Laravel\Contracts\ChatHandler;
+use BootDesk\ChatSDK\Web\Cards\WebAudioCard;
+use BootDesk\ChatSDK\Web\Cards\WebCarouselCard;
+use BootDesk\ChatSDK\Web\Cards\WebLocationCard;
+use BootDesk\ChatSDK\Web\Cards\WebPollCard;
+use BootDesk\ChatSDK\Web\Cards\WebProductCard;
+use BootDesk\ChatSDK\Web\Cards\WebVideoCard;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Override;
 
@@ -147,6 +155,115 @@ class ChatHandlers implements ChatHandler
             ));
         });
 
+        // Inline audio file attachment
+        $chat->onNewMessage('/^audiofile$/i', function (MessageContext $ctx): void {
+            $ctx->thread->addReaction($ctx->message->id, '👍');
+            $ctx->thread->post(new PostableMessage(
+                content: 'Here is an **audio file**:',
+                attachments: [
+                    new Attachment(
+                        type: 'audio',
+                        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+                        name: 'SoundHelix-Song-1.mp3',
+                    ),
+                ],
+            ));
+        });
+
+        // Inline video file attachment
+        $chat->onNewMessage('/^videofile$/i', function (MessageContext $ctx): void {
+            $ctx->thread->addReaction($ctx->message->id, '👍');
+            $ctx->thread->post(new PostableMessage(
+                content: 'Here is a **video file**:',
+                attachments: [
+                    new Attachment(
+                        type: 'video',
+                        url: 'https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4',
+                        name: 'big-buck-bunny.mp4',
+                    ),
+                ],
+            ));
+        });
+
+        // --- Web-native cards ---
+
+        $chat->onNewMessage('/^video$/i', function (MessageContext $ctx): void {
+            $ctx->thread->addReaction($ctx->message->id, '👍');
+            $ctx->thread->post(new WebVideoCard(
+                url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
+                title: 'Never Gonna Give You Up',
+                duration: 213,
+                platform: 'youtube',
+            ));
+        });
+
+        $chat->onNewMessage('/^audio$/i', function (MessageContext $ctx): void {
+            $ctx->thread->addReaction($ctx->message->id, '👍');
+            $ctx->thread->post(new WebAudioCard(
+                url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+                title: 'SoundHelix Demo',
+                duration: 542,
+            ));
+        });
+
+        $chat->onNewMessage('/^map$/i', function (MessageContext $ctx): void {
+            $ctx->thread->addReaction($ctx->message->id, '👍');
+            $ctx->thread->post(new WebLocationCard(
+                lat: 48.8566,
+                lng: 2.3522,
+                title: 'Paris',
+                address: 'Eiffel Tower, Champ de Mars',
+                zoom: 15,
+            ));
+        });
+
+        $chat->onNewMessage('/^product$/i', function (MessageContext $ctx): void {
+            $ctx->thread->addReaction($ctx->message->id, '👍');
+            $ctx->thread->post(new WebProductCard(
+                url: 'https://picsum.photos/seed/shoe/400/400',
+                title: 'Running Shoes',
+                price: 89.99,
+                currency: 'USD',
+                badge: '20% off',
+                actions: [
+                    ['label' => 'Buy Now', 'actionId' => 'buy', 'value' => 'sku-run-001'],
+                    ['label' => 'Details', 'actionId' => 'details', 'value' => 'sku-run-001'],
+                ],
+            ));
+        });
+
+        $chat->onNewMessage('/^poll$/i', function (MessageContext $ctx): void {
+            $ctx->thread->addReaction($ctx->message->id, '👍');
+            $ctx->thread->post(new WebPollCard(
+                question: 'What is your favorite PHP framework?',
+                options: [
+                    ['id' => 'laravel', 'label' => 'Laravel'],
+                    ['id' => 'symfony', 'label' => 'Symfony'],
+                    ['id' => 'other', 'label' => 'Other'],
+                ],
+                allowMultiple: false,
+            ));
+        });
+
+        $chat->onNewMessage('/^carousel$/i', function (MessageContext $ctx): void {
+            $ctx->thread->addReaction($ctx->message->id, '👍');
+            $ctx->thread->post(new WebCarouselCard(items: [
+                Card::make()
+                    ->header('Product A')
+                    ->text('$29.99 – Premium quality')
+                    ->actions([Button::primary('Buy', 'buy', ['sku' => 'a-001'])]),
+                Card::make()
+                    ->header('Product B')
+                    ->text('$49.99 – Best seller')
+                    ->actions([Button::primary('Buy', 'buy', ['sku' => 'b-002'])]),
+                Card::make()
+                    ->header('Product C')
+                    ->text('$19.99 – Budget friendly')
+                    ->actions([Button::primary('Buy', 'buy', ['sku' => 'c-003'])]),
+            ]));
+        });
+
         $chat->onNewMessage('/^bigtable$/i', function (MessageContext $ctx): void {
             $ctx->thread->addReaction($ctx->message->id, '👍');
             $rows = [];
@@ -225,7 +342,7 @@ class ChatHandlers implements ChatHandler
         // Prefer pattern-matched handlers above for cross-platform compatibility,
         // since some platforms don't support arbitrary slash command registration.
         $chat->onSlashCommand('/help', function (SlashCommandEvent $event): void {
-            $event->channel->post("Available commands:\n- `hello` — greeting\n- `order <item>` — place an order\n- `photo <query>` — picsum photo\n- `photocard` — card with imageUrl\n- `upload` — binary file upload\n- `status` — system status card\n- `bigtable` — large data table\n- `/subscribe` — start listening in this thread\n- `/unsubscribe` — stop");
+            $event->channel->post("Available commands:\n- `hello` — greeting\n- `order <item>` — place an order\n- `photo <query>` — picsum photo\n- `photocard` — card with imageUrl\n- `upload` — binary file upload\n- `audiofile` — inline audio player\n- `videofile` — inline video player\n- `status` — system status card\n- `video` — YouTube embed card\n- `audio` — audio player card\n- `map` — location card\n- `product` — product card with buy action\n- `poll` — interactive poll card\n- `carousel` — product carousel\n- `bigtable` — large data table\n- `/subscribe` — start listening in this thread\n- `/unsubscribe` — stop");
         });
 
         $chat->onSlashCommand('/subscribe', function (SlashCommandEvent $event): void {
@@ -271,12 +388,137 @@ class ChatHandlers implements ChatHandler
             ));
         });
 
+        // Web card actions
+        $chat->onAction('buy', function (ActionEvent $event): void {
+            $sku = $event->value ?? $event->data['sku'] ?? 'unknown';
+            $event->thread->post("🛒 Added **{$sku}** to your cart!");
+        });
+
+        $chat->onAction('details', function (ActionEvent $event): void {
+            $event->thread->post("📄 SKU `{$event->value}` — Full specs available on our website.");
+        });
+
+        $chat->onAction('poll_vote', function (ActionEvent $event): void {
+            $event->thread->post("🗳️ Vote recorded for **{$event->value}**! Thanks for participating.");
+        });
+
         // Reactions — respond to emoji reactions (adds or removes)
         $chat->onReaction(function (ReactionEvent $event): void {
             if ($event->added) {
                 $event->thread->post("Thanks for the {{emoji:$event->emoji}} reaction!");
             } else {
                 $event->thread->post("Too bad you removed the {{emoji:$event->emoji}} reaction!");
+            }
+        });
+
+        // Persist reactions to cache so history shows them
+        // Uses rawEmoji (unicode character) as the display emoji in cache
+        $chat->listen(ReactionEvent::class, function (ReactionEvent $event): void {
+            $cacheKey = "chat:messages:{$event->thread->id}";
+            $messages = Cache::get($cacheKey, []);
+            if ($messages === []) {
+                return;
+            }
+
+            $userId = $event->user->id;
+            $displayEmoji = $event->rawEmoji ?: $event->emoji;
+
+            foreach ($messages as $i => $msg) {
+                if (($msg['id'] ?? '') !== $event->messageId) {
+                    continue;
+                }
+
+                $reactions = $msg['reactions'] ?? [];
+
+                if ($event->added) {
+                    $found = false;
+                    foreach ($reactions as $j => $r) {
+                        if ($r['emoji'] === $displayEmoji) {
+                            if (! in_array($userId, $r['users'], true)) {
+                                $reactions[$j]['users'][] = $userId;
+                                $reactions[$j]['count'] = count($reactions[$j]['users']);
+                            }
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (! $found) {
+                        $reactions[] = [
+                            'emoji' => $displayEmoji,
+                            'count' => 1,
+                            'users' => [$userId],
+                        ];
+                    }
+                } else {
+                    foreach ($reactions as $j => $r) {
+                        if ($r['emoji'] === $displayEmoji) {
+                            $reactions[$j]['users'] = array_values(array_filter(
+                                $r['users'],
+                                fn (string $u): bool => $u !== $userId,
+                            ));
+                            $reactions[$j]['count'] = count($reactions[$j]['users']);
+                            if ($reactions[$j]['count'] === 0) {
+                                array_splice($reactions, $j, 1);
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                $messages[$i]['reactions'] = $reactions;
+                Cache::put($cacheKey, $messages, 3600);
+                break;
+            }
+        });
+
+        // Persist bot's outgoing reactions to cache (e.g., bot reacts to user's message)
+        $chat->listen(OutgoingReactionEvent::class, function (OutgoingReactionEvent $event): void {
+            $cacheKey = "chat:messages:{$event->threadId}";
+            $messages = Cache::get($cacheKey, []);
+            if ($messages === []) {
+                return;
+            }
+
+            $displayEmoji = $event->rawEmoji ?: $event->emoji;
+
+            foreach ($messages as $i => $msg) {
+                if (($msg['id'] ?? '') !== $event->messageId) {
+                    continue;
+                }
+
+                $reactions = $msg['reactions'] ?? [];
+
+                if ($event->added) {
+                    $found = false;
+                    foreach ($reactions as $j => $r) {
+                        if ($r['emoji'] === $displayEmoji) {
+                            $found = true;
+                            $reactions[$j]['count']++;
+                            break;
+                        }
+                    }
+                    if (! $found) {
+                        $reactions[] = [
+                            'emoji' => $displayEmoji,
+                            'count' => 1,
+                            'users' => [],
+                        ];
+                    }
+                } else {
+                    foreach ($reactions as $j => $r) {
+                        if ($r['emoji'] === $displayEmoji) {
+                            $reactions[$j]['count']--;
+                            if ($reactions[$j]['count'] <= 0) {
+                                array_splice($reactions, $j, 1);
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                $messages[$i]['reactions'] = $reactions;
+                Cache::put($cacheKey, $messages, 3600);
+                break;
             }
         });
 

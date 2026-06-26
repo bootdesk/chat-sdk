@@ -17,9 +17,18 @@ export { CardRenderer } from "./cards/CardRenderer";
 export { DefaultCard } from "./cards/DefaultCard";
 export { ImageCardComponent } from "./cards/ImageCard";
 export { FileCardComponent } from "./cards/FileCard";
+export { VideoCardComponent } from "./cards/VideoCard";
+export { AudioCardComponent } from "./cards/AudioCard";
+export { LocationCardComponent } from "./cards/LocationCard";
+export { ProductCardComponent } from "./cards/ProductCard";
+export { PollCardComponent } from "./cards/PollCard";
+export { CarouselCardComponent } from "./cards/CarouselCard";
 export { CardProvider, useCardRegistry } from "./cards/CardContext";
 export { ChatProvider, useChatContext } from "./providers/ChatProvider";
 export type { CardRendererProps, CardRenderer as CardRendererType } from "./cards/types";
+
+export { MapConfigProvider, useMapConfig } from "./providers/MapConfigContext";
+export type { MapConfig } from "./providers/MapConfigContext";
 
 export { useChatClient } from "./hooks/useChatClient";
 export { useMessages } from "./hooks/useMessages";
@@ -57,7 +66,19 @@ export type {
 } from "@bootdesk/js-web-adapter-core";
 export { PushManager, createPushSubscriptionHandlers } from "@bootdesk/js-web-adapter-core";
 
-export type { Message, User, Card, PHPCard, CustomCard } from "@bootdesk/js-web-adapter-core";
+export type {
+  Message,
+  User,
+  Card,
+  PHPCard,
+  CustomCard,
+  VideoCard,
+  AudioCard,
+  LocationCard,
+  ProductCard,
+  PollCard,
+  CarouselCard,
+} from "@bootdesk/js-web-adapter-core";
 
 export {
   WebChatClient,

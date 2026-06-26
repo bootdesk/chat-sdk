@@ -17,9 +17,9 @@ npm run typecheck       # tsc --noEmit
 
 - `src/components/` — `ChatWidget`, `Header`, `MessageList`, `MessageContent`, `InputArea`, `TypingIndicator`, `FloatingButton`, `Dropzone`, `AttachmentList`, `PushPermissionPrompt`, `PushToggle`, `ErrorBoundary`
 - `src/hooks/` — `useBridge`, `useChatClient`, `useMessages`, `useStreaming`, `useTyping`, `useAttachmentUpload`, `usePushNotifications`
-- `src/cards/` — `CardProvider`/`CardContext`, `CardRenderer`, `DefaultCard`, `ImageCard`, `FileCard`
+- `src/cards/` — `CardProvider`/`CardContext`, `CardRenderer`, `DefaultCard`, `ImageCard`, `FileCard`, `VideoCard`, `AudioCard`, `LocationCard`, `ProductCard`, `PollCard`, `CarouselCard`
 - `src/i18n/` — `LocaleProvider`, `mergeLocale`, 33 locale files (en, en-US, en-GB, pt, pt-BR, pt-PT, es, fr, de, it, nl, ...)
-- `src/providers/` — `ChatProvider` (combines CardProvider + ChatContext)
+- `src/providers/` — `ChatProvider` (combines CardProvider + ChatContext), `MapConfigProvider`
 - `src/utils/` — `markdown` (marked + DOMPurify), `formatSize`, `formatTimestamp` (relative time)
 - `src/styles/` — `tailwind.css` (Tailwind component classes; safe-area & mobile styles injected at runtime)
 
@@ -28,7 +28,7 @@ npm run typecheck       # tsc --noEmit
 - `ChatWidget` — main component (floating/fullscreen/embedded modes); supports `preEntry` prop for custom pre-chat forms
 - `ChatProvider` — wraps CardProvider + ChatContext
 - `Header`, `MessageList`, `InputArea`, `TypingIndicator`, `FloatingButton`
-- `CardRenderer`, `CardProvider`, `DefaultCard`
+- `CardRenderer`, `CardProvider`, `DefaultCard`, `ImageCard`, `FileCard`, `VideoCard`, `AudioCard`, `LocationCard`, `ProductCard`, `PollCard`, `CarouselCard`, `MapConfigProvider`
 - `LocaleProvider`, `useLocale`
 - `useMessages`, `useTyping`, `useChatClient` (re-exports from core)
 
@@ -43,7 +43,7 @@ npm run typecheck       # tsc --noEmit
 ## testing
 
 - Vitest, jsdom env, `@testing-library/react` + `@testing-library/jest-dom`
-- 18 test files, 100+ tests covering components, hooks, cards, i18n, utils
+- 26 test files, 165+ tests covering components, hooks, cards, i18n, utils
 - Run: `npm test`
 
 ## conventions

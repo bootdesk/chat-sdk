@@ -20,6 +20,7 @@ class StoreReceivedMessage implements ReceivingMiddleware
         $messages[] = [
             'id' => $message->id,
             'text' => $message->text,
+            'card' => null,
             'author' => [
                 'id' => $message->author->id,
                 'name' => $message->author->name ?? $message->author->id,
@@ -27,8 +28,10 @@ class StoreReceivedMessage implements ReceivingMiddleware
             'timestamp' => (int) (microtime(true) * 1000),
             'reactions' => [],
             'attachments' => array_map(fn (Attachment $a): array => [
+                'id' => '',
                 'url' => $a->url ?? '',
                 'name' => $a->name ?? '',
+                'type' => $a->type ?? '',
                 'mime_type' => $a->mimeType ?? '',
             ], $message->attachments),
         ];

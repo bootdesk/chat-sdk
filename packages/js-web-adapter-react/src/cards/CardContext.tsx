@@ -3,6 +3,12 @@ import { CardRenderer, CardRendererMap } from "./types";
 import { DefaultCard } from "./DefaultCard";
 import { ImageCardComponent } from "./ImageCard";
 import { FileCardComponent } from "./FileCard";
+import { VideoCardComponent } from "./VideoCard";
+import { AudioCardComponent } from "./AudioCard";
+import { LocationCardComponent } from "./LocationCard";
+import { ProductCardComponent } from "./ProductCard";
+import { PollCardComponent } from "./PollCard";
+import { CarouselCardComponent } from "./CarouselCard";
 
 interface CardContextValue {
   renderers: CardRendererMap;
@@ -23,6 +29,12 @@ export function CardProvider({ children, renderers }: CardProviderProps): React.
       ["card", DefaultCard],
       ["image", ImageCardComponent],
       ["file", FileCardComponent],
+      ["video", VideoCardComponent],
+      ["audio", AudioCardComponent],
+      ["location", LocationCardComponent],
+      ["product", ProductCardComponent],
+      ["poll", PollCardComponent],
+      ["carousel", CarouselCardComponent],
     ]);
 
     if (renderers) {

@@ -287,6 +287,84 @@ const { pendingAttachments, upload, removePending, progress } =
 
 Cards are rich interactive elements sent from your backend. The widget renders them automatically.
 
+### Web Card Types
+
+Six built-in web-native card types are available. Sent from your backend, rendered automatically:
+
+| Type       | PHP Class         | Description                                               |
+| ---------- | ----------------- | --------------------------------------------------------- |
+| `video`    | `WebVideoCard`    | Video embed (YouTube/Vimeo auto-detect, generic fallback) |
+| `audio`    | `WebAudioCard`    | Audio player                                              |
+| `location` | `WebLocationCard` | Map with OpenStreetMap static tile                        |
+| `product`  | `WebProductCard`  | Product with image, price, badge, action buttons          |
+| `poll`     | `WebPollCard`     | Interactive poll with results bar                         |
+| `carousel` | `WebCarouselCard` | Horizontal scroll of card items                           |
+
+PHP usage (via `Thread::post()` or `Chat::reply()`):
+
+```php
+use BootDesk\ChatSDK\Web\Cards\WebVideoCard;
+use BootDesk\ChatSDK\Web\Cards\WebPollCard;
+use BootDesk\ChatSDK\Core\PostableMessage;
+
+// Video card
+$chat->reply(PostableMessage::card(
+    new WebVideoCard(
+        url: 'https://youtube.com/watch?v=abc123',
+        title: 'Tutorial',
+        thumbnail: 'https://img.youtube.com/vi/abc123/maxresdefault.jpg',
+        duration: 300,
+        platform: 'youtube', // 'youtube', 'vimeo', or null for generic <video>
+    ),
+));
+
+// Poll card
+$poll = new WebPollCard(
+    question: 'Which framework?',
+    options: [
+        ['id' => 'laravel', 'label' => 'Laravel'],
+        ['id' => 'symfony', 'label' => 'Symfony'],
+    ],
+    allowMultiple: false,
+    results: [ // optional — show bars immediately
+        ['optionId' => 'laravel', 'count' => 42],
+        ['optionId' => 'symfony', 'count' => 18],
+    ],
+);
+$chat->reply(PostableMessage::card($poll));
+
+// Carousel (items are regular Cards)
+use BootDesk\ChatSDK\Core\Cards\Card;
+use BootDesk\ChatSDK\Core\Cards\Button;
+use BootDesk\ChatSDK\Web\Cards\WebCarouselCard;
+
+$carousel = new WebCarouselCard(items: [
+    Card::make()
+        ->header('Product A')
+        ->text('$29.99')
+        ->actions([Button::primary('Buy', 'buy_a')]),
+    Card::make()
+        ->header('Product B')
+        ->text('$49.99')
+        ->actions([Button::primary('Buy', 'buy_b')]),
+]);
+$chat->reply(PostableMessage::card($carousel));
+```
+
+Poll votes and product actions trigger `ActionEvent`. Listen in your bot:
+
+```php
+use BootDesk\ChatSDK\Core\ActionEvent;
+
+$chat->listen(ActionEvent::class, function (ActionEvent $event) {
+    match ($event->actionId) {
+        'poll_vote' => /* handle vote for $event->value */,
+        'buy'       => /* process purchase for $event->value */,
+        default     => null,
+    };
+});
+```
+
 ### Custom Card Renderers
 
 Register custom renderers via `CardProvider`:
@@ -502,6 +580,47 @@ All classes are defined in the widget's CSS via Tailwind `@apply`. They resolve 
 |                         | `bdesk-file-card-name`                                            | File name                             |
 |                         | `bdesk-file-card-size`                                            | File size                             |
 |                         | `bdesk-file-card-download`                                        | Download link                         |
+|                         | `bdesk-video-card`                                                | Video card wrapper                    |
+|                         | `bdesk-video-card-embed`                                          | Video embed container                 |
+|                         | `bdesk-video-card-iframe`                                         | Embed iframe                          |
+|                         | `bdesk-video-card-player`                                         | Native `<video>` element              |
+|                         | `bdesk-video-card-title`                                          | Video title                           |
+|                         | `bdesk-video-card-duration`                                       | Duration text                         |
+|                         | `bdesk-audio-card`                                                | Audio card wrapper                    |
+|                         | `bdesk-audio-card-title`                                          | Audio title                           |
+|                         | `bdesk-audio-card-player`                                         | Native `<audio>` element              |
+|                         | `bdesk-audio-card-duration`                                       | Duration text                         |
+|                         | `bdesk-location-card`                                             | Location card wrapper                 |
+|                         | `bdesk-location-card-map`                                         | Map image link                        |
+|                         | `bdesk-location-card-img`                                         | Map tile image                        |
+|                         | `bdesk-location-card-info`                                        | Info container                        |
+|                         | `bdesk-location-card-title`                                       | Location title                        |
+|                         | `bdesk-location-card-address`                                     | Address text                          |
+|                         | `bdesk-location-card-directions`                                  | "Open in Maps" link                   |
+|                         | `bdesk-product-card`                                              | Product card wrapper                  |
+|                         | `bdesk-product-card-img`                                          | Product image                         |
+|                         | `bdesk-product-card-body`                                         | Product info body                     |
+|                         | `bdesk-product-card-header`                                       | Title + price row                     |
+|                         | `bdesk-product-card-title`                                        | Product name                          |
+|                         | `bdesk-product-card-price`                                        | Price text                            |
+|                         | `bdesk-product-card-badge`                                        | Badge label                           |
+|                         | `bdesk-product-card-actions`                                      | Action button row                     |
+|                         | `bdesk-product-card-btn`                                          | Action button                         |
+|                         | `bdesk-poll-card`                                                 | Poll card wrapper                     |
+|                         | `bdesk-poll-card-question`                                        | Question text                         |
+|                         | `bdesk-poll-card-options`                                         | Options container                     |
+|                         | `bdesk-poll-card-option`                                          | Single option button                  |
+|                         | `bdesk-poll-card-option--selected`                                | Selected option                       |
+|                         | `bdesk-poll-card-option--voted`                                   | Voted option                          |
+|                         | `bdesk-poll-card-option-label`                                    | Option label                          |
+|                         | `bdesk-poll-card-option-bar-wrap`                                 | Progress bar wrapper                  |
+|                         | `bdesk-poll-card-option-bar`                                      | Progress bar fill                     |
+|                         | `bdesk-poll-card-option-pct`                                      | Percentage text                       |
+|                         | `bdesk-poll-card-vote-btn`                                        | Vote submit button                    |
+|                         | `bdesk-poll-card-total`                                           | Total votes count                     |
+|                         | `bdesk-carousel-card`                                             | Carousel card wrapper                 |
+|                         | `bdesk-carousel-card-track`                                       | Horizontal scroll track               |
+|                         | `bdesk-carousel-card-item`                                        | Individual slide                      |
 | **Message Attachments** | `bdesk-img-attach`                                                | Inline image                          |
 |                         | `bdesk-file-attach`                                               | Inline file link                      |
 |                         | `bdesk-file-icon`                                                 | File link icon                        |

@@ -459,6 +459,30 @@
   @apply shrink-0;
 }
 
+.bdesk-audio-attach {
+  @apply flex flex-col gap-1;
+}
+
+.bdesk-audio-attach-player {
+  @apply w-full h-10;
+}
+
+.bdesk-audio-attach-name {
+  @apply text-xs text-[var(--chat-text-secondary)];
+}
+
+.bdesk-video-attach {
+  @apply flex flex-col gap-1;
+}
+
+.bdesk-video-attach-player {
+  @apply w-full max-h-60 rounded object-cover;
+}
+
+.bdesk-video-attach-name {
+  @apply text-xs text-[var(--chat-text-secondary)];
+}
+
 .bdesk-input-area {
   @apply flex flex-col gap-2 border-t border-[var(--chat-border)] bg-[var(--chat-surface)] p-4;
 }
@@ -862,6 +886,179 @@
 
 .bdesk-file-card-download {
   @apply px-3 py-2 bg-[var(--chat-primary)] text-white rounded text-sm font-medium no-underline hover:opacity-90;
+}
+
+.bdesk-video-card {
+  @apply rounded-lg overflow-hidden max-w-xs bg-[var(--chat-surface)];
+}
+
+.bdesk-video-card-embed {
+  @apply relative w-full aspect-video;
+}
+
+.bdesk-video-card-iframe {
+  @apply absolute inset-0 w-full h-full border-0;
+}
+
+.bdesk-video-card-player {
+  @apply block w-full max-h-64;
+}
+
+.bdesk-video-card-title {
+  @apply px-3 py-2 text-sm font-medium;
+}
+
+.bdesk-video-card-duration {
+  @apply px-3 pb-2 text-xs text-[var(--chat-text-secondary)];
+}
+
+.bdesk-audio-card {
+  @apply p-3 rounded-lg max-w-xs bg-[var(--chat-surface)];
+}
+
+.bdesk-audio-card-title {
+  @apply text-sm font-medium mb-2;
+}
+
+.bdesk-audio-card-player {
+  @apply w-full h-10;
+}
+
+.bdesk-audio-card-duration {
+  @apply text-xs text-[var(--chat-text-secondary)] mt-1;
+}
+
+.bdesk-location-card {
+  @apply rounded-lg overflow-hidden max-w-xs bg-[var(--chat-surface)];
+}
+
+.bdesk-location-card-map {
+  @apply block;
+}
+
+.bdesk-location-card-img {
+  @apply block w-full h-auto;
+}
+
+.bdesk-location-card-info {
+  @apply p-3;
+}
+
+.bdesk-location-card-title {
+  @apply text-sm font-medium;
+}
+
+.bdesk-location-card-address {
+  @apply text-xs text-[var(--chat-text-secondary)] mt-1;
+}
+
+.bdesk-location-card-directions {
+  @apply inline-block mt-2 text-xs text-[var(--chat-primary)] no-underline hover:underline;
+}
+
+.bdesk-product-card {
+  @apply rounded-lg overflow-hidden max-w-xs bg-[var(--chat-surface)];
+}
+
+.bdesk-product-card-img {
+  @apply block w-full h-auto;
+}
+
+.bdesk-product-card-body {
+  @apply p-3;
+}
+
+.bdesk-product-card-header {
+  @apply flex items-start justify-between gap-2;
+}
+
+.bdesk-product-card-title {
+  @apply text-sm font-medium flex-1;
+}
+
+.bdesk-product-card-price {
+  @apply text-sm font-semibold text-[var(--chat-primary)] whitespace-nowrap;
+}
+
+.bdesk-product-card-badge {
+  @apply inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded bg-[var(--chat-primary)] text-white;
+}
+
+.bdesk-product-card-actions {
+  @apply flex flex-wrap gap-2 mt-3;
+}
+
+.bdesk-product-card-btn {
+  @apply px-3 py-1.5 text-xs font-medium rounded border border-[var(--chat-primary)] text-[var(--chat-primary)] bg-transparent cursor-pointer hover:bg-[var(--chat-primary)] hover:text-white;
+}
+
+.bdesk-poll-card {
+  @apply p-3 rounded-lg max-w-xs bg-[var(--chat-surface)];
+}
+
+.bdesk-poll-card-question {
+  @apply text-sm font-medium mb-3;
+}
+
+.bdesk-poll-card-options {
+  @apply flex flex-col gap-2;
+}
+
+.bdesk-poll-card-option {
+  @apply flex items-center gap-2 px-3 py-2 rounded border border-[var(--chat-border)] text-sm text-left cursor-pointer bg-[var(--chat-background)] hover:border-[var(--chat-primary)] transition-colors;
+}
+
+.bdesk-poll-card-option--selected {
+  @apply border-[var(--chat-primary)];
+  background-color: color-mix(in srgb, var(--chat-primary) 7%, transparent);
+}
+
+.bdesk-poll-card-option--voted {
+  @apply cursor-default;
+}
+
+.bdesk-poll-card-option-label {
+  @apply flex-1;
+}
+
+.bdesk-poll-card-option-bar-wrap {
+  @apply relative flex items-center gap-1;
+}
+
+.bdesk-poll-card-option-bar {
+  @apply absolute left-0 top-0 h-full rounded;
+  background-color: color-mix(in srgb, var(--chat-primary) 10%, transparent);
+}
+
+.bdesk-poll-card-option-pct {
+  @apply text-xs font-medium text-[var(--chat-text-secondary)] min-w-[2.5rem] text-right;
+}
+
+.bdesk-poll-card-vote-btn {
+  @apply w-full mt-3 px-4 py-2 text-sm font-medium rounded bg-[var(--chat-primary)] text-white border-0 cursor-pointer hover:opacity-90;
+}
+
+.bdesk-poll-card-total {
+  @apply text-xs text-[var(--chat-text-secondary)] mt-2 text-center;
+}
+
+.bdesk-carousel-card {
+  @apply min-w-0;
+}
+
+.bdesk-carousel-card-track {
+  @apply flex gap-3 overflow-x-auto pb-2 snap-x snap-proximity cursor-grab;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.bdesk-carousel-card-track::-webkit-scrollbar {
+  display: none;
+}
+
+.bdesk-carousel-card-item {
+  @apply flex-shrink-0 w-72 snap-start;
 }
 
 .bdesk-widget {

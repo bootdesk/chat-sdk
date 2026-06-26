@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from "react";
 
 import { useBridge, useMessages, useTyping, usePushNotifications } from "../hooks";
 import { LocaleProvider, mergeLocale, useLocale } from "../i18n";
+import { MapConfigProvider } from "../providers/MapConfigContext";
 import { FloatingButton } from "./FloatingButton";
 import { Header } from "./Header";
 import { MessageList } from "./MessageList";
@@ -50,6 +51,7 @@ export function ChatWidget({
   preEntry,
   onChatStart,
   pushConfig,
+  mapConfig,
 }: ChatWidgetProps): React.JSX.Element {
   const {
     config: iframeConfig,
@@ -485,5 +487,9 @@ export function ChatWidget({
     </>
   );
 
-  return <LocaleProvider locale={localeConfig}>{widget}</LocaleProvider>;
+  return (
+    <LocaleProvider locale={localeConfig}>
+      <MapConfigProvider config={mapConfig}>{widget}</MapConfigProvider>
+    </LocaleProvider>
+  );
 }

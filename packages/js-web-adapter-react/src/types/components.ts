@@ -1,6 +1,7 @@
 import type { PushConfig, ReconfigureConfig } from "@bootdesk/js-web-adapter-core";
 import type { UploadConfig } from "./AttachmentUpload";
 import type { LocaleConfig } from "../i18n";
+import type { MapConfig } from "../providers/MapConfigContext";
 
 export type DisplayMode = "floating" | "fullscreen" | "embedded";
 
@@ -61,4 +62,5 @@ export interface ChatWidgetProps {
   };
   preEntry?: PreEntryConfig;
   onChatStart?: (config?: ReconfigureConfig) => void;
+  mapConfig?: MapConfig;
 }

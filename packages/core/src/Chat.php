@@ -460,6 +460,26 @@ class Chat
     public function openDM(string|Author $user): Thread
     {
         $userId = $user instanceof Author ? $user->id : $user;
+
+        // Support "adapter:userId" format — explicit adapter prefix
+        if (str_contains($userId, ':')) {
+            $parts = explode(':', $userId, 2);
+            $adapter = $this->resolveAdapter($parts[0]);
+            if ($adapter instanceof Adapter) {
+                $userId = $parts[1];
+
+                $threadId = $adapter->openDM($userId);
+                if ($threadId === null) {
+                    throw new \RuntimeException(sprintf(
+                        'Adapter "%s" does not support opening DMs',
+                        $adapter->getName(),
+                    ));
+                }
+
+                return new Thread($threadId, $this, $adapter, $this->state);
+            }
+        }
+
         $adapter = $this->inferAdapterFromUserId($userId);
 
         $threadId = $adapter->openDM($userId);

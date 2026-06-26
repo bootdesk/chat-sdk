@@ -656,6 +656,24 @@ class ChatTest extends TestCase
         $this->assertSame('mock:DM:U1234567', $thread->id);
     }
 
+    public function test_open_dm_with_adapter_prefix(): void
+    {
+        $adapter = new MockAdapter;
+        $chat = new Chat($this->state, ['slack' => $adapter]);
+        $thread = $chat->openDM('slack:U1234567');
+        $this->assertInstanceOf(Thread::class, $thread);
+        $this->assertSame('mock:DM:U1234567', $thread->id);
+    }
+
+    public function test_open_dm_with_adapter_prefix_uses_full_after_colon(): void
+    {
+        $adapter = new MockAdapter;
+        $chat = new Chat($this->state, ['slack' => $adapter]);
+        // userId after colon may contain colons itself
+        $thread = $chat->openDM('slack:U123:extra');
+        $this->assertSame('mock:DM:U123:extra', $thread->id);
+    }
+
     public function test_open_dm_throws_for_unknown_user_id_format(): void
     {
         $this->expectException(\RuntimeException::class);

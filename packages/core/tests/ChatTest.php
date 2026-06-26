@@ -681,14 +681,25 @@ class ChatTest extends TestCase
         $this->chat->openDM('not-a-valid-user-id');
     }
 
-    public function test_open_dm_throws_when_adapter_returns_null(): void
+    public function test_open_dm_falls_through_when_adapter_returns_null(): void
     {
         $adapter = $this->createMock(Adapter::class);
         $adapter->method('openDM')->willReturn(null);
         $chat = new Chat($this->state, ['slack' => $adapter]);
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('does not support opening DMs');
+        $this->expectExceptionMessage('No matching adapter supports it');
         $chat->openDM('U1234567');
+    }
+
+    public function test_open_dm_adapter_prefix_throws_when_adapter_returns_null(): void
+    {
+        $adapter = $this->createMock(Adapter::class);
+        $adapter->method('getName')->willReturn('slack');
+        $adapter->method('openDM')->willReturn(null);
+        $chat = new Chat($this->state, ['slack' => $adapter]);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('does not support opening DMs');
+        $chat->openDM('slack:U1234567');
     }
 
     public function test_get_user_convenience(): void

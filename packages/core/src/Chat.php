@@ -466,9 +466,7 @@ class Chat
             $parts = explode(':', $userId, 2);
             $adapter = $this->resolveAdapter($parts[0]);
             if ($adapter instanceof Adapter) {
-                $userId = $parts[1];
-
-                $threadId = $adapter->openDM($userId);
+                $threadId = $adapter->openDM($parts[1]);
                 if ($threadId === null) {
                     throw new \RuntimeException(sprintf(
                         'Adapter "%s" does not support opening DMs',
@@ -480,80 +478,70 @@ class Chat
             }
         }
 
-        $adapter = $this->inferAdapterFromUserId($userId);
+        $candidates = $this->inferAdapterFromUserId($userId);
 
-        $threadId = $adapter->openDM($userId);
-
-        if ($threadId === null) {
+        if ($candidates === []) {
             throw new \RuntimeException(sprintf(
-                'Adapter "%s" does not support opening DMs',
-                $adapter->getName(),
+                'Cannot infer adapter from userId "%s". Expected: Slack ("U..."), Teams ("29:..."), Google Chat ("users/..."), Linear (UUID), or Discord/Telegram/GitHub (numeric).',
+                $userId,
             ));
         }
 
-        return new Thread($threadId, $this, $adapter, $this->state);
-    }
-
-    /**
-     * Infer which adapter to use based on the userId format.
-     */
-    private function inferAdapterFromUserId(string $userId): Adapter
-    {
-        // GChat: "users/..."
-        if (str_starts_with($userId, 'users/') && isset($this->adapters['gchat'])) {
-            return $this->adapters['gchat'];
-        }
-
-        // Teams: "29:..."
-        if (str_starts_with($userId, '29:') && isset($this->adapters['teams'])) {
-            return $this->adapters['teams'];
-        }
-
-        // Linear: UUID v4
-        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $userId)
-            && isset($this->adapters['linear'])
-        ) {
-            return $this->adapters['linear'];
-        }
-
-        // Slack: "U..." or "W..." (uppercase, alphanumeric, 7+ chars)
-        if (preg_match('/^[UW][A-Z0-9]{6,}$/', $userId) && isset($this->adapters['slack'])) {
-            return $this->adapters['slack'];
-        }
-
-        // Numeric IDs — shared by Discord (17-19 digit snowflakes), Telegram
-        // (positive integer), and GitHub (numeric account_id).
-        // Disambiguate by which adapters the caller registered.
-        if (preg_match('/^\d+$/', $userId)) {
-            $candidates = [];
-
-            if (preg_match('/^\d{17,19}$/', $userId) && isset($this->adapters['discord'])) {
-                $candidates[] = 'discord';
-            }
-            if (isset($this->adapters['telegram'])) {
-                $candidates[] = 'telegram';
-            }
-            if (isset($this->adapters['github'])) {
-                $candidates[] = 'github';
+        foreach ($candidates as $adapterName) {
+            $adapter = $this->resolveAdapter($adapterName);
+            if (! $adapter instanceof Adapter) {
+                continue;
             }
 
-            if (count($candidates) === 1) {
-                return $this->adapters[$candidates[0]];
-            }
-
-            if (count($candidates) > 1) {
-                throw new \RuntimeException(sprintf(
-                    'Numeric userId "%s" is ambiguous between adapters: %s. Call the platform\'s adapter directly.',
-                    $userId,
-                    implode(', ', $candidates),
-                ));
+            $threadId = $adapter->openDM($userId);
+            if ($threadId !== null) {
+                return new Thread($threadId, $this, $adapter, $this->state);
             }
         }
 
         throw new \RuntimeException(sprintf(
-            'Cannot infer adapter from userId "%s". Expected: Slack ("U..."), Teams ("29:..."), Google Chat ("users/..."), Linear (UUID), or Discord/Telegram/GitHub (numeric).',
+            'Cannot open DM for userId "%s". No matching adapter supports it.',
             $userId,
         ));
+    }
+
+    /**
+     * Infer candidate adapter names based on the userId format.
+     *
+     * @return string[]
+     */
+    private function inferAdapterFromUserId(string $userId): array
+    {
+        if (str_starts_with($userId, 'users/')) {
+            return ['gchat'];
+        }
+
+        if (str_starts_with($userId, '29:')) {
+            return ['teams'];
+        }
+
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $userId)) {
+            return ['linear'];
+        }
+
+        if (preg_match('/^[UW][A-Z0-9]{6,}$/', $userId)) {
+            return ['slack'];
+        }
+
+        if (preg_match('/^\d+$/', $userId)) {
+            $candidates = [];
+
+            if (preg_match('/^\d{17,19}$/', $userId)) {
+                $candidates[] = 'discord';
+            }
+
+            $candidates[] = 'telegram';
+            $candidates[] = 'github';
+
+            return $candidates;
+        }
+
+        return [];
     }
 
     public function getUser(string $adapterName, string $userId): ?UserInfo

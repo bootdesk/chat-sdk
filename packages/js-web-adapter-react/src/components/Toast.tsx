@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React from "react";
 import { cn } from "../lib/cn";
 
 export type ToastType = "error" | "success" | "info";

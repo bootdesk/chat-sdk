@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useMemo, useState } from "react";
 import { Message } from "@bootdesk/js-web-adapter-core";
 import { MessageContent } from "./MessageContent";
 import { useLocale } from "../i18n/LocaleProvider";
-import { formatTimestamp, type TimeStrings } from "../utils/formatTimestamp";
+import { formatTimestamp } from "../utils/formatTimestamp";
 import { cn } from "../lib/cn";
 import { EmojiPicker } from "./EmojiPicker";
 

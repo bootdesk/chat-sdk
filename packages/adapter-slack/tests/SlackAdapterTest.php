@@ -151,7 +151,7 @@ class SlackAdapterTest extends TestCase
 
     public function test_channel_id_from_thread(): void
     {
-        $this->assertSame('C123', $this->adapter->channelIdFromThreadId('slack:C123:1234.5678'));
+        $this->assertSame('slack:C123', $this->adapter->channelIdFromThreadId('slack:C123:1234.5678'));
     }
 
     public function test_url_verification_challenge(): void
@@ -538,9 +538,9 @@ class SlackAdapterTest extends TestCase
 
     public function test_fetch_channel_info(): void
     {
-        $info = $this->adapter->fetchChannelInfo('C123');
+        $info = $this->adapter->fetchChannelInfo('slack:C123');
 
-        $this->assertSame('C123', $info->id);
+        $this->assertSame('slack:C123', $info->id);
         $this->assertSame('general', $info->name);
         $this->assertSame('Team chat', $info->topic);
         $this->assertFalse($info->isPrivate);

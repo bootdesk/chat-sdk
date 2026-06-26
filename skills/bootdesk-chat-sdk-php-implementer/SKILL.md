@@ -860,8 +860,8 @@ class User extends Authenticatable
 {
     public function routeNotificationForChat(): ?ChatRoute
     {
-        return ChatRoute::dm('slack', $this->slack_id);
-        // or ChatRoute::channel('slack', 'C123');
+        return ChatRoute::dm('slack:'.$this->slack_id);
+        // or ChatRoute::channel('slack:C123');
         // or ChatRoute::thread('slack:C123:123456');
     }
 }

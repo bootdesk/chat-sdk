@@ -157,7 +157,7 @@ public function decodeThreadId(string $threadId): mixed
 public function channelIdFromThreadId(string $threadId): string
 {
     $parts = explode(':', $threadId, 3);
-    return $parts[1] ?? $threadId;
+    return $parts[0].':'.$parts[1];
 }
 ```
 

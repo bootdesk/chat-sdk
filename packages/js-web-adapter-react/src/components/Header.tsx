@@ -206,9 +206,6 @@ export function Header({
                 <line x1="12" y1="17" x2="12" y2="21" />
               </svg>
             )}
-            <span className="bdesk-header-btn-label">
-              {theme === "light" ? "L" : theme === "dark" ? "D" : "A"}
-            </span>
           </button>
         )}
 

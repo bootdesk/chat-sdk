@@ -607,12 +607,15 @@ No `getInfo()` / `getMembers()` / `send()` — those don't exist.
 
 ## DM (Direct Message)
 
+Adapter is inferred from userId format. Returns `Thread` directly.
+
 ```php
-$threadId = $chat->openDM('slack', 'U12345');           // ?string
-if ($threadId !== null) {
-    $chat->thread($threadId)->post('Hello in DM!');
-}
+$thread = $chat->openDM('U1234567');           // inferred as Slack
+$thread = $chat->openDM('slack:U12345');       // explicit adapter prefix
+$thread->post('Hello in DM!');
 ```
+
+Throws `RuntimeException` when adapter can't be inferred or doesn't support DMs.
 
 ## User Info
 

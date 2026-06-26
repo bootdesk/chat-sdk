@@ -193,26 +193,7 @@ class ChatChannelTest extends TestCase
         };
 
         $result = $this->channel->send(
-            $this->createNotifiable(ChatRoute::channel('mock', 'C123')),
-            $notification,
-        );
-
-        $this->assertNotNull($result);
-        $this->assertSame('s1', $result->id);
-    }
-
-    public function test_send_channel_route_with_prefixed_id(): void
-    {
-        $notification = new class extends Notification
-        {
-            public function toChat($notifiable): PostableMessage
-            {
-                return PostableMessage::text('hello');
-            }
-        };
-
-        $result = $this->channel->send(
-            $this->createNotifiable(ChatRoute::channel('mock', 'mock:C123')),
+            $this->createNotifiable(ChatRoute::channel('mock:C123')),
             $notification,
         );
 
@@ -231,26 +212,7 @@ class ChatChannelTest extends TestCase
         };
 
         $result = $this->channel->send(
-            $this->createNotifiable(ChatRoute::dm('mock', 'U1')),
-            $notification,
-        );
-
-        $this->assertNotNull($result);
-        $this->assertSame('s1', $result->id);
-    }
-
-    public function test_send_dm_route_with_prefixed_user_id(): void
-    {
-        $notification = new class extends Notification
-        {
-            public function toChat($notifiable): PostableMessage
-            {
-                return PostableMessage::text('hello');
-            }
-        };
-
-        $result = $this->channel->send(
-            $this->createNotifiable(ChatRoute::dm('mock', 'mock:U1')),
+            $this->createNotifiable(ChatRoute::dm('mock:U1')),
             $notification,
         );
 

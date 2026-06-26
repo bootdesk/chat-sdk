@@ -38,19 +38,11 @@ class ChatChannel
         }
 
         if ($route->channelId !== null) {
-            $identifier = str_contains($route->channelId, ':')
-                ? $route->channelId
-                : "{$route->adapter}:{$route->channelId}";
-
-            return $chat->channel($identifier)->post($message);
+            return $chat->channel($route->channelId)->post($message);
         }
 
         if ($route->userId !== null) {
-            $identifier = str_contains($route->userId, ':')
-                ? $route->userId
-                : "{$route->adapter}:{$route->userId}";
-
-            return $chat->openDM($identifier)->post($message);
+            return $chat->openDM($route->userId)->post($message);
         }
 
         return null;

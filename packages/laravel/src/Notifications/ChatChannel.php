@@ -38,7 +38,11 @@ class ChatChannel
         }
 
         if ($route->channelId !== null) {
-            return $chat->channel($route->channelId)->post($message);
+            $identifier = str_contains($route->channelId, ':')
+                ? $route->channelId
+                : "{$route->adapter}:{$route->channelId}";
+
+            return $chat->channel($identifier)->post($message);
         }
 
         if ($route->userId !== null) {

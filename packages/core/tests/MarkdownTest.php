@@ -51,8 +51,8 @@ class MarkdownTest extends TestCase
         $ast = $this->converter->toAst('Hello **world**');
         $this->assertInstanceOf(Document::class, $ast);
 
-        $html = $this->converter->fromAst($ast);
-        $this->assertStringContainsString('Hello', $html);
+        $markdown = $this->converter->fromAst($ast);
+        $this->assertStringContainsString('**world**', $markdown);
     }
 
     public function test_extract_plain_text(): void

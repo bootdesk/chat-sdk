@@ -1,8 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BootDesk\ChatSDK\Core\Markdown;
 
 use BootDesk\ChatSDK\Core\Contracts\FormatConverter;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\BlockQuoteRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\CodeRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\EmphasisRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\FencedCodeRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\HeadingRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\ImageRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\IndentedCodeRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\LinkRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\ListBlockRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\ListItemRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\MarkdownRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\NewlineRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\ParagraphRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\StrikethroughRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\StrongRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\TableRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\TaskListItemMarkerRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\TextRenderer;
+use BootDesk\ChatSDK\Core\Markdown\Renderer\ThematicBreakRenderer;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
@@ -18,17 +39,29 @@ use League\CommonMark\Extension\CommonMark\Node\Inline\Emphasis;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Image;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Link;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Strong;
+use League\CommonMark\Extension\Strikethrough\Strikethrough;
+use League\CommonMark\Extension\Strikethrough\StrikethroughExtension;
+use League\CommonMark\Extension\Table\Table;
+use League\CommonMark\Extension\Table\TableCell;
+use League\CommonMark\Extension\Table\TableExtension;
+use League\CommonMark\Extension\Table\TableRow;
+use League\CommonMark\Extension\Table\TableSection;
+use League\CommonMark\Extension\TaskList\TaskListExtension;
+use League\CommonMark\Extension\TaskList\TaskListItemMarker;
 use League\CommonMark\Node\Block\Document;
 use League\CommonMark\Node\Block\Paragraph;
 use League\CommonMark\Node\Inline\Newline;
 use League\CommonMark\Node\Inline\Text;
 use League\CommonMark\Parser\MarkdownParser;
+use League\CommonMark\Renderer\NodeRendererInterface;
 
 abstract class BaseFormatConverter implements FormatConverter
 {
     private Environment $environment;
 
     private MarkdownParser $parser;
+
+    private MarkdownRenderer $renderer;
 
     public function __construct()
     {
@@ -37,7 +70,12 @@ abstract class BaseFormatConverter implements FormatConverter
             'allow_unsafe_links' => false,
         ]);
         $this->environment->addExtension(new CommonMarkCoreExtension);
+        $this->environment->addExtension(new StrikethroughExtension);
+        $this->environment->addExtension(new TableExtension);
+        $this->environment->addExtension(new TaskListExtension);
+        $this->registerRenderers();
         $this->parser = new MarkdownParser($this->environment);
+        $this->renderer = new MarkdownRenderer($this->environment);
     }
 
     abstract public function toAst(string $platformText): Document;
@@ -74,135 +112,37 @@ abstract class BaseFormatConverter implements FormatConverter
 
     protected function renderMarkdown(Document $ast): string
     {
-        $walker = $ast->walker();
-        $output = '';
-        $closeStack = [];
-        $listStack = [];
-        $inBlockQuote = false;
+        return trim($this->renderer->renderDocument($ast)->getContent());
+    }
 
-        while ($event = $walker->next()) {
-            $node = $event->getNode();
-            $entering = $event->isEntering();
+    protected function registerRenderers(): void
+    {
+        $this->addRenderer(Text::class, new TextRenderer);
+        $this->addRenderer(Strong::class, new StrongRenderer);
+        $this->addRenderer(Emphasis::class, new EmphasisRenderer);
+        $this->addRenderer(Strikethrough::class, new StrikethroughRenderer);
+        $this->addRenderer(Heading::class, new HeadingRenderer);
+        $this->addRenderer(Link::class, new LinkRenderer);
+        $this->addRenderer(Image::class, new ImageRenderer);
+        $this->addRenderer(Code::class, new CodeRenderer);
+        $this->addRenderer(FencedCode::class, new FencedCodeRenderer);
+        $this->addRenderer(IndentedCode::class, new IndentedCodeRenderer);
+        $this->addRenderer(ListBlock::class, new ListBlockRenderer);
+        $this->addRenderer(ListItem::class, new ListItemRenderer);
+        $this->addRenderer(Paragraph::class, new ParagraphRenderer);
+        $this->addRenderer(BlockQuote::class, new BlockQuoteRenderer);
+        $this->addRenderer(ThematicBreak::class, new ThematicBreakRenderer);
+        $this->addRenderer(Newline::class, new NewlineRenderer);
+        $this->addRenderer(Table::class, new TableRenderer);
+        $this->addRenderer(TableCell::class, new ParagraphRenderer);
+        $this->addRenderer(TableRow::class, new ParagraphRenderer);
+        $this->addRenderer(TableSection::class, new ParagraphRenderer);
+        $this->addRenderer(TaskListItemMarker::class, new TaskListItemMarkerRenderer);
+    }
 
-            if ($entering) {
-                switch ($node::class) {
-                    case Text::class:
-                        $output .= $node->getLiteral();
-                        break;
-
-                    case Strong::class:
-                        $output .= '**';
-                        $closeStack[] = '**';
-                        break;
-
-                    case Emphasis::class:
-                        $output .= '*';
-                        $closeStack[] = '*';
-                        break;
-
-                    case Heading::class:
-                        $level = $node->getLevel();
-                        $output .= str_repeat('#', $level).' ';
-                        $closeStack[] = "\n";
-                        break;
-
-                    case Link::class:
-                        $output .= '[';
-                        $closeStack[] = ']('.$node->getUrl().')';
-                        break;
-
-                    case Image::class:
-                        $output .= '![';
-                        $closeStack[] = ']('.$node->getUrl().')';
-                        break;
-
-                    case Code::class:
-                        $output .= '`'.$node->getLiteral().'`';
-                        break;
-
-                    case FencedCode::class:
-                        $info = $node->getInfo() ?? '';
-                        $code = rtrim($node->getLiteral(), "\n");
-                        $output .= "```{$info}\n{$code}\n```";
-                        break;
-
-                    case IndentedCode::class:
-                        $code = rtrim($node->getLiteral(), "\n");
-                        $output .= "    {$code}";
-                        break;
-
-                    case BlockQuote::class:
-                        $inBlockQuote = true;
-                        $output .= '> ';
-                        $closeStack[] = '';
-                        break;
-
-                    case ListBlock::class:
-                        $data = $node->getListData();
-                        $listStack[] = [
-                            'type' => $data->type,
-                            'counter' => $data->start ?? 1,
-                        ];
-                        break;
-
-                    case ListItem::class:
-                        $listInfo = $listStack !== [] ? $listStack[array_key_last($listStack)] : null;
-                        if ($listInfo !== null && $listInfo['type'] === ListBlock::TYPE_ORDERED) {
-                            $output .= "{$listInfo['counter']}. ";
-                            $listStack[array_key_last($listStack)]['counter']++;
-                        } else {
-                            $output .= '- ';
-                        }
-                        break;
-
-                    case ThematicBreak::class:
-                        $output .= "---\n";
-                        break;
-
-                    case Newline::class:
-                        if ($node->getType() === Newline::HARDBREAK) {
-                            $output .= "  \n";
-                        } else {
-                            $output .= "\n";
-                        }
-                        break;
-
-                    case Paragraph::class:
-                        break;
-                }
-            } else {
-                switch ($node::class) {
-                    case Strong::class:
-                    case Emphasis::class:
-                    case Link::class:
-                    case Image::class:
-                    case BlockQuote::class:
-
-                    case Heading::class:
-                        if ($closeStack !== []) {
-                            $output .= array_pop($closeStack);
-                        }
-                        break;
-
-                    case Paragraph::class:
-                        if ($listStack === []) {
-                            $output .= "\n\n";
-                        }
-                        break;
-
-                    case ListItem::class:
-                        $output .= "\n";
-                        break;
-
-                    case ListBlock::class:
-                        array_pop($listStack);
-                        $output .= "\n";
-                        break;
-                }
-            }
-        }
-
-        return trim($output);
+    protected function addRenderer(string $nodeClass, NodeRendererInterface $renderer, int $priority = 0): void
+    {
+        $this->environment->addRenderer($nodeClass, $renderer, $priority);
     }
 
     private function astToPlainText(Document $ast): string

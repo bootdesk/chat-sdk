@@ -60,4 +60,30 @@ class MarkdownTest extends TestCase
         $text = $this->converter->extractPlainText('Hello **world**');
         $this->assertSame('Hello world', $text);
     }
+
+    public function test_gfm_strikethrough(): void
+    {
+        $markdown = $this->converter->fromMarkdown('~~strikethrough~~');
+        $this->assertStringContainsString('~~strikethrough~~', $markdown);
+    }
+
+    public function test_gfm_table(): void
+    {
+        $markdown = "| A | B |\n|---|---|\n| 1 | 2 |";
+        $ast = $this->converter->toAst($markdown);
+        $result = $this->converter->fromAst($ast);
+        $this->assertStringContainsString('A', $result);
+        $this->assertStringContainsString('B', $result);
+        $this->assertStringContainsString('1', $result);
+        $this->assertStringContainsString('2', $result);
+    }
+
+    public function test_gfm_task_list(): void
+    {
+        $markdown = "- [x] done\n- [ ] todo";
+        $ast = $this->converter->toAst($markdown);
+        $result = $this->converter->fromAst($ast);
+        $this->assertStringContainsString('[x]', $result);
+        $this->assertStringContainsString('[ ]', $result);
+    }
 }

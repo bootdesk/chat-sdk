@@ -70,22 +70,29 @@ $adapter->postMessage('telegram:12345', new PostableMessage(
 ));
 ```
 
-### Attachments (URL-based)
+### Attachments (URL-based / file-id-based)
 
-Send via `Attachment` objects — type determines which Telegram API method is called:
+Send via `Attachment` objects — type determines which Telegram API method is called. The `url` field accepts either a public URL or a Telegram `file_id` (from a previously received attachment):
 
 ```php
 use BootDesk\ChatSDK\Core\Attachment;
+use BootDesk\ChatSDK\Core\FileUpload;
 
-// Sticker (file_id from previous receive)
+// Forward a received sticker by its file_id
+$received = $message->attachments[0]; // type: 'sticker'
 $adapter->postMessage('telegram:12345', new PostableMessage(
     content: '',
     attachments: [
-        new Attachment(type: 'sticker', url: 'CAACAgI...', name: 'sticker.webp', mimeType: 'image/webp'),
+        new Attachment(
+            type: 'sticker',
+            url: $received->fetchMetadata['file_id'],
+            name: $received->name,
+            mimeType: $received->mimeType,
+        ),
     ],
 ));
 
-// Animation / GIF
+// Animation / GIF by public URL
 $adapter->postMessage('telegram:12345', new PostableMessage(
     content: 'Check this out',
     attachments: [
@@ -93,16 +100,23 @@ $adapter->postMessage('telegram:12345', new PostableMessage(
     ],
 ));
 
-// Video note (coin-sized video)
+// Forward a video note by its file_id
+$receivedVn = $message->attachments[0]; // type: 'video_note'
 $adapter->postMessage('telegram:12345', new PostableMessage(
     content: '',
     attachments: [
-        new Attachment(type: 'video_note', url: 'file_id_vn...', name: 'video_note.mp4', mimeType: 'video/mp4'),
+        new Attachment(
+            type: 'video_note',
+            url: $receivedVn->fetchMetadata['file_id'],
+        ),
     ],
 ));
+
 ```
 
 Types map to Telegram API: `sticker` → `sendSticker`, `animation` → `sendAnimation`, `video_note` → `sendVideoNote`, `image` → `sendPhoto`, `video` → `sendVideo`, `audio` → `sendAudio`. Unknown types fall back to `sendDocument`.
+
+**Note:** `sendSticker` and `sendVideoNote` do not support captions. Any text in `content` is silently dropped for these types.
 
 ### Files (binary uploads)
 

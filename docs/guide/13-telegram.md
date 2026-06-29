@@ -70,7 +70,41 @@ $adapter->postMessage('telegram:12345', new PostableMessage(
 ));
 ```
 
-### Files
+### Attachments (URL-based)
+
+Send via `Attachment` objects — type determines which Telegram API method is called:
+
+```php
+use BootDesk\ChatSDK\Core\Attachment;
+
+// Sticker (file_id from previous receive)
+$adapter->postMessage('telegram:12345', new PostableMessage(
+    content: '',
+    attachments: [
+        new Attachment(type: 'sticker', url: 'CAACAgI...', name: 'sticker.webp', mimeType: 'image/webp'),
+    ],
+));
+
+// Animation / GIF
+$adapter->postMessage('telegram:12345', new PostableMessage(
+    content: 'Check this out',
+    attachments: [
+        new Attachment(type: 'animation', url: 'https://example.com/dance.mp4', name: 'dance.mp4', mimeType: 'video/mp4'),
+    ],
+));
+
+// Video note (coin-sized video)
+$adapter->postMessage('telegram:12345', new PostableMessage(
+    content: '',
+    attachments: [
+        new Attachment(type: 'video_note', url: 'file_id_vn...', name: 'video_note.mp4', mimeType: 'video/mp4'),
+    ],
+));
+```
+
+Types map to Telegram API: `sticker` → `sendSticker`, `animation` → `sendAnimation`, `video_note` → `sendVideoNote`, `image` → `sendPhoto`, `video` → `sendVideo`, `audio` → `sendAudio`. Unknown types fall back to `sendDocument`.
+
+### Files (binary uploads)
 
 ```php
 use BootDesk\ChatSDK\Core\FileUpload;
@@ -80,6 +114,8 @@ $adapter->postMessage('telegram:12345', new PostableMessage(
     files: [FileUpload::fromFilename('/tmp/report.pdf')],
 ));
 ```
+
+Sticker files with mime type `image/webp` or `application/x-tgsticker` automatically route to `sendSticker`.
 
 ### Cards (Inline Keyboards)
 
@@ -306,24 +342,27 @@ Raw arrays are also accepted in `metadata.reply_markup` for power users.
 
 ## Feature Matrix
 
-| Feature            | Supported |
-| ------------------ | --------- |
-| Post messages      | ✓         |
-| Edit messages      | ✓         |
-| Delete messages    | ✓         |
-| Reactions          | ✓         |
-| Reply keyboards    | ✓         |
-| Inline keyboards   | ✓         |
-| Force reply        | ✓         |
-| Reply-to-message   | ✓         |
-| File uploads       | ✓         |
-| URL attachments    | ✓         |
-| Typing indicator   | ✓         |
-| Streaming          | ✓         |
-| Bot commands       | ✓         |
-| Group chats        | ✓         |
-| Topic forums       | ✓         |
-| Thread info & edit | ✓         |
+| Feature              | Supported |
+| -------------------- | --------- |
+| Post messages        | ✓         |
+| Edit messages        | ✓         |
+| Delete messages      | ✓         |
+| Reactions            | ✓         |
+| Reply keyboards      | ✓         |
+| Inline keyboards     | ✓         |
+| Force reply          | ✓         |
+| Reply-to-message     | ✓         |
+| File uploads         | ✓         |
+| URL attachments      | ✓         |
+| Stickers (in/out)    | ✓         |
+| Animations (in/out)  | ✓         |
+| Video notes (in/out) | ✓         |
+| Typing indicator     | ✓         |
+| Streaming            | ✓         |
+| Bot commands         | ✓         |
+| Group chats          | ✓         |
+| Topic forums         | ✓         |
+| Thread info & edit   | ✓         |
 
 ## Webhook
 

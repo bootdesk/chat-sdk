@@ -52,8 +52,13 @@ interface FormatConverter
 
     // Convert markdown to platform-native format directly
     public function fromMarkdown(string $markdown): string;
+
+    // Convert platform text or AST to GFM markdown (uses separate renderer, ignores platform overrides)
+    public function renderAsGFM(string|Document $input): string;
 }
 ```
+
+`renderAsGFM()` normalizes platform-formatted text to clean GFM — useful for storage or cross-platform forwarding. Uses a separate renderer chain with only core/commonmark renderers, never affected by platform-specific overrides.
 
 ## Supported Markdown Features
 

@@ -548,7 +548,7 @@ $chat->addHeardMiddleware(new class implements HeardMiddleware {
 });
 
 $chat->addWebhookEventMiddleware(new class implements WebhookEventMiddleware {
-    public function process(WebhookEvent $event, Adapter $adapter): Adapter {
+    public function handle(WebhookEvent $event, Adapter $adapter): Adapter {
         return $adapter; // swap adapter per originId for multi-tenant
     }
 });

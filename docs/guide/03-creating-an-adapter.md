@@ -140,3 +140,36 @@ class MyPlatformAdapterTest extends TestCase
     }
 }
 ```
+
+## Step 8: Handle Location Attachments
+
+**Incoming** (`extractAttachments()`): check `$attachment->type === 'location'` and populate `lat`/`lng`/`address` from platform coordinates:
+
+```php
+if ($data['type'] === 'location') {
+    $attachments[] = Attachment::location(
+        lat: (float) $data['latitude'],
+        lng: (float) $data['longitude'],
+        name: $data['title'] ?? null,
+        address: $data['address'] ?? null,
+    );
+}
+```
+
+**Outgoing** (`postMessage()`): check `$attachment->type === 'location'` and use native types if available:
+
+```php
+if ($attachment->type === 'location') {
+    // Native: platform supports location messages
+    $this->sendLocation($threadId, $attachment->lat, $attachment->lng);
+
+    // Fallback for non-native platforms: Google Maps link
+    $mapsUrl = sprintf(
+        'https://www.google.com/maps?q=%F,%F',
+        $attachment->lat,
+        $attachment->lng,
+    );
+}
+```
+
+Use `$attachment->isDataUrl()` to detect GeoJSON-encoded location data from the `url` field.

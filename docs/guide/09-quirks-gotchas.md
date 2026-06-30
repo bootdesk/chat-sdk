@@ -160,6 +160,23 @@ Use `withFetchOptions()` to swap `fetchData` without rebuilding the full Attachm
 return $attachment->withFetchOptions(fetchData: [$this, 'fetchMedia'], fetchMetadata: ['file_id' => $fileId]);
 ```
 
+## Location Handling
+
+Location attachment support varies by platform:
+
+| Platform  | Incoming                               | Outgoing                                   |
+| --------- | -------------------------------------- | ------------------------------------------ |
+| Telegram  | `location` + `venue`                   | `sendLocation` / `sendVenue` (native)      |
+| WhatsApp  | `location`                             | Native `type: location` message            |
+| Messenger | `location` (coordinates)               | Google Maps link fallback                  |
+| Instagram | `location` (coordinates)               | Google Maps link fallback                  |
+| Slack     | — (not supported)                      | Google Maps link fallback                  |
+| Discord   | — (not supported)                      | Google Maps link fallback                  |
+| Twilio    | — (not supported)                      | Google Maps link fallback                  |
+| Telnyx    | Refactored to `Attachment::location()` | Google Maps link fallback / RCS native map |
+
+Incoming location is always parsed into `Attachment::$lat`, `$lng`, `$address`. Use `Attachment::location()` for outgoing — each adapter routes to native format or falls back.
+
 ## WhatsApp Template Names
 
 Templates using `{{first_name}}` require calling `->named()`:

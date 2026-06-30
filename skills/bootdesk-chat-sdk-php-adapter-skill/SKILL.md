@@ -557,6 +557,67 @@ $attachment = new Attachment(
 );
 ```
 
+### Standard Attachment Types
+
+Standard types available on all adapters: `image`, `video`, `audio`, `file`,
+`location`, `contact`, `poll`, `sticker`, `share`, `embed`.
+
+### Location Attachments
+
+Incoming — parse lat/lng from platform payload:
+
+```php
+use BootDesk\ChatSDK\Core\Attachment;
+
+$attachment = new Attachment(
+    type: 'location',
+    lat: $payload['latitude'],
+    lng: $payload['longitude'],
+    name: $payload['location_name'] ?? null,
+    address: $payload['address'] ?? null,
+);
+```
+
+Outgoing — use `Attachment::location()` factory; platform either sends natively
+(Telegram `sendLocation`, WhatsApp `type: location`) or falls back to text:
+
+```php
+$attachment = Attachment::location(
+    lat: 37.7749,
+    lng: -122.4194,
+    name: 'San Francisco',
+    address: 'SF, CA, USA',
+);
+
+$msg = new PostableMessage(
+    content: 'Check this location',
+    attachments: [$attachment],
+);
+```
+
+`Attachment::location()` auto-generates a GeoJSON `data:` URL. Native platforms
+consume it directly; non-native fall back to a Google Maps link.
+
+### Data URLs
+
+`data:` URLs provide canonical serialization for structured attachment data:
+
+```php
+// GeoJSON for locations:
+// data:application/geo+json;base64,...
+
+// vCard for contacts (name, phone, email):
+// data:text/vcard;base64,QkVHSU46VkNBUkQ...
+
+if ($attachment->isDataUrl()) {
+    $stream = $attachment->read();     // Nyholm\Psr7\Stream
+    $data = (string) $stream;
+}
+```
+
+`isDataUrl(): bool` checks if url starts with `data:`. `read()` decodes the
+base64 payload into a PSR-7 `StreamInterface`.
+
 ### Binary File Uploads
 
 ```php

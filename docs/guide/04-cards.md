@@ -95,3 +95,24 @@ Button::link('Open', 'https://example.com');
 ```
 
 When `actionHref` is set and the adapter renders as plain text (e.g., GitHub, Linear), it renders as a markdown link. Otherwise, the platform's native button format is used.
+
+## Location Attachments
+
+For platform-agnostic location parsing (Telegram, WhatsApp, Messenger, Instagram), use `Attachment::location()`:
+
+```php
+$attachment = Attachment::location(
+    lat: -23.5505,
+    lng: -46.6333,
+    name: 'São Paulo',
+    address: 'São Paulo, Brazil',
+);
+
+$attachment->type;        // 'location'
+$attachment->lat;         // -23.5505
+$attachment->lng;         // -46.6333
+$attachment->address;     // 'São Paulo, Brazil'
+$attachment->isDataUrl(); // true (GeoJSON data URL)
+```
+
+The web adapter's `WebLocationCard` renders the location client-side. For outgoing location on platforms without native location types (Slack, Discord, Twilio, Messenger, Instagram), the SDK falls back to a Google Maps link in message text.

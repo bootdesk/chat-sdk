@@ -142,7 +142,13 @@ $message->threadId;      // string — canonical "{adapter}:{channelId}:{threadT
 $message->author;        // Author (id, name, email, isMe, isBot, profilePicture)
 $message->text;          // string (NOT nullable — empty string when absent)
 $message->formatted;     // ?League\CommonMark\Node\Block\Document
-$message->attachments;   // Attachment[]
+$message->attachments;   // Attachment[] — see common types:
+                          //   'image', 'video', 'audio', 'file', 'sticker'
+                          //   'location' (lat/lng/name/address + GeoJSON data URL)
+                          //   'contact' (vCard data URL + phone in metadata)
+                          //   'poll' (question/options in fetchMetadata)
+                          //   'share', 'embed', 'fallback'
+                          // Helper: Attachment::location() factory, isDataUrl()
 $message->isMention;     // bool
 $message->isDM;          // bool
 $message->raw;           // ?string — original platform payload
@@ -196,6 +202,34 @@ $sent->raw;                 // mixed — full decoded API response
 $sent->price;               // ?Money\Money — outgoing cost
 $sent->extras;              // array<string, mixed> (public mutable)
 ```
+
+### Attachments
+
+```php
+use BootDesk\ChatSDK\Core\Attachment;
+
+// Location factory — generates GeoJSON data URL
+$loc = Attachment::location(
+    lat: 37.7749,
+    lng: -122.4194,
+    name: 'San Francisco',
+    address: 'SF, CA, USA',
+);
+$loc->type;       // 'location'
+$loc->lat;        // 37.7749
+$loc->lng;        // -122.4194
+$loc->address;    // 'SF, CA, USA'
+$loc->isDataUrl(); // true — url is data:application/geo+json;base64,...
+
+// Check and decode data URLs
+if ($attachment->isDataUrl()) {
+    $stream = $attachment->read();
+    $data = (string) $stream; // decoded vCard, GeoJSON, etc.
+}
+```
+
+Common attachment types: `image`, `video`, `audio`, `file`, `location`,
+`contact`, `poll`, `sticker`, `share`, `embed`.
 
 ### ThreadInfo / UserInfo / ChannelInfo
 

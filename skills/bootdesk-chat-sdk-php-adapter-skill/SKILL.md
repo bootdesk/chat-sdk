@@ -408,7 +408,7 @@ For batched platforms, `HandlesBatchedWebhooks::parseBatchedWebhook()` runs
 first, returning ALL events as `WebhookEvent[]`. Each is then dispatched
 through the full pipeline above.
 
-### WebhookEvent types
+### WebhookEvent types (defined on `WebhookEvent`)
 
 ```php
 WebhookEvent::TYPE_MESSAGE            // regular message
@@ -416,18 +416,14 @@ WebhookEvent::TYPE_ACTION             // button action
 WebhookEvent::TYPE_REACTION           // reaction
 WebhookEvent::TYPE_STATUS             // delivery/read/failed
 WebhookEvent::TYPE_SLASH_COMMAND      // /command
-WebhookEvent::TYPE_MODAL_SUBMIT       // modal form submit
-WebhookEvent::TYPE_MODAL_CLOSE        // modal dismissed
-WebhookEvent::TYPE_OPTIONS_LOAD       // external select query
 WebhookEvent::TYPE_MESSAGE_COST       // cost data (non-terminal)
-WebhookEvent::TYPE_ASSISTANT_THREAD_STARTED  // Slack assistant thread started
-WebhookEvent::TYPE_ASSISTANT_CONTEXT_CHANGED // Slack assistant context changed
-WebhookEvent::TYPE_APP_HOME_OPENED    // Slack app home opened
-WebhookEvent::TYPE_MEMBER_JOINED_CHANNEL // Slack member joined channel
 WebhookEvent::TYPE_UNSUPPORTED        // unrecognized event
 ```
 
 Returned from `parseBatchedWebhook()` with threadId, type, and payload.
+Other event types (modal submit/close, options load, Slack-specific events)
+are dispatched as typed Event classes (ModalSubmitEvent, OptionsLoadEvent, etc.)
+— they are NOT constants on `WebhookEvent`.
 
 ## Batched Webhooks (Meta Platforms)
 
@@ -573,8 +569,8 @@ $file = new FileUpload(
     clientMediaType: 'image/jpeg',
 );
 
-// PostableMessage handles both
-$msg = PostableMessage::file($file);
+// PostableMessage handles both — pass files via constructor
+$msg = new PostableMessage(content: 'Check this file', files: [$file]);
 ```
 
 ### Attachment Rehydration

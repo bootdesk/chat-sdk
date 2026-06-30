@@ -126,6 +126,9 @@ const result = await client.loadMessages({ limit: 50 });
 
 // Load older messages
 const older = await client.loadMessages({ before: result.prevCursor });
+
+// Options: limit, before, after, skipStateSeed; optional AbortSignal
+const result2 = await client.loadMessages({ limit: 50, after: 100 }, signal);
 ```
 
 ### Edit / Delete / React
@@ -194,6 +197,13 @@ const unsub = client.addEventListener("message:added", (message) => {
 });
 ```
 
+Internal events use colon-separated names (server events use dots):
+`"message:added"`, `"message:edited"`, `"message:deleted"`,
+`"reaction:added"`, `"reaction:removed"`, `"typing:started"`,
+`"typing:stopped"`, `"streaming:started"`, `"streaming:chunk"`,
+`"streaming:complete"`, `"message.posted"`, `"dm.requested"`,
+`"messages:loaded"`
+
 ### Accessors
 
 ```typescript
@@ -221,7 +231,7 @@ Real signature from `types/components.ts`:
 ```typescript
 interface ChatWidgetProps {
   client: WebChatClient; // required
-  locale?: string; // "en", "pt-BR", etc.
+  locale?: string | LocaleConfig; // string or { locale, overrides? }
   initialMode?: "floating" | "fullscreen" | "embedded"; // default "floating"
   theme?: "light" | "dark" | "auto"; // default "auto"
   onThemeChange?: (theme: ThemeMode) => void;
@@ -267,6 +277,7 @@ interface ChatWidgetProps {
   };
   preEntry?: PreEntryConfig; // { render: (helpers) => ReactNode } — NOT a bare function
   onChatStart?: (config?: ReconfigureConfig) => void;
+  mapConfig?: MapConfig; // MapConfigProvider configuration
 }
 ```
 
@@ -360,7 +371,8 @@ const {
   deleteMessage, // (id) => Promise<void>
   addReaction, // (id, emoji) => Promise<void>
   removeReaction, // (id, emoji) => Promise<void>
-} = useMessages(client);
+  thinking, // boolean — bot thinking indicator (800ms delay)
+} = useMessages(client); // second optional param: enabled (boolean)
 ```
 
 ### useStreaming
@@ -407,6 +419,7 @@ const {
   config, // unknown — config pushed from parent frame
   isInIframe, // boolean
   isInWebView, // boolean
+  isInWebView, // boolean
   notifyMessage, // (text: string) => void
   notifyViewportConfig, // (viewportContent: string) => void
   onNotificationClicked, // (cb: () => void) => void — register notification click handler
@@ -434,6 +447,7 @@ const {
   status, // PushSubscriptionStatus: "unsupported"|"denied"|"default"|"subscribing"|"subscribed"|"error"
   isSupported, // boolean (PushManager.isSupported())
   isSubscribed, // boolean (status === "subscribed")
+  isBusy, // boolean (true when status === "subscribing")
   subscribe, // () => Promise<void>
   unsubscribe, // () => Promise<void>
 } = usePushNotifications(options);
@@ -447,11 +461,19 @@ don't call this hook directly unless you build a custom UI (pass
 
 ### Default Cards
 
-Three built-in card types render automatically:
+Nine built-in card types render automatically:
 
-- **PHPCard** (type: `"card"`) — rendered by `DefaultCard`: sections, fields, buttons
-- **ImageCard** (type: `"image"`) — rendered by `ImageCardComponent`: image with caption
-- **FileCard** (type: `"file"`) — rendered by `FileCardComponent`: file name + download
+| Type               | Component               | Content                             |
+| ------------------ | ----------------------- | ----------------------------------- |
+| `"card"` (PHPCard) | `DefaultCard`           | sections, fields, buttons           |
+| `"image"`          | `ImageCardComponent`    | image with caption                  |
+| `"file"`           | `FileCardComponent`     | file name + download                |
+| `"video"`          | `VideoCardComponent`    | video embed                         |
+| `"audio"`          | `AudioCardComponent`    | audio embed                         |
+| `"location"`       | `LocationCardComponent` | map location                        |
+| `"product"`        | `ProductCardComponent`  | product card (image, title, price)  |
+| `"poll"`           | `PollCardComponent`     | poll with options                   |
+| `"carousel"`       | `CarouselCardComponent` | horizontal scrollable card carousel |
 
 ### Custom Card Renderers
 
@@ -486,8 +508,7 @@ type CardRenderer = React.ComponentType<CardRendererProps>;
 ```
 
 `CardProvider` accepts custom renderers via the `renderers` prop; built-in
-defaults (`card` → `DefaultCard`, `image` → `ImageCardComponent`,
-`file` → `FileCardComponent`) are kept unless overridden by name.
+defaults (9 types listed above) are kept unless overridden by name.
 
 ### Card Components
 
@@ -497,6 +518,12 @@ import {
   DefaultCard,
   ImageCardComponent,
   FileCardComponent,
+  VideoCardComponent,
+  AudioCardComponent,
+  LocationCardComponent,
+  ProductCardComponent,
+  PollCardComponent,
+  CarouselCardComponent,
 } from "@bootdesk/js-web-adapter-react";
 
 // Individual card components can be used standalone
@@ -506,8 +533,8 @@ import {
 ## Pre-Entry Flow
 
 Show a custom form before the chat loads (e.g., email verification). Pass a
-`PreEntryConfig` object whose `render` receives `{ start }` helpers — NOT a
-bare function:
+`PreEntryConfig` object whose `render` receives `{ start, t, locale }` helpers —
+NOT a bare function:
 
 ```tsx
 import { useState } from "react";
@@ -523,7 +550,7 @@ function ChatPage() {
     <ChatWidget
       client={client}
       preEntry={{
-        render: ({ start }) => <PreEntryForm start={start} />,
+        render: ({ start, t, locale }) => <PreEntryForm start={start} />,
       }}
       onChatStart={(config) => {
         // config: ReconfigureConfig | undefined — what start() was called with
@@ -560,7 +587,9 @@ function PreEntryForm({
 ```
 
 `start(config?)` calls `client.reconfigure(config)` internally and transitions
-to the chat UI. `config` matches `ReconfigureConfig`:
+to the chat UI. The helpers object also provides `t(path: string): string` for
+i18n and `locale: string` for the active locale. `config` matches
+`ReconfigureConfig`:
 
 ```typescript
 interface ReconfigureConfig {
@@ -723,31 +752,43 @@ and must be awaited.
 Auto-detects from browser if not specified. Uses `Accept-Language` header
 fallback on the PHP side.
 
-### Supported Locales (33 browser locales, 7 built-in locale files)
+### Supported Locales (33 built-in locale files)
 
-Built-in locale files: `en`, `en-US`, `en-GB`, `pt`, `pt-BR`, `pt-PT`, `es`
+Built-in locale files: `ar`, `cs`, `da`, `de`, `el`, `en`, `en-US`, `en-GB`,
+`es`, `et`, `fa`, `fi`, `fr`, `he`, `hi`, `hr`, `hu`, `id`, `it`, `ja`, `ko`,
+`ms`, `nb`, `nl`, `pl`, `pt`, `pt-BR`, `pt-PT`, `ro`, `ru`, `sk`, `sv`, `th`,
+`tr`, `uk`, `vi`, `zh-CN`, `zh-TW`
 
-All 33 browser locales supported via browser `Accept-Language` fallback:
-`ar`, `cs`, `da`, `de`, `el`, `en`, `es`, `fa`, `fi`, `fr`, `he`, `hi`,
-`hr`, `hu`, `id`, `it`, `ja`, `ko`, `ms`, `nb`, `nl`, `pl`, `pt-BR`, `pt`,
-`ro`, `ru`, `sk`, `sv`, `th`, `tr`, `uk`, `zh-CN`, `zh-TW`
+RTL auto-detected for Arabic, Hebrew, Persian, Urdu.
 
-### Custom Locale
+### Custom Locale / Merging
 
 ```typescript
-import { registerLocale } from "@bootdesk/js-web-adapter-react";
+import { registerLocale, mergeLocale, getAvailableLocales, LocaleProvider } from "@bootdesk/js-web-adapter-react";
 
+// Register a new locale
 registerLocale("my-locale", {
-  chat: { title: "Chat", inputPlaceholder: "Type..." },
-  // ... full locale object
+  direction: "ltr",
+  chatWidget: { title: "Chat", placeholder: "Type..." },
+  // ... full LocaleStrings shape
 });
 
-<ChatWidget client={client} locale="my-locale" />
+// Merge overrides into existing locale
+mergeLocale("pt-BR", { chatWidget: { title: "Meu Chat" } });
+
+// List available locales
+getAvailableLocales(); // string[]
+
+// Use locale prop (string or LocaleConfig with overrides)
+<ChatWidget client={client} locale="pt-BR" />
+<ChatWidget client={client} locale={{ locale: "pt-BR", overrides: { chatWidget: { title: "Custom" } } }} />
+
+// Or wrap with LocaleProvider
+import { LocaleProvider } from "@bootdesk/js-web-adapter-react";
+<LocaleProvider locale="pt-BR">
+  <ChatWidget client={client} />
+</LocaleProvider>;
 ```
-
-### RTL Support
-
-Automatically handled for Arabic, Hebrew, Persian, Urdu locales.
 
 ## Push Notifications
 
@@ -808,9 +849,15 @@ const push = new PushManager({
 
 await push.initialize();
 const unsub = push.onStatusChange((status) => console.log(status));
+const unsubMsg = push.onMessage((eventData) => console.log(eventData));
+console.log(push.getStatus()); // current status
 await push.subscribe();
 await push.unsubscribe();
 unsub();
+unsubMsg();
+
+// Static check
+const supported = PushManager.isSupported();
 ```
 
 ## File Uploads
@@ -905,7 +952,16 @@ interface Message {
 ### Card
 
 ```typescript
-type Card = PHPCard | ImageCard | FileCard;
+type Card =
+  | PHPCard
+  | ImageCard
+  | FileCard
+  | VideoCard
+  | AudioCard
+  | LocationCard
+  | ProductCard
+  | PollCard
+  | CarouselCard;
 // (CustomCard is a permissive extension: { type: string; [key: string]: unknown })
 
 interface PHPCard {
@@ -931,6 +987,48 @@ interface FileCard {
   url: string;
   size?: number;
   mimeType?: string;
+}
+
+interface VideoCard {
+  type: "video";
+  url: string;
+  title?: string;
+  poster?: string;
+  controls?: boolean;
+}
+
+interface AudioCard {
+  type: "audio";
+  url: string;
+  title?: string;
+  controls?: boolean;
+}
+
+interface LocationCard {
+  type: "location";
+  latitude: number;
+  longitude: number;
+  title?: string;
+}
+
+interface ProductCard {
+  type: "product";
+  name: string;
+  price: string;
+  imageUrl?: string;
+  description?: string;
+  url?: string;
+}
+
+interface PollCard {
+  type: "poll";
+  question: string;
+  options: { id: string; label: string }[];
+}
+
+interface CarouselCard {
+  type: "carousel";
+  items: Card[];
 }
 ```
 

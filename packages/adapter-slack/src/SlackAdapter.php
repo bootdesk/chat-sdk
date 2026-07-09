@@ -2,6 +2,7 @@
 
 namespace BootDesk\ChatSDK\Slack;
 
+use BootDesk\ChatSDK\Core\ActionEvent;
 use BootDesk\ChatSDK\Core\Attachment;
 use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\ChannelInfo;
@@ -28,6 +29,7 @@ use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\Modals\Modal;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\SentMessage;
+use BootDesk\ChatSDK\Core\SlashCommandEvent;
 use BootDesk\ChatSDK\Core\Support\EmojiResolver;
 use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Core\UserInfo;
@@ -36,6 +38,8 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, HandlesOptionsLoad, HandlesSlackEvents, HasAuthorInfo, MustRehydrateAttachments, RequiresAsyncResponse, SupportsMessageMutability, SupportsModals
 {
@@ -47,6 +51,8 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
 
     protected EmojiResolver $emojiResolver;
 
+    protected readonly ?LoggerInterface $logger;
+
     public function __construct(
         protected readonly string $botToken,
         protected readonly ClientInterface $httpClient,
@@ -54,7 +60,9 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
         protected readonly string $apiUrl = 'https://slack.com/api/',
         protected readonly ?Psr17Factory $psrFactory = null,
         ?EmojiResolver $emojiResolver = null,
+        ?LoggerInterface $logger = null,
     ) {
+        $this->logger = $logger ?? new NullLogger;
         $this->formatConverter = new SlackFormatConverter;
         $this->emojiResolver = $emojiResolver ?? EmojiResolver::default();
 
@@ -403,6 +411,7 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
         $payload = json_decode($body, true);
 
         if ($payload === null) {
+            $this->logger->error('[Slack] Invalid JSON payload');
             throw new AdapterException('Invalid JSON payload from Slack');
         }
 
@@ -423,6 +432,15 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
         ]);
 
         $isMe = $this->botUserId !== null && ($userId === $this->botUserId || $userId === '');
+
+        $this->logger->info('[Slack] Message parsed', [
+            'channelId' => $channelId,
+            'userId' => $userId,
+            'threadTs' => $threadTs,
+            'isDM' => $isDM,
+            'isMention' => $isMention,
+            'text_preview' => mb_substr($text, 0, 100),
+        ]);
 
         return new Message(
             id: $messageTs,
@@ -679,6 +697,58 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
             'channel' => $decoded['channel'],
             'ts' => $messageId,
         ]);
+    }
+
+    public function replaceOriginal(ActionEvent|SlashCommandEvent|string $eventOrUrl, PostableMessage $message): SentMessage
+    {
+        $responseUrl = is_string($eventOrUrl) ? $eventOrUrl : $this->extractResponseUrl($eventOrUrl);
+
+        if ($responseUrl === null || $responseUrl === '') {
+            throw new AdapterException('No response_url available for replaceOriginal');
+        }
+
+        $params = $this->buildMessageParams($message);
+
+        if (isset($params['markdown_text']) && ! isset($params['text'])) {
+            $params['text'] = $params['markdown_text'];
+            unset($params['markdown_text']);
+        }
+
+        $params['replace_original'] = true;
+
+        $this->apiCall('', $params, overrideUrl: $responseUrl);
+
+        $threadId = $eventOrUrl instanceof ActionEvent ? $eventOrUrl->thread->id : '';
+
+        return new SentMessage(
+            id: 'replaced',
+            threadId: $threadId,
+            timestamp: (string) time(),
+        );
+    }
+
+    public function deleteOriginal(ActionEvent|SlashCommandEvent|string $eventOrUrl): void
+    {
+        $responseUrl = is_string($eventOrUrl) ? $eventOrUrl : $this->extractResponseUrl($eventOrUrl);
+
+        if ($responseUrl === null || $responseUrl === '') {
+            throw new AdapterException('No response_url available for deleteOriginal');
+        }
+
+        $this->apiCall('', ['delete_original' => true], overrideUrl: $responseUrl);
+    }
+
+    protected function extractResponseUrl(ActionEvent|SlashCommandEvent $event): ?string
+    {
+        if ($event instanceof ActionEvent) {
+            $payload = json_decode($event->raw ?? '', true);
+
+            return $payload['response_url'] ?? null;
+        }
+
+        parse_str($event->raw ?? '', $params);
+
+        return $params['response_url'] ?? null;
     }
 
     public function addReaction(string $threadId, string $messageId, string $emoji): void
@@ -1014,6 +1084,12 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
         $factory = $this->psrFactory ?? new Psr17Factory;
         $url = $overrideUrl ?? $this->apiUrl.$method;
 
+        $this->logger->debug('[Slack] API call', [
+            'method' => $method,
+            'httpMethod' => $httpMethod,
+            'url' => $url,
+        ]);
+
         $request = $factory->createRequest($httpMethod, $url)
             ->withHeader('Authorization', "Bearer {$this->botToken}");
 
@@ -1034,6 +1110,11 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
 
         if ($statusCode < 200 || $statusCode >= 300) {
             $responseBody = (string) $psrResponse->getBody();
+            $this->logger->error('[Slack] API error', [
+                'method' => $method,
+                'statusCode' => $statusCode,
+                'response' => mb_substr($responseBody, 0, 500),
+            ]);
             throw new AdapterException("Slack API returned HTTP {$statusCode}: {$responseBody}");
         }
 

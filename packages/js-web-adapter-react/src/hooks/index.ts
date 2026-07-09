@@ -5,3 +5,4 @@ export { useTyping } from "./useTyping";
 export { usePushNotifications } from "./usePushNotifications";
 export { useAttachmentUpload } from "./useAttachmentUpload";
 export { useBridge } from "./useBridge";
+export { useVisualViewport } from "./useVisualViewport";

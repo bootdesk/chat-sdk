@@ -119,6 +119,7 @@ export function MessageList({
       data-chat-message-list="true"
       data-testid="chat-message-list"
     >
+      <div className="bdesk-message-list-spacer" />
       {groupedMessages.length === 0 && !isLoading && (
         <div className="bdesk-empty-state">
           <div className="bdesk-empty-state-text">{t("messageList.emptyState")}</div>

@@ -1,13 +1,15 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import type { BridgePushStatus } from "@bootdesk/chat-widget-bridge";
+import type { BridgePushStatus, BannerData } from "@bootdesk/chat-widget-bridge";
 
 interface BridgeResult {
   config: any;
   isInIframe: boolean;
   isInWebView: boolean;
+  banner: BannerData | null;
   notifyMessage: (text: string) => void;
   notifyViewportConfig: (viewportContent: string) => void;
   onNotificationClicked: (cb: () => void) => void;
+  onOpen: (cb: () => void) => void;
   pushState: BridgePushStatus | null;
   requestPushSubscribe: () => void;
   requestPushUnsubscribe: () => void;
@@ -38,8 +40,10 @@ function bridgeSend(msg: Record<string, unknown>): void {
 
 export function useBridge(): BridgeResult {
   const notificationCbRef = useRef<(() => void) | null>(null);
+  const openCbRef = useRef<(() => void) | null>(null);
   const [config, setConfig] = useState<any>(null);
   const [pushState, setPushState] = useState<BridgePushStatus | null>(null);
+  const [banner, setBanner] = useState<BannerData | null>(null);
 
   const isInIframe = typeof window !== "undefined" && window !== window.parent;
   const isInWebView = !isInIframe && hasNativeBridge();
@@ -70,6 +74,10 @@ export function useBridge(): BridgeResult {
 
   const onNotificationClicked = useCallback((cb: () => void) => {
     notificationCbRef.current = cb;
+  }, []);
+
+  const onOpen = useCallback((cb: () => void) => {
+    openCbRef.current = cb;
   }, []);
 
   const requestPushSubscribe = useCallback(() => {
@@ -142,6 +150,18 @@ export function useBridge(): BridgeResult {
         notificationCbRef.current?.();
       }
 
+      if (data.type === "chat-open") {
+        openCbRef.current?.();
+      }
+
+      if (data.type === "chat-banner" && typeof data.text === "string") {
+        setBanner({ text: data.text as string, action: data.action as BannerData["action"] });
+      }
+
+      if (data.type === "chat-banner-dismiss") {
+        setBanner(null);
+      }
+
       if (data.type === "chat-push-state" && typeof data.status === "string") {
         setPushState(data.status as BridgePushStatus);
       }
@@ -157,6 +177,15 @@ export function useBridge(): BridgeResult {
       }
       if (detail.type === "chat-notification-clicked") {
         notificationCbRef.current?.();
+      }
+      if (detail.type === "chat-open") {
+        openCbRef.current?.();
+      }
+      if (detail.type === "chat-banner" && typeof detail.text === "string") {
+        setBanner({ text: detail.text, action: detail.action as BannerData["action"] | undefined });
+      }
+      if (detail.type === "chat-banner-dismiss") {
+        setBanner(null);
       }
       if (detail.type === "chat-push-state" && typeof detail.status === "string") {
         setPushState(detail.status as BridgePushStatus);
@@ -175,9 +204,11 @@ export function useBridge(): BridgeResult {
     config,
     isInIframe,
     isInWebView,
+    banner,
     notifyMessage,
     notifyViewportConfig,
     onNotificationClicked,
+    onOpen,
     pushState,
     requestPushSubscribe,
     requestPushUnsubscribe,

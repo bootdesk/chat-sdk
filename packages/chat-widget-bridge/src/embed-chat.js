@@ -41,8 +41,11 @@
     button: null,
     iframe: null,
     overlay: null,
+    bannerEl: null,
     styleEl: null,
     isOpen: false,
+    iframeMounted: false,
+    pendingBanner: null,
     originalViewport: undefined,
     initialized: false,
   };
@@ -90,14 +93,12 @@
   }
 
   function createIframe() {
-    var opts = state.opts;
     state.iframe = document.createElement("iframe");
     state.iframe.setAttribute("data-embed-chat-iframe", "");
     state.iframe.setAttribute("title", "Chat Widget");
     state.iframe.setAttribute("role", "dialog");
     state.iframe.setAttribute("aria-modal", "true");
     state.iframe.setAttribute("allow", "clipboard-write; microphone");
-    state.iframe.src = opts.iframeSrc;
     Object.assign(state.iframe.style, {
       position: "fixed",
       bottom: "96px",
@@ -116,8 +117,10 @@
       pointerEvents: "none",
       background: "#fff",
     });
-    document.body.appendChild(state.iframe);
+  }
 
+  function mountIframe(src) {
+    var opts = state.opts;
     state.iframe.addEventListener("load", function () {
       var savedTheme = "auto";
       try {
@@ -135,12 +138,36 @@
         },
         "*",
       );
+
+      function sendPendingBanner() {
+        if (state.pendingBanner) {
+          state.iframe.contentWindow.postMessage(
+            {
+              type: "chat-banner",
+              text: state.pendingBanner.text,
+              action: state.pendingBanner.action,
+            },
+            "*",
+          );
+        } else if (state.pendingBanner === false) {
+          state.iframe.contentWindow.postMessage({ type: "chat-banner-dismiss" }, "*");
+        }
+      }
+      sendPendingBanner();
+      setTimeout(sendPendingBanner, 300);
     });
+    state.iframe.src = src;
+    document.body.appendChild(state.iframe);
   }
 
   function toggle() {
     state.isOpen = !state.isOpen;
     var open = state.isOpen;
+
+    if (open && !state.iframeMounted) {
+      state.iframeMounted = true;
+      mountIframe(state.opts.iframeSrc);
+    }
 
     state.button.setAttribute("aria-expanded", String(open));
     state.iframe.style.opacity = open ? "1" : "0";
@@ -160,7 +187,8 @@
   }
 
   function handleMessage(event) {
-    if (!state.iframe || event.source !== state.iframe.contentWindow) return;
+    if (!state.iframeMounted || !state.iframe || event.source !== state.iframe.contentWindow)
+      return;
     var data = event.data || {};
     if (data.type === "chat-message") {
       console.log("[Embed Chat] Message:", data.text);
@@ -215,7 +243,8 @@
 
     var style = document.createElement("style");
     style.textContent =
-      "@media (max-width: 799px) { [data-embed-chat-iframe] { width: 100dvw !important; height: 100dvh !important; bottom: 0 !important; right: 0 !important; max-width: none !important; max-height: none !important; border-radius: 0 !important; } [data-embed-chat-overlay] { display: none !important; } }";
+      "@media (max-width: 799px), (max-height: 599px), (pointer: coarse) and (max-width: 1366px) { [data-embed-chat-iframe] { width: 100dvw !important; height: 100dvh !important; bottom: 0 !important; right: 0 !important; max-width: none !important; max-height: none !important; border-radius: 0 !important; } [data-embed-chat-overlay] { display: none !important; } }";
+
     document.head.appendChild(style);
     state.styleEl = style;
 
@@ -236,5 +265,110 @@
     }
   }
 
-  window.ChatSDK = { initialize: initialize, destroy: destroy };
+  function showBanner(bannerData) {
+    state.pendingBanner = bannerData;
+    if (state.iframe && state.iframeMounted) {
+      state.iframe.contentWindow.postMessage(
+        { type: "chat-banner", text: bannerData.text, action: bannerData.action },
+        "*",
+      );
+    }
+    if (!state.bannerEl) {
+      state.bannerEl = document.createElement("div");
+      state.bannerEl.setAttribute("data-embed-chat-banner", "");
+      Object.assign(state.bannerEl.style, {
+        position: "fixed",
+        bottom: "90px",
+        right: "24px",
+        background: "var(--chat-primary, #6366f1)",
+        color: "#fff",
+        padding: "12px 20px",
+        borderRadius: "12px",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+        zIndex: "2147483646",
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        cursor: "pointer",
+        fontSize: "14px",
+        transition: "opacity 0.2s, transform 0.2s",
+        maxWidth: "280px",
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      });
+      state.bannerEl.addEventListener("click", function () {
+        dismissBanner();
+        if (bannerData.action && bannerData.action.open) toggle();
+        else if (!bannerData.action) toggle();
+        if (!state.isOpen) toggle();
+      });
+      document.body.appendChild(state.bannerEl);
+    }
+    state.bannerEl.textContent = "";
+    state.bannerEl.style.opacity = "1";
+    state.bannerEl.style.transform = "translateY(0)";
+
+    var textSpan = document.createElement("span");
+    textSpan.textContent = bannerData.text || "";
+    state.bannerEl.appendChild(textSpan);
+
+    if (bannerData.action && bannerData.action.label) {
+      var actionBtn = document.createElement("span");
+      actionBtn.textContent = bannerData.action.label;
+      Object.assign(actionBtn.style, {
+        fontWeight: "600",
+        whiteSpace: "nowrap",
+      });
+      state.bannerEl.appendChild(actionBtn);
+    }
+
+    var dismiss = document.createElement("button");
+    dismiss.innerHTML =
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+    Object.assign(dismiss.style, {
+      background: "none",
+      border: "none",
+      color: "inherit",
+      cursor: "pointer",
+      padding: "0",
+      opacity: "0.7",
+      flexShrink: "0",
+    });
+    dismiss.setAttribute("aria-label", "Dismiss");
+    dismiss.addEventListener("click", function (e) {
+      e.stopPropagation();
+      dismissBanner();
+    });
+    state.bannerEl.appendChild(dismiss);
+  }
+
+  function dismissBanner() {
+    state.pendingBanner = false;
+    if (state.iframe && state.iframeMounted) {
+      state.iframe.contentWindow.postMessage({ type: "chat-banner-dismiss" }, "*");
+    }
+    if (state.bannerEl) {
+      state.bannerEl.style.opacity = "0";
+      state.bannerEl.style.transform = "translateY(8px)";
+      setTimeout(function () {
+        if (state.bannerEl && state.bannerEl.parentNode)
+          state.bannerEl.parentNode.removeChild(state.bannerEl);
+        state.bannerEl = null;
+      }, 200);
+    }
+  }
+
+  window.ChatSDK = {
+    initialize: initialize,
+    destroy: destroy,
+    open: function () {
+      if (state.isOpen) return;
+      toggle();
+    },
+    close: function () {
+      if (!state.isOpen) return;
+      toggle();
+    },
+    showBanner: showBanner,
+    dismissBanner: dismissBanner,
+  };
 })();

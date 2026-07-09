@@ -267,7 +267,7 @@ jobs:
       - name: Install & build all
         run: |
           npm ci
-          npm run build -w packages/js-web-adapter-core -w packages/js-web-adapter-react -w packages/chat-widget-bridge
+          npm run build -w packages/js-web-adapter-core -w packages/chat-widget-bridge -w packages/js-web-adapter-react
 
       - name: Publish core
         run: npm publish --access public --provenance

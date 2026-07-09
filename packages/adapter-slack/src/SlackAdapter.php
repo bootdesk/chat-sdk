@@ -36,6 +36,8 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, HandlesOptionsLoad, HandlesSlackEvents, HasAuthorInfo, MustRehydrateAttachments, RequiresAsyncResponse, SupportsMessageMutability, SupportsModals
 {
@@ -47,6 +49,8 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
 
     protected EmojiResolver $emojiResolver;
 
+    protected readonly ?LoggerInterface $logger;
+
     public function __construct(
         protected readonly string $botToken,
         protected readonly ClientInterface $httpClient,
@@ -54,7 +58,9 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
         protected readonly string $apiUrl = 'https://slack.com/api/',
         protected readonly ?Psr17Factory $psrFactory = null,
         ?EmojiResolver $emojiResolver = null,
+        ?LoggerInterface $logger = null,
     ) {
+        $this->logger = $logger ?? new NullLogger;
         $this->formatConverter = new SlackFormatConverter;
         $this->emojiResolver = $emojiResolver ?? EmojiResolver::default();
 
@@ -403,6 +409,7 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
         $payload = json_decode($body, true);
 
         if ($payload === null) {
+            $this->logger->error('[Slack] Invalid JSON payload');
             throw new AdapterException('Invalid JSON payload from Slack');
         }
 
@@ -423,6 +430,15 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
         ]);
 
         $isMe = $this->botUserId !== null && ($userId === $this->botUserId || $userId === '');
+
+        $this->logger->info('[Slack] Message parsed', [
+            'channelId' => $channelId,
+            'userId' => $userId,
+            'threadTs' => $threadTs,
+            'isDM' => $isDM,
+            'isMention' => $isMention,
+            'text_preview' => mb_substr($text, 0, 100),
+        ]);
 
         return new Message(
             id: $messageTs,
@@ -1014,6 +1030,12 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
         $factory = $this->psrFactory ?? new Psr17Factory;
         $url = $overrideUrl ?? $this->apiUrl.$method;
 
+        $this->logger->debug('[Slack] API call', [
+            'method' => $method,
+            'httpMethod' => $httpMethod,
+            'url' => $url,
+        ]);
+
         $request = $factory->createRequest($httpMethod, $url)
             ->withHeader('Authorization', "Bearer {$this->botToken}");
 
@@ -1034,6 +1056,11 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
 
         if ($statusCode < 200 || $statusCode >= 300) {
             $responseBody = (string) $psrResponse->getBody();
+            $this->logger->error('[Slack] API error', [
+                'method' => $method,
+                'statusCode' => $statusCode,
+                'response' => mb_substr($responseBody, 0, 500),
+            ]);
             throw new AdapterException("Slack API returned HTTP {$statusCode}: {$responseBody}");
         }
 

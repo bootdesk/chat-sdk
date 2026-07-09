@@ -17,6 +17,12 @@ export interface PreEntryConfig {
   render: (helpers: PreEntryHelpers) => React.ReactNode;
 }
 
+export interface ChatWidgetRef {
+  open: () => void;
+  close: () => void;
+  sendMessage: (text: string) => void;
+}
+
 export interface ChatWidgetProps {
   client: import("@bootdesk/js-web-adapter-core").WebChatClient;
   locale?: string | LocaleConfig;

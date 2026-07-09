@@ -1,6 +1,7 @@
 export { ChatWidget } from "./components/ChatWidget";
 export type {
   ChatWidgetProps,
+  ChatWidgetRef,
   PreEntryConfig,
   PreEntryHelpers,
   ThemeMode,

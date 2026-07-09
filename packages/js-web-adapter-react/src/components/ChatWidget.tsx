@@ -1,6 +1,12 @@
 import React, { useState, useCallback, useEffect } from "react";
 
-import { useBridge, useMessages, useTyping, usePushNotifications } from "../hooks";
+import {
+  useBridge,
+  useMessages,
+  useTyping,
+  usePushNotifications,
+  useVisualViewport,
+} from "../hooks";
 import { LocaleProvider, mergeLocale, useLocale } from "../i18n";
 import { MapConfigProvider } from "../providers/MapConfigContext";
 import { FloatingButton } from "./FloatingButton";
@@ -13,7 +19,8 @@ import { ToastContainer } from "./Toast";
 import type { ToastItem, ToastType } from "./Toast";
 import type { ReconfigureConfig } from "@bootdesk/js-web-adapter-core";
 import type { LocaleConfig } from "../i18n";
-import type { ChatWidgetProps, DisplayMode, ThemeMode } from "../types/components";
+import type { ChatWidgetProps, ChatWidgetRef, DisplayMode, ThemeMode } from "../types/components";
+import type { BannerData } from "@bootdesk/chat-widget-bridge";
 import { cn } from "../lib/cn";
 
 function PreEntryRenderer({
@@ -27,39 +34,44 @@ function PreEntryRenderer({
   return <>{render({ start: onStart, t, locale })}</>;
 }
 
-export function ChatWidget({
-  client,
-  locale: localeProp,
-  initialMode = "floating",
-  theme: themeProp,
-  onThemeChange,
-  position = "bottom-right",
-  className,
-  showClose = true,
-  showFullscreenToggle = true,
-  title = "Chat",
-  placeholder,
-  onOpen,
-  onClose,
-  embedded,
-  floatingButton,
-  enableAttachments = false,
-  uploadConfig,
-  accept,
-  maxFileSize,
-  renderPushPrompt,
-  preEntry,
-  onChatStart,
-  pushConfig,
-  mapConfig,
-}: ChatWidgetProps): React.JSX.Element {
+export const ChatWidget = React.forwardRef<ChatWidgetRef, ChatWidgetProps>(function ChatWidget(
+  {
+    client,
+    locale: localeProp,
+    initialMode = "floating",
+    theme: themeProp,
+    onThemeChange,
+    position = "bottom-right",
+    className,
+    showClose = true,
+    showFullscreenToggle = true,
+    title = "Chat",
+    placeholder,
+    onOpen: onOpenProp,
+    onClose,
+    embedded,
+    floatingButton,
+    enableAttachments = false,
+    uploadConfig,
+    accept,
+    maxFileSize,
+    renderPushPrompt,
+    preEntry,
+    onChatStart,
+    pushConfig,
+    mapConfig,
+  }: ChatWidgetProps,
+  ref,
+): React.JSX.Element {
   const {
     config: iframeConfig,
     isInIframe,
     isInWebView,
+    banner: bridgeBanner,
     notifyMessage,
     notifyViewportConfig,
     onNotificationClicked,
+    onOpen: onOpenFromBridge,
     pushState: bridgePushState,
     requestPushSubscribe,
     requestPushUnsubscribe,
@@ -138,6 +150,21 @@ export function ChatWidget({
   const [displayMode, setDisplayMode] = useState<DisplayMode>(effectiveMode);
   const [isConnected] = useState(true);
   const [isPreEntry, setIsPreEntry] = useState(Boolean(preEntry));
+  const [banner, setBanner] = useState<BannerData | null>(null);
+
+  useEffect(() => {
+    if (!inBridge) return;
+    setBanner(bridgeBanner);
+  }, [inBridge, bridgeBanner]);
+
+  useEffect(() => {
+    if (!inBridge) return;
+    onOpenFromBridge(() => {
+      if (effectiveEmbedded) return;
+      setIsOpen(true);
+      onOpenProp?.();
+    });
+  }, [inBridge, onOpenFromBridge, effectiveEmbedded, onOpenProp]);
 
   const handleStart = useCallback(
     (config?: ReconfigureConfig) => {
@@ -148,26 +175,52 @@ export function ChatWidget({
     [client, onChatStart],
   );
 
-  const [isSmallScreen, setIsSmallScreen] = useState(
-    () => typeof window !== "undefined" && window.innerWidth < 800,
+  const [isSmallViewport, setIsSmallViewport] = useState(
+    () => typeof window !== "undefined" && (window.innerWidth < 800 || window.innerHeight < 600),
   );
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 799px)");
+    const mq = window.matchMedia("(max-width: 799px), (max-height: 599px)");
     const handler = (e: MediaQueryListEvent) => {
-      setIsSmallScreen(e.matches);
+      setIsSmallViewport(e.matches);
       if (e.matches) setDisplayMode("fullscreen");
     };
-    setIsSmallScreen(mq.matches);
+    setIsSmallViewport(mq.matches);
     if (mq.matches) setDisplayMode("fullscreen");
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
 
+  const { isKeyboardOpen, viewportHeight } = useVisualViewport();
+
+  const [isTouchDevice, setIsTouchDevice] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse)");
+    const handler = (e: MediaQueryListEvent) => setIsTouchDevice(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const [preKeyboardMode, setPreKeyboardMode] = useState<DisplayMode | null>(null);
+
+  useEffect(() => {
+    if (!isTouchDevice || effectiveEmbedded) return;
+    if (isKeyboardOpen && displayMode !== "fullscreen") {
+      setPreKeyboardMode(displayMode);
+      setDisplayMode("fullscreen");
+    } else if (!isKeyboardOpen && preKeyboardMode) {
+      setDisplayMode(preKeyboardMode);
+      setPreKeyboardMode(null);
+    }
+  }, [isKeyboardOpen, isTouchDevice, displayMode, effectiveEmbedded, preKeyboardMode]);
+
   useEffect(() => {
     if (initialMode !== "fullscreen") return;
-    if (!isSmallScreen) setIsOpen(true);
-  }, [initialMode, isSmallScreen]);
+    if (!isSmallViewport) setIsOpen(true);
+  }, [initialMode, isSmallViewport]);
 
   useEffect(() => {
     if (inBridge) {
@@ -175,7 +228,7 @@ export function ChatWidget({
       return () => notifyViewportConfig("");
     }
 
-    const isFullscreen = displayMode === "fullscreen" || isSmallScreen;
+    const isFullscreen = displayMode === "fullscreen" || isSmallViewport;
     const active = isOpen && isFullscreen;
 
     const meta = document.querySelector('meta[name="viewport"]');
@@ -190,7 +243,7 @@ export function ChatWidget({
         meta.setAttribute("content", original);
       };
     }
-  }, [isOpen, displayMode, isSmallScreen, inBridge, notifyViewportConfig]);
+  }, [isOpen, displayMode, isSmallViewport, inBridge, notifyViewportConfig]);
 
   const {
     messages,
@@ -320,11 +373,11 @@ export function ChatWidget({
 
   const toggleOpen = useCallback(() => {
     setIsOpen((prev) => {
-      if (!prev) onOpen?.();
+      if (!prev) onOpenProp?.();
       else onClose?.();
       return !prev;
     });
-  }, [onOpen, onClose]);
+  }, [onOpenProp, onClose]);
 
   const toggleFullscreen = useCallback(() => {
     setDisplayMode((prev) => (prev === "fullscreen" ? "floating" : "fullscreen"));
@@ -349,6 +402,16 @@ export function ChatWidget({
     }
   }, [isInIframe, isInWebView]);
 
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      open: () => toggleOpen(),
+      close: () => close(),
+      sendMessage: (text: string) => handleSend(text),
+    }),
+    [toggleOpen, close, handleSend],
+  );
+
   const panelContent = (
     <div className="bdesk-widget-panel">
       <Header
@@ -367,7 +430,7 @@ export function ChatWidget({
         onToggleFullscreen={
           effectiveEmbedded
             ? undefined
-            : showFullscreenToggle && !isSmallScreen
+            : showFullscreenToggle && !isSmallViewport
               ? toggleFullscreen
               : undefined
         }
@@ -380,6 +443,39 @@ export function ChatWidget({
         pushStatus={hasBridgePush ? bridgePushState : pushConfig ? push.status : undefined}
         onPushToggle={hasBridgePush || pushConfig ? handlePushToggle : undefined}
       />
+
+      {banner && (
+        <div className="bdesk-banner">
+          <span className="bdesk-banner-text">{banner.text}</span>
+          {banner.action && (
+            <button
+              className="bdesk-banner-action"
+              onClick={() => {
+                if (banner.action?.open) toggleOpen();
+                setBanner(null);
+              }}
+            >
+              {banner.action.label}
+            </button>
+          )}
+          <button
+            className="bdesk-banner-dismiss"
+            onClick={() => setBanner(null)}
+            aria-label="Dismiss"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {isPreEntry && preEntry ? (
         <div className="bdesk-pre-entry">
@@ -437,6 +533,7 @@ export function ChatWidget({
       className="bdesk-widget"
       data-chat-widget="embedded"
       data-chat-theme={effectiveTheme}
+      style={{ "--chat-vh": `${viewportHeight}px` } as React.CSSProperties}
     >
       {panelContent}
     </div>
@@ -480,6 +577,7 @@ export function ChatWidget({
           data-chat-widget={displayMode}
           data-chat-position={position}
           data-chat-theme={effectiveTheme}
+          style={{ "--chat-vh": `${viewportHeight}px` } as React.CSSProperties}
         >
           {panelContent}
         </div>
@@ -492,4 +590,4 @@ export function ChatWidget({
       <MapConfigProvider config={mapConfig}>{widget}</MapConfigProvider>
     </LocaleProvider>
   );
-}
+});

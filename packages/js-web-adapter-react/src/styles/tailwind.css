@@ -279,6 +279,10 @@
   scrollbar-color: var(--chat-text-secondary) transparent;
 }
 
+.bdesk-message-list-spacer {
+  @apply flex-1 min-h-0;
+}
+
 .bdesk-message-list::-webkit-scrollbar {
   width: 6px;
 }
@@ -1074,12 +1078,29 @@
   @apply flex-1 overflow-y-auto p-4;
 }
 
+.bdesk-banner {
+  @apply flex items-center gap-2 px-4 py-3 bg-[var(--chat-primary)] text-white text-sm;
+}
+
+.bdesk-banner-text {
+  @apply flex-1;
+}
+
+.bdesk-banner-action {
+  @apply shrink-0 px-3 py-1 rounded bg-white/20 text-white font-medium text-sm border-none cursor-pointer hover:bg-white/30 transition;
+}
+
+.bdesk-banner-dismiss {
+  @apply shrink-0 bg-transparent border-none text-white/70 cursor-pointer p-1 rounded hover:text-white hover:bg-white/10 transition;
+}
+
 .bdesk-widget--float {
   @apply flex flex-col overflow-hidden bg-[var(--chat-background)];
 }
 
 .bdesk-widget--fullscreen {
   @apply fixed inset-0 z-50;
+  height: var(--chat-vh, 100dvh);
 }
 
 .bdesk-widget--pos-bottom-right {
@@ -1099,7 +1120,9 @@
 }
 
 .bdesk-widget--float-size {
-  @apply w-[480px] max-w-[min(800px,calc(100dvw-40px))] h-dvh max-h-[min(600px,80dvh)] z-10 shadow-xl border border-[var(--chat-border)] rounded-2xl;
+  @apply w-[480px] max-w-[min(800px,calc(100dvw-40px))] z-10 shadow-xl border border-[var(--chat-border)] rounded-2xl;
+  height: var(--chat-vh, 100dvh);
+  max-height: min(600px, calc(var(--chat-vh, 100dvh) * 0.8));
 }
 
 [dir="rtl"] .bdesk-message-bubble-own {
@@ -1119,11 +1142,11 @@
 }
 
 [data-chat-widget="fullscreen"] {
-  height: 100dvh;
+  height: var(--chat-vh, 100dvh);
 }
 
 [data-chat-widget="floating"] {
-  max-height: min(600px, 80dvh);
+  max-height: min(600px, calc(var(--chat-vh, 100dvh) * 0.8));
 }
 
 @supports (padding: max(0px)) {
@@ -1144,7 +1167,7 @@
   }
 }
 
-@media screen and (max-width: 799px) {
+@media screen and (max-width: 799px), screen and (max-height: 599px) {
   [data-chat-widget="floating"] {
     position: fixed !important;
     inset: 0 !important;

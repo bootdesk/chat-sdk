@@ -2,6 +2,7 @@
 
 namespace BootDesk\ChatSDK\Slack;
 
+use BootDesk\ChatSDK\Core\ActionEvent;
 use BootDesk\ChatSDK\Core\Attachment;
 use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\ChannelInfo;
@@ -28,6 +29,7 @@ use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\Modals\Modal;
 use BootDesk\ChatSDK\Core\PostableMessage;
 use BootDesk\ChatSDK\Core\SentMessage;
+use BootDesk\ChatSDK\Core\SlashCommandEvent;
 use BootDesk\ChatSDK\Core\Support\EmojiResolver;
 use BootDesk\ChatSDK\Core\ThreadInfo;
 use BootDesk\ChatSDK\Core\UserInfo;
@@ -695,6 +697,58 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
             'channel' => $decoded['channel'],
             'ts' => $messageId,
         ]);
+    }
+
+    public function replaceOriginal(ActionEvent|SlashCommandEvent|string $eventOrUrl, PostableMessage $message): SentMessage
+    {
+        $responseUrl = is_string($eventOrUrl) ? $eventOrUrl : $this->extractResponseUrl($eventOrUrl);
+
+        if ($responseUrl === null || $responseUrl === '') {
+            throw new AdapterException('No response_url available for replaceOriginal');
+        }
+
+        $params = $this->buildMessageParams($message);
+
+        if (isset($params['markdown_text']) && ! isset($params['text'])) {
+            $params['text'] = $params['markdown_text'];
+            unset($params['markdown_text']);
+        }
+
+        $params['replace_original'] = true;
+
+        $this->apiCall('', $params, overrideUrl: $responseUrl);
+
+        $threadId = $eventOrUrl instanceof ActionEvent ? $eventOrUrl->thread->id : '';
+
+        return new SentMessage(
+            id: 'replaced',
+            threadId: $threadId,
+            timestamp: (string) time(),
+        );
+    }
+
+    public function deleteOriginal(ActionEvent|SlashCommandEvent|string $eventOrUrl): void
+    {
+        $responseUrl = is_string($eventOrUrl) ? $eventOrUrl : $this->extractResponseUrl($eventOrUrl);
+
+        if ($responseUrl === null || $responseUrl === '') {
+            throw new AdapterException('No response_url available for deleteOriginal');
+        }
+
+        $this->apiCall('', ['delete_original' => true], overrideUrl: $responseUrl);
+    }
+
+    protected function extractResponseUrl(ActionEvent|SlashCommandEvent $event): ?string
+    {
+        if ($event instanceof ActionEvent) {
+            $payload = json_decode($event->raw ?? '', true);
+
+            return $payload['response_url'] ?? null;
+        }
+
+        parse_str($event->raw ?? '', $params);
+
+        return $params['response_url'] ?? null;
     }
 
     public function addReaction(string $threadId, string $messageId, string $emoji): void

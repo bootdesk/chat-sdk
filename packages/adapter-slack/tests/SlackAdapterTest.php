@@ -2,10 +2,14 @@
 
 namespace BootDesk\ChatSDK\Slack\Tests;
 
+use BootDesk\ChatSDK\Core\ActionEvent;
 use BootDesk\ChatSDK\Core\Attachment;
+use BootDesk\ChatSDK\Core\Author;
 use BootDesk\ChatSDK\Core\Cards\Button;
 use BootDesk\ChatSDK\Core\Cards\Card;
+use BootDesk\ChatSDK\Core\Channel;
 use BootDesk\ChatSDK\Core\Chat;
+use BootDesk\ChatSDK\Core\Contracts\Adapter;
 use BootDesk\ChatSDK\Core\Contracts\HandlesModals;
 use BootDesk\ChatSDK\Core\Contracts\HandlesOptionsLoad;
 use BootDesk\ChatSDK\Core\Contracts\HandlesReactions;
@@ -14,9 +18,13 @@ use BootDesk\ChatSDK\Core\Contracts\MustRehydrateAttachments;
 use BootDesk\ChatSDK\Core\Contracts\SupportsModals;
 use BootDesk\ChatSDK\Core\Exceptions\AdapterException;
 use BootDesk\ChatSDK\Core\Exceptions\AuthenticationException;
+use BootDesk\ChatSDK\Core\Message;
 use BootDesk\ChatSDK\Core\Modals\Modal;
 use BootDesk\ChatSDK\Core\Modals\TextInput;
 use BootDesk\ChatSDK\Core\PostableMessage;
+use BootDesk\ChatSDK\Core\SlashCommandEvent;
+use BootDesk\ChatSDK\Core\Tests\Helpers\MemoryStateAdapter;
+use BootDesk\ChatSDK\Core\Thread;
 use BootDesk\ChatSDK\Slack\SlackAdapter;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
@@ -100,6 +108,9 @@ class SlackAdapterTest extends TestCase
                             'ok' => true,
                             'channel' => ['id' => 'D999'],
                         ]))
+                    ),
+                    'hooks.slack.com' => $factory->createResponse(200)->withBody(
+                        $factory->createStream(json_encode(['ok' => true]))
                     ),
                 ];
             }
@@ -1158,5 +1169,140 @@ class SlackAdapterTest extends TestCase
         $this->expectExceptionMessage('Slack API returned HTTP 403');
 
         $rehydrated->read();
+    }
+
+    public function test_replace_original_with_string_url(): void
+    {
+        $url = 'https://hooks.slack.com/actions/T123/B123/abc123';
+        $countBefore = count($this->capturedRequests);
+
+        $sent = $this->adapter->replaceOriginal($url, PostableMessage::text('Replaced!'));
+
+        $this->assertSame('replaced', $sent->id);
+        $this->assertSame('', $sent->threadId);
+
+        $this->assertCount($countBefore + 1, $this->capturedRequests);
+        $lastRequest = $this->capturedRequests[count($this->capturedRequests) - 1];
+        $body = json_decode((string) $lastRequest->getBody(), true);
+        $this->assertTrue($body['replace_original']);
+        $this->assertSame('Replaced!', $body['text']);
+        $this->assertStringContainsString('hooks.slack.com', (string) $lastRequest->getUri());
+    }
+
+    public function test_replace_original_with_action_event(): void
+    {
+        $payload = json_encode([
+            'type' => 'block_actions',
+            'response_url' => 'https://hooks.slack.com/actions/T123/B123/def456',
+            'actions' => [['action_id' => 'approve', 'value' => 'yes']],
+            'channel' => ['id' => 'C123'],
+            'user' => ['id' => 'U123'],
+            'message' => ['ts' => '1234.5678'],
+            'trigger_id' => 'trig123',
+        ]);
+
+        $state = new MemoryStateAdapter;
+        $chat = new Chat($state);
+        $mockAdapter = $this->createMock(Adapter::class);
+        $thread = new Thread('slack:C123:1234.5678', $chat, $mockAdapter, $state);
+
+        $event = new ActionEvent(
+            actionId: 'approve',
+            value: 'yes',
+            messageId: '1234.5678',
+            triggerId: 'trig123',
+            thread: $thread,
+            user: new Author(id: 'U123'),
+            raw: $payload,
+        );
+
+        $sent = $this->adapter->replaceOriginal($event, PostableMessage::text('Approved!'));
+
+        $this->assertSame('replaced', $sent->id);
+        $this->assertSame('slack:C123:1234.5678', $sent->threadId);
+
+        $lastRequest = $this->capturedRequests[count($this->capturedRequests) - 1];
+        $body = json_decode((string) $lastRequest->getBody(), true);
+        $this->assertTrue($body['replace_original']);
+        $this->assertSame('Approved!', $body['text']);
+        $this->assertStringContainsString('hooks.slack.com/actions/T123/B123/def456', (string) $lastRequest->getUri());
+    }
+
+    public function test_replace_original_with_slash_command_event(): void
+    {
+        $rawBody = http_build_query([
+            'command' => '/approve',
+            'text' => 'yes',
+            'user_id' => 'U123',
+            'channel_id' => 'C123',
+            'response_url' => 'https://hooks.slack.com/commands/T123/ghi789',
+            'trigger_id' => 'trig456',
+        ]);
+
+        $state = new MemoryStateAdapter;
+        $chat = new Chat($state);
+        $mockAdapter = $this->createMock(Adapter::class);
+        $thread = new Thread('slack:C123', $chat, $mockAdapter, $state);
+        $channel = new Channel('slack:C123', $mockAdapter);
+
+        $event = new SlashCommandEvent(
+            adapter: $mockAdapter,
+            channel: $channel,
+            thread: $thread,
+            message: new Message(id: '1234', threadId: 'slack:C123', author: new Author(id: 'U123'), text: '/approve yes'),
+            user: new Author(id: 'U123'),
+            command: '/approve',
+            text: 'yes',
+            raw: $rawBody,
+            triggerId: 'trig456',
+        );
+
+        $sent = $this->adapter->replaceOriginal($event, PostableMessage::text('Done!'));
+
+        $this->assertSame('replaced', $sent->id);
+
+        $lastRequest = $this->capturedRequests[count($this->capturedRequests) - 1];
+        $body = json_decode((string) $lastRequest->getBody(), true);
+        $this->assertTrue($body['replace_original']);
+        $this->assertSame('Done!', $body['text']);
+        $this->assertStringContainsString('hooks.slack.com/commands/T123/ghi789', (string) $lastRequest->getUri());
+    }
+
+    public function test_replace_original_throws_without_response_url(): void
+    {
+        $state = new MemoryStateAdapter;
+        $chat = new Chat($state);
+        $mockAdapter = $this->createMock(Adapter::class);
+        $thread = new Thread('slack:C123:1234.5678', $chat, $mockAdapter, $state);
+
+        $event = new ActionEvent(
+            actionId: 'test',
+            value: null,
+            messageId: 'm1',
+            triggerId: null,
+            thread: $thread,
+            user: new Author(id: 'U1'),
+            raw: json_encode(['type' => 'block_actions']),
+        );
+
+        $this->expectException(AdapterException::class);
+        $this->expectExceptionMessage('No response_url');
+
+        $this->adapter->replaceOriginal($event, PostableMessage::text('test'));
+    }
+
+    public function test_delete_original_with_string_url(): void
+    {
+        $url = 'https://hooks.slack.com/actions/T123/B123/jkl012';
+        $countBefore = count($this->capturedRequests);
+
+        $this->adapter->deleteOriginal($url);
+
+        $this->assertCount($countBefore + 1, $this->capturedRequests);
+        $lastRequest = $this->capturedRequests[count($this->capturedRequests) - 1];
+        $body = json_decode((string) $lastRequest->getBody(), true);
+        $this->assertTrue($body['delete_original']);
+        $this->assertStringNotContainsString('replace_original', json_encode($body));
+        $this->assertStringContainsString('hooks.slack.com', (string) $lastRequest->getUri());
     }
 }

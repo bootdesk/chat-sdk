@@ -440,6 +440,7 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
             'isDM' => $isDM,
             'isMention' => $isMention,
             'text_preview' => mb_substr($text, 0, 100),
+            'body' => mb_substr($body, 0, 500),
         ]);
 
         return new Message(

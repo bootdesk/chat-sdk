@@ -1,6 +1,6 @@
 {
   "name": "@bootdesk/js-web-adapter-react",
-  "version": "0.4.4",
+  "version": "0.4.44",
   "description": "React components for BootDesk Chat SDK WebAdapter",
   "repository": "https://github.com/bootdesk/chat-sdk",
   "type": "module",
@@ -32,10 +32,10 @@
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
-    "@bootdesk/js-web-adapter-core": "0.4.4",
+    "@bootdesk/js-web-adapter-core": "0.4.44",
     "marked": "^18.0.0",
     "dompurify": "^3.4.5",
-    "@bootdesk/chat-widget-bridge": "0.4.4"
+    "@bootdesk/chat-widget-bridge": "0.4.44"
   },
   "peerDependenciesMeta": {
     "@bootdesk/chat-widget-bridge": {

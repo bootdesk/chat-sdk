@@ -1305,4 +1305,298 @@ class SlackAdapterTest extends TestCase
         $this->assertStringNotContainsString('replace_original', json_encode($body));
         $this->assertStringContainsString('hooks.slack.com', (string) $lastRequest->getUri());
     }
+
+    // --- GET query params tests ---
+
+    public function test_api_call_get_with_params_appends_query_string(): void
+    {
+        $capturedUri = null;
+        $spy = $this->createSpyClient(function (RequestInterface $request) use (&$capturedUri): void {
+            $capturedUri = (string) $request->getUri();
+        });
+
+        $adapter = new SlackAdapter(
+            botToken: 'xoxb-test-token',
+            httpClient: $spy,
+            psrFactory: $this->factory,
+        );
+
+        $apiCall = \Closure::bind(
+            fn (string $method, array $params = [], string $httpMethod = 'POST') => $this->apiCall($method, $params, httpMethod: $httpMethod),
+            $adapter,
+            SlackAdapter::class,
+        );
+
+        $apiCall('conversations.list', ['limit' => 10, 'cursor' => 'abc'], 'GET');
+
+        $this->assertNotNull($capturedUri);
+        $this->assertStringContainsString('conversations.list', $capturedUri);
+        $this->assertStringContainsString('limit=10', $capturedUri);
+        $this->assertStringContainsString('cursor=abc', $capturedUri);
+    }
+
+    public function test_api_call_get_without_params_no_query_string(): void
+    {
+        $capturedUri = null;
+        $spy = $this->createSpyClient(function (RequestInterface $request) use (&$capturedUri): void {
+            $capturedUri = (string) $request->getUri();
+        });
+
+        $adapter = new SlackAdapter(
+            botToken: 'xoxb-test-token',
+            httpClient: $spy,
+            psrFactory: $this->factory,
+        );
+
+        $apiCall = \Closure::bind(
+            fn (string $method, array $params = [], string $httpMethod = 'POST') => $this->apiCall($method, $params, httpMethod: $httpMethod),
+            $adapter,
+            SlackAdapter::class,
+        );
+
+        $apiCall('auth.test', [], 'GET');
+
+        $this->assertNotNull($capturedUri);
+        $this->assertStringNotContainsString('?', $capturedUri);
+    }
+
+    public function test_api_call_get_with_existing_query_uses_ampersand(): void
+    {
+        $capturedUri = null;
+        $spy = $this->createSpyClient(function (RequestInterface $request) use (&$capturedUri): void {
+            $capturedUri = (string) $request->getUri();
+        });
+
+        $factory = $this->factory;
+        $adapter = new SlackAdapter(
+            botToken: 'xoxb-test-token',
+            httpClient: $spy,
+            psrFactory: $factory,
+        );
+
+        $apiCall = \Closure::bind(
+            fn (string $method, array $params = [], string $httpMethod = 'POST', ?string $overrideUrl = null) => $this->apiCall($method, $params, httpMethod: $httpMethod, overrideUrl: $overrideUrl),
+            $adapter,
+            SlackAdapter::class,
+        );
+
+        $apiCall('', ['foo' => 'bar'], 'GET', 'https://hooks.slack.com/actions/T001?response=ok');
+
+        $this->assertNotNull($capturedUri);
+        $this->assertStringContainsString('?response=ok', $capturedUri);
+        $this->assertStringContainsString('&foo=bar', $capturedUri);
+    }
+
+    public function test_api_call_post_still_sends_params_as_body(): void
+    {
+        $capturedUri = null;
+        $capturedBody = null;
+        $spy = $this->createSpyClient(function (RequestInterface $request) use (&$capturedUri, &$capturedBody): void {
+            $capturedUri = (string) $request->getUri();
+            $capturedBody = (string) $request->getBody();
+        });
+
+        $adapter = new SlackAdapter(
+            botToken: 'xoxb-test-token',
+            httpClient: $spy,
+            psrFactory: $this->factory,
+        );
+
+        $apiCall = \Closure::bind(
+            fn (string $method, array $params = [], string $httpMethod = 'POST') => $this->apiCall($method, $params, httpMethod: $httpMethod),
+            $adapter,
+            SlackAdapter::class,
+        );
+
+        $apiCall('chat.postMessage', ['channel' => 'C123', 'text' => 'Hello'], 'POST');
+
+        $this->assertNotNull($capturedBody);
+        $body = json_decode($capturedBody, true);
+        $this->assertSame('C123', $body['channel']);
+        $this->assertSame('Hello', $body['text']);
+        $this->assertStringNotContainsString('?', $capturedUri);
+    }
+
+    // --- Attachment text extraction tests ---
+
+    public function test_fetch_messages_extracts_attachment_text_when_message_text_empty(): void
+    {
+        $spy = $this->createSpyClient(
+            onRequest: fn () => null,
+            responseBody: [
+                'ok' => true,
+                'messages' => [
+                    [
+                        'ts' => '111.222',
+                        'user' => 'U123',
+                        'text' => '',
+                        'attachments' => [
+                            ['id' => 1, 'text' => 'Attachment content here', 'fallback' => 'Fallback text'],
+                        ],
+                    ],
+                ],
+            ],
+        );
+
+        $adapter = new SlackAdapter(
+            botToken: 'xoxb-test-token',
+            httpClient: $spy,
+            psrFactory: $this->factory,
+        );
+
+        $result = $adapter->fetchMessages('slack:C123:1234.5678');
+
+        $this->assertCount(1, $result->messages);
+        $this->assertSame('Attachment content here', $result->messages[0]->text);
+    }
+
+    public function test_fetch_messages_falls_back_to_attachment_fallback_when_text_missing(): void
+    {
+        $spy = $this->createSpyClient(
+            onRequest: fn () => null,
+            responseBody: [
+                'ok' => true,
+                'messages' => [
+                    [
+                        'ts' => '111.222',
+                        'user' => 'U123',
+                        'text' => '',
+                        'attachments' => [
+                            ['id' => 1, 'fallback' => 'Fallback text only'],
+                        ],
+                    ],
+                ],
+            ],
+        );
+
+        $adapter = new SlackAdapter(
+            botToken: 'xoxb-test-token',
+            httpClient: $spy,
+            psrFactory: $this->factory,
+        );
+
+        $result = $adapter->fetchMessages('slack:C123:1234.5678');
+
+        $this->assertCount(1, $result->messages);
+        $this->assertSame('Fallback text only', $result->messages[0]->text);
+    }
+
+    public function test_fetch_messages_joins_multiple_attachment_texts(): void
+    {
+        $spy = $this->createSpyClient(
+            onRequest: fn () => null,
+            responseBody: [
+                'ok' => true,
+                'messages' => [
+                    [
+                        'ts' => '111.222',
+                        'user' => 'U123',
+                        'text' => '',
+                        'attachments' => [
+                            ['id' => 1, 'text' => 'First attachment'],
+                            ['id' => 2, 'text' => 'Second attachment'],
+                        ],
+                    ],
+                ],
+            ],
+        );
+
+        $adapter = new SlackAdapter(
+            botToken: 'xoxb-test-token',
+            httpClient: $spy,
+            psrFactory: $this->factory,
+        );
+
+        $result = $adapter->fetchMessages('slack:C123:1234.5678');
+
+        $this->assertCount(1, $result->messages);
+        $this->assertStringContainsString('First attachment', $result->messages[0]->text);
+        $this->assertStringContainsString('Second attachment', $result->messages[0]->text);
+        $this->assertStringContainsString("\n\n", $result->messages[0]->text);
+    }
+
+    public function test_fetch_messages_uses_message_text_when_not_empty(): void
+    {
+        $spy = $this->createSpyClient(
+            onRequest: fn () => null,
+            responseBody: [
+                'ok' => true,
+                'messages' => [
+                    [
+                        'ts' => '111.222',
+                        'user' => 'U123',
+                        'text' => 'Direct message text',
+                        'attachments' => [
+                            ['id' => 1, 'text' => 'Should be ignored'],
+                        ],
+                    ],
+                ],
+            ],
+        );
+
+        $adapter = new SlackAdapter(
+            botToken: 'xoxb-test-token',
+            httpClient: $spy,
+            psrFactory: $this->factory,
+        );
+
+        $result = $adapter->fetchMessages('slack:C123:1234.5678');
+
+        $this->assertCount(1, $result->messages);
+        $this->assertSame('Direct message text', $result->messages[0]->text);
+    }
+
+    public function test_fetch_messages_attachment_skipped_when_text_and_fallback_empty(): void
+    {
+        $spy = $this->createSpyClient(
+            onRequest: fn () => null,
+            responseBody: [
+                'ok' => true,
+                'messages' => [
+                    [
+                        'ts' => '111.222',
+                        'user' => 'U123',
+                        'text' => '',
+                        'attachments' => [
+                            ['id' => 1, 'title' => 'No text or fallback'],
+                        ],
+                    ],
+                ],
+            ],
+        );
+
+        $adapter = new SlackAdapter(
+            botToken: 'xoxb-test-token',
+            httpClient: $spy,
+            psrFactory: $this->factory,
+        );
+
+        $result = $adapter->fetchMessages('slack:C123:1234.5678');
+
+        $this->assertCount(1, $result->messages);
+        $this->assertSame('', $result->messages[0]->text);
+    }
+
+    private function createSpyClient(callable $onRequest, ?array $responseBody = null): ClientInterface
+    {
+        return new class($this->factory, $onRequest, $responseBody) implements ClientInterface
+        {
+            public function __construct(
+                private Psr17Factory $factory,
+                private \Closure $onRequest,
+                private ?array $responseBody = null,
+            ) {}
+
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                ($this->onRequest)($request);
+
+                $body = $this->responseBody ?? ['ok' => true];
+
+                return $this->factory->createResponse(200)->withBody(
+                    $this->factory->createStream(json_encode($body))
+                );
+            }
+        };
+    }
 }

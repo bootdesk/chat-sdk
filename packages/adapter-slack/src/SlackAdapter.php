@@ -194,7 +194,7 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
                 'channel' => $event['item']['channel'],
                 'ts' => $event['item']['ts'],
                 'limit' => 1,
-            ]);
+            ], httpMethod: 'GET');
             $firstMessage = $response['messages'][0] ?? [];
             if (isset($firstMessage['thread_ts'])) {
                 $parentTs = $firstMessage['thread_ts'];
@@ -802,15 +802,29 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
             $params['ts'] = $decoded['thread_ts'];
         }
 
-        $response = $this->apiCall('conversations.replies', $params);
+        $response = $this->apiCall('conversations.replies', $params, httpMethod: 'GET');
 
         $messages = [];
         foreach ($response['messages'] ?? [] as $msg) {
+            $text = $msg['text'] ?? '';
+
+            if ($text === '' && isset($msg['attachments'])) {
+                $parts = [];
+                foreach ($msg['attachments'] as $attachment) {
+                    $parts[] = $attachment['text'] ?? $attachment['fallback'] ?? '';
+                }
+                $text = implode("\n\n", array_filter($parts));
+            }
+
+            $isBot = isset($msg['bot_id']);
             $messages[] = new Message(
                 id: $msg['ts'],
                 threadId: $threadId,
-                author: new Author(id: $msg['user'] ?? ($msg['bot_id'] ?? '')),
-                text: $msg['text'] ?? '',
+                author: new Author(
+                    id: $msg['user'] ?? ($msg['bot_id'] ?? ''),
+                    isBot: $isBot,
+                ),
+                text: $text,
             );
         }
 
@@ -827,7 +841,7 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
         try {
             $response = $this->apiCall('conversations.info', [
                 'channel' => $decoded['channel'],
-            ]);
+            ], httpMethod: 'GET');
         } catch (AdapterException) {
             return new ThreadInfo(
                 id: $threadId,
@@ -885,7 +899,7 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
         }
 
         try {
-            $response = $this->apiCall('conversations.info', ['channel' => $channel]);
+            $response = $this->apiCall('conversations.info', ['channel' => $channel], httpMethod: 'GET');
         } catch (AdapterException) {
             return null;
         }
@@ -906,7 +920,7 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
 
     public function getUser(string $userId): ?UserInfo
     {
-        $response = $this->apiCall('users.info', ['user' => $userId]);
+        $response = $this->apiCall('users.info', ['user' => $userId], httpMethod: 'GET');
         $user = $response['user'] ?? null;
 
         if ($user === null) {
@@ -922,7 +936,7 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
 
     public function getAuthorInfo(Author $author): Author
     {
-        $response = $this->apiCall('users.info', ['user' => $author->id]);
+        $response = $this->apiCall('users.info', ['user' => $author->id], httpMethod: 'GET');
         $user = $response['user'] ?? null;
 
         if ($user === null) {
@@ -1090,6 +1104,10 @@ class SlackAdapter implements Adapter, HandlesInteractions, HandlesModals, Handl
             'httpMethod' => $httpMethod,
             'url' => $url,
         ]);
+
+        if ($httpMethod === 'GET' && $params !== []) {
+            $url .= (str_contains($url, '?') ? '&' : '?').http_build_query($params);
+        }
 
         $request = $factory->createRequest($httpMethod, $url)
             ->withHeader('Authorization', "Bearer {$this->botToken}");

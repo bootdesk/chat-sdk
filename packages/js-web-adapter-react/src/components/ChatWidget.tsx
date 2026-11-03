@@ -12,6 +12,7 @@ import { MapConfigProvider } from "../providers/MapConfigContext";
 import { FloatingButton } from "./FloatingButton";
 import { Header } from "./Header";
 import { MessageList } from "./MessageList";
+import { WelcomePanel } from "./WelcomePanel";
 import { InputArea } from "./InputArea";
 import { TypingIndicator } from "./TypingIndicator";
 import { PushPermissionPrompt } from "./PushPermissionPrompt";
@@ -47,6 +48,10 @@ export const ChatWidget = React.forwardRef<ChatWidgetRef, ChatWidgetProps>(funct
     showFullscreenToggle = true,
     title = "Chat",
     placeholder,
+    welcome,
+    headerAvatarUrl,
+    headerSubtitle,
+    closeIcon = "close",
     onOpen: onOpenProp,
     onClose,
     embedded,
@@ -317,6 +322,9 @@ export const ChatWidget = React.forwardRef<ChatWidgetRef, ChatWidgetProps>(funct
 
   const currentUserId = "getCurrentUserId" in client ? client.getCurrentUserId() : "";
 
+  const showWelcome =
+    Boolean(welcome) && !isPreEntry && messages.length === 0 && !isLoadingHistory && !thinking;
+
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const showToast = useCallback((message: string, type: ToastType = "error") => {
@@ -416,6 +424,9 @@ export const ChatWidget = React.forwardRef<ChatWidgetRef, ChatWidgetProps>(funct
     <div className="bdesk-widget-panel">
       <Header
         title={effectiveTitle}
+        avatarUrl={headerAvatarUrl}
+        subtitle={headerSubtitle}
+        closeIcon={closeIcon}
         onClose={
           effectiveEmbedded
             ? inBridge
@@ -483,32 +494,42 @@ export const ChatWidget = React.forwardRef<ChatWidgetRef, ChatWidgetProps>(funct
         </div>
       ) : (
         <>
-          <MessageList
-            messages={messages}
-            currentUserId={currentUserId}
-            isLoading={isLoadingHistory || loading}
-            thinking={thinking}
-            canReact={canReact}
-            onActionClick={handleActionClick}
-            onReactionClick={handleReactionClick}
-            className={className?.messageList}
-          />
+          {showWelcome ? (
+            <WelcomePanel
+              config={welcome!}
+              onSuggestion={(text) => {
+                void handleSend(text);
+              }}
+            />
+          ) : (
+            <MessageList
+              messages={messages}
+              currentUserId={currentUserId}
+              isLoading={isLoadingHistory || loading}
+              thinking={thinking}
+              canReact={canReact}
+              onActionClick={handleActionClick}
+              onReactionClick={handleReactionClick}
+              className={className?.messageList}
+            />
+          )}
 
           {isSomeoneTyping && <TypingIndicator />}
 
-          {!hasBridgePush && pushConfig ? (
-            <PushPermissionPrompt
-              getVapidPublicKey={pushConfig.getVapidPublicKey}
-              onSubscribe={pushConfig.onSubscribe}
-              onUnsubscribe={pushConfig.onUnsubscribe}
-              serviceWorkerUrl={pushConfig.serviceWorkerUrl}
-              serviceWorkerScope={pushConfig.serviceWorkerScope}
-              serviceWorkerType={pushConfig.serviceWorkerType}
-              notificationOptions={pushConfig.notificationOptions}
-            />
-          ) : !hasBridgePush ? (
-            renderPushPrompt?.()
-          ) : null}
+          {!showWelcome &&
+            (!hasBridgePush && pushConfig ? (
+              <PushPermissionPrompt
+                getVapidPublicKey={pushConfig.getVapidPublicKey}
+                onSubscribe={pushConfig.onSubscribe}
+                onUnsubscribe={pushConfig.onUnsubscribe}
+                serviceWorkerUrl={pushConfig.serviceWorkerUrl}
+                serviceWorkerScope={pushConfig.serviceWorkerScope}
+                serviceWorkerType={pushConfig.serviceWorkerType}
+                notificationOptions={pushConfig.notificationOptions}
+              />
+            ) : !hasBridgePush ? (
+              renderPushPrompt?.()
+            ) : null)}
 
           <InputArea
             onSend={handleSend}

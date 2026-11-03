@@ -17,6 +17,25 @@ export interface PreEntryConfig {
   render: (helpers: PreEntryHelpers) => React.ReactNode;
 }
 
+export interface ChatWidgetRef {
+  open: () => void;
+  close: () => void;
+  sendMessage: (text: string) => void;
+}
+
+export interface WelcomeSuggestion {
+  label: string;
+  value?: string;
+}
+
+export interface WelcomeConfig {
+  title?: string;
+  message?: string;
+  avatarUrl?: string;
+  suggestions?: WelcomeSuggestion[];
+  footnote?: string;
+}
+
 export interface ChatWidgetProps {
   client: import("@bootdesk/js-web-adapter-core").WebChatClient;
   locale?: string | LocaleConfig;
@@ -34,6 +53,10 @@ export interface ChatWidgetProps {
   showFullscreenToggle?: boolean;
   title?: string;
   placeholder?: string;
+  welcome?: WelcomeConfig;
+  headerAvatarUrl?: string;
+  headerSubtitle?: string;
+  closeIcon?: "close" | "minimize";
   onOpen?: () => void;
   onClose?: () => void;
   embedded?: boolean;

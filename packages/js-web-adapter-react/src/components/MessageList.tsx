@@ -15,6 +15,17 @@ function hashUserId(id: string, max: number): number {
   return Math.abs(hash) % max;
 }
 
+function isSameDay(first: number, second: number): boolean {
+  const a = new Date(first);
+  const b = new Date(second);
+
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 interface MessageListProps {
   messages: Message[];
   currentUserId: string;
@@ -36,7 +47,7 @@ export function MessageList({
   onActionClick,
   className,
 }: MessageListProps): React.JSX.Element {
-  const { t, strings } = useLocale();
+  const { t, strings, locale } = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
   const listEndRef = useRef<HTMLDivElement>(null);
   const hasInitiallyScrolled = useRef(false);
@@ -119,6 +130,7 @@ export function MessageList({
       data-chat-message-list="true"
       data-testid="chat-message-list"
     >
+      <div className="bdesk-message-list-spacer" />
       {groupedMessages.length === 0 && !isLoading && (
         <div className="bdesk-empty-state">
           <div className="bdesk-empty-state-text">{t("messageList.emptyState")}</div>
@@ -129,88 +141,106 @@ export function MessageList({
         const isOwn = group.user === currentUserId;
         const firstMessage = group.messages[0]!;
         const userColorIndex = isOwn ? -1 : hashUserId(group.user, 4);
+        const previousGroup = groupIndex > 0 ? groupedMessages[groupIndex - 1] : undefined;
+        const previousMessage = previousGroup?.messages[previousGroup.messages.length - 1];
+        const startsNewDay =
+          !previousMessage || !isSameDay(previousMessage.timestamp, firstMessage.timestamp);
 
         return (
-          <div key={`${group.user}-${groupIndex}`} className="bdesk-message-group">
-            {firstMessage.author.name && (
-              <div className="bdesk-message-group-author">{firstMessage.author.name}</div>
+          <React.Fragment key={`${group.user}-${groupIndex}`}>
+            {startsNewDay && (
+              <div className="bdesk-day-separator">
+                <span>
+                  {new Intl.DateTimeFormat(locale, {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                  }).format(new Date(firstMessage.timestamp))}
+                </span>
+              </div>
             )}
 
-            {group.messages.map((message, msgIndex) => (
-              <div
-                key={message.id}
-                className="bdesk-message-item"
-                data-chat-message-id={message.id}
-              >
-                <div
-                  className={isOwn ? "bdesk-message-bubble-own" : "bdesk-message-bubble-other"}
-                  {...(isOwn ? {} : { "data-chat-user-color": String(userColorIndex) })}
-                >
-                  <MessageContent message={message} onActionClick={onActionClick} />
-                </div>
+            <div className="bdesk-message-group">
+              {firstMessage.author.name && (
+                <div className="bdesk-message-group-author">{firstMessage.author.name}</div>
+              )}
 
-                {message.reactions && message.reactions.length > 0 && (
-                  <div className="bdesk-reactions">
-                    {message.reactions.map((reaction, rIndex) => (
-                      <button
-                        key={`${reaction.emoji}-${rIndex}`}
-                        onClick={() => onReactionClick?.(message.id, reaction.emoji)}
-                        className={cn(
-                          "bdesk-reaction-btn",
-                          reaction.hasReacted
-                            ? "bdesk-reaction-btn--active"
-                            : "bdesk-reaction-btn--inactive",
-                        )}
-                        data-chat-reaction={reaction.emoji}
-                      >
-                        <span>{reaction.emoji}</span>
-                        <span className="bdesk-reaction-count">{reaction.count}</span>
-                      </button>
-                    ))}
-                    {canReact && (
+              {group.messages.map((message, msgIndex) => (
+                <div
+                  key={message.id}
+                  className="bdesk-message-item"
+                  data-chat-message-id={message.id}
+                >
+                  <div
+                    className={isOwn ? "bdesk-message-bubble-own" : "bdesk-message-bubble-other"}
+                    {...(isOwn ? {} : { "data-chat-user-color": String(userColorIndex) })}
+                  >
+                    <MessageContent message={message} onActionClick={onActionClick} />
+                  </div>
+
+                  {message.reactions && message.reactions.length > 0 && (
+                    <div className="bdesk-reactions">
+                      {message.reactions.map((reaction, rIndex) => (
+                        <button
+                          key={`${reaction.emoji}-${rIndex}`}
+                          onClick={() => onReactionClick?.(message.id, reaction.emoji)}
+                          className={cn(
+                            "bdesk-reaction-btn",
+                            reaction.hasReacted
+                              ? "bdesk-reaction-btn--active"
+                              : "bdesk-reaction-btn--inactive",
+                          )}
+                          data-chat-reaction={reaction.emoji}
+                        >
+                          <span>{reaction.emoji}</span>
+                          <span className="bdesk-reaction-count">{reaction.count}</span>
+                        </button>
+                      ))}
+                      {canReact && (
+                        <button
+                          className="bdesk-reaction-add-btn"
+                          onClick={(e) =>
+                            setPickerTarget({
+                              messageId: message.id,
+                              el: e.currentTarget,
+                              existing: message.reactions?.map((r) => r.emoji) ?? [],
+                            })
+                          }
+                          aria-label="Add reaction"
+                        >
+                          +
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {canReact && !message.reactions?.length && (
+                    <div className="bdesk-reactions">
                       <button
                         className="bdesk-reaction-add-btn"
                         onClick={(e) =>
                           setPickerTarget({
                             messageId: message.id,
                             el: e.currentTarget,
-                            existing: message.reactions?.map((r) => r.emoji) ?? [],
+                            existing: [],
                           })
                         }
                         aria-label="Add reaction"
                       >
                         +
                       </button>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
 
-                {canReact && !message.reactions?.length && (
-                  <div className="bdesk-reactions">
-                    <button
-                      className="bdesk-reaction-add-btn"
-                      onClick={(e) =>
-                        setPickerTarget({
-                          messageId: message.id,
-                          el: e.currentTarget,
-                          existing: [],
-                        })
-                      }
-                      aria-label="Add reaction"
-                    >
-                      +
-                    </button>
-                  </div>
-                )}
-
-                {msgIndex === 0 && (
-                  <div className="bdesk-msg-timestamp">
-                    {formatTimestamp(message.timestamp, strings.time)}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  {msgIndex === 0 && (
+                    <div className="bdesk-msg-timestamp">
+                      {formatTimestamp(message.timestamp, strings.time)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </React.Fragment>
         );
       })}
 

@@ -26,7 +26,7 @@
         .hero {
             max-width: 600px;
             margin: 0 auto;
-            padding: 6rem 2rem;
+            padding: 4rem 2rem;
             text-align: center;
         }
 
@@ -94,6 +94,45 @@
             color: #1b1b18;
             box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
+
+        .demo-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .demo-btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: 1px solid #d4d4d2;
+            background: #fff;
+            color: #1b1b18;
+            cursor: pointer;
+            transition: background 0.15s, box-shadow 0.15s;
+        }
+
+        .demo-btn:hover {
+            background: #f5f5f4;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .demo-btn:active {
+            background: #eee;
+        }
+
+        .demo-btn--primary {
+            background: #f53003;
+            color: #fff;
+            border-color: #f53003;
+        }
+
+        .demo-btn--primary:hover {
+            background: #d42a00;
+        }
     </style>
 </head>
 
@@ -116,10 +155,31 @@
             Click the chat bubble at the bottom-right. The iframe opens with a
             slide animation. Messages you send are logged to the console.
         </p>
+        <p>
+            Use the buttons below to test the developer API.
+        </p>
+
+        <div class="demo-buttons">
+            <button class="demo-btn" onclick="demo.openChat()">Open Chat</button>
+            <button class="demo-btn" onclick="demo.closeChat()">Close Chat</button>
+            <button class="demo-btn demo-btn--primary" onclick="demo.showBanner()">Show Banner</button>
+            <button class="demo-btn" onclick="demo.showBannerNoAction()">Banner (no action)</button>
+            <button class="demo-btn" onclick="demo.dismissBanner()">Dismiss Banner</button>
+        </div>
+
         <div class="embed-snippet">
             &lt;script src="https://chat.example.com/embed.js"&gt;&lt;/script&gt;
         </div>
     </div>
+
+    <script>
+        // Optional: auto-show banner after 5 seconds
+        setTimeout(function () {
+            if (!document.querySelector('[data-embed-chat-iframe]')) {
+                demo.showBanner();
+            }
+        }, 5000);
+    </script>
 </body>
 
 </html>

@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { BridgeConfig, BridgeMessage, BridgePushStatus, IframeBridgeHook } from "./types";
+import type {
+  BannerData,
+  BridgeConfig,
+  BridgeMessage,
+  BridgePushStatus,
+  IframeBridgeHook,
+} from "./types";
 
 export function useIframeBridge(): IframeBridgeHook {
   const [config, setConfig] = useState<BridgeConfig | null>(null);
   const [pushState, setPushState] = useState<BridgePushStatus | null>(null);
+  const [banner, setBanner] = useState<BannerData | null>(null);
   const notificationCbRef = useRef<(() => void) | null>(null);
+  const openCbRef = useRef<(() => void) | null>(null);
   const readyRef = useRef(false);
 
   const isInIframe = typeof window !== "undefined" && window !== window.parent;
@@ -35,6 +43,10 @@ export function useIframeBridge(): IframeBridgeHook {
 
   const onNotificationClicked = useCallback((cb: () => void) => {
     notificationCbRef.current = cb;
+  }, []);
+
+  const onOpen = useCallback((cb: () => void) => {
+    openCbRef.current = cb;
   }, []);
 
   const requestPushSubscribe = useCallback(() => {
@@ -77,10 +89,21 @@ export function useIframeBridge(): IframeBridgeHook {
         case "chat-notification-clicked":
           notificationCbRef.current?.();
           break;
+        case "chat-open":
+          openCbRef.current?.();
+          break;
         case "chat-push-state":
           if (typeof data.status === "string") {
             setPushState(data.status as BridgePushStatus);
           }
+          break;
+        case "chat-banner": {
+          const { text, action } = data as unknown as BannerData & { type: string };
+          setBanner({ text, action });
+          break;
+        }
+        case "chat-banner-dismiss":
+          setBanner(null);
           break;
       }
     }
@@ -104,9 +127,11 @@ export function useIframeBridge(): IframeBridgeHook {
   return {
     config,
     isInIframe,
+    banner,
     notifyMessage,
     notifyViewportConfig,
     onNotificationClicked,
+    onOpen,
     pushState,
     requestPushSubscribe,
     requestPushUnsubscribe,

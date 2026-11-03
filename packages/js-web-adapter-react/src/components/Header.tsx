@@ -5,6 +5,9 @@ import { cn } from "../lib/cn";
 
 interface HeaderProps {
   title?: string;
+  avatarUrl?: string;
+  subtitle?: string;
+  closeIcon?: "close" | "minimize";
   onClose?: () => void;
   onToggleFullscreen?: () => void;
   isFullscreen?: boolean;
@@ -19,6 +22,9 @@ interface HeaderProps {
 
 export function Header({
   title = "Chat",
+  avatarUrl,
+  subtitle,
+  closeIcon = "close",
   onClose,
   onToggleFullscreen,
   isFullscreen = false,
@@ -47,17 +53,25 @@ export function Header({
       data-testid="chat-header"
     >
       <div className="bdesk-header-left">
-        {showConnectionStatus && (
-          <div
-            className={cn(
-              "bdesk-header-dot",
-              isConnected ? "bdesk-header-dot--connected" : "bdesk-header-dot--disconnected",
+        {avatarUrl && <img className="bdesk-header-avatar" src={avatarUrl} alt="" />}
+
+        <div className="bdesk-header-details">
+          <div className="bdesk-header-title-row">
+            {showConnectionStatus && (
+              <div
+                className={cn(
+                  "bdesk-header-dot",
+                  isConnected ? "bdesk-header-dot--connected" : "bdesk-header-dot--disconnected",
+                )}
+                data-chat-connection-status="true"
+                title={isConnected ? "Connected" : "Disconnected"}
+              />
             )}
-            data-chat-connection-status="true"
-            title={isConnected ? "Connected" : "Disconnected"}
-          />
-        )}
-        <h2 className="bdesk-header-title">{title}</h2>
+            <h2 className="bdesk-header-title">{title}</h2>
+          </div>
+
+          {subtitle && <span className="bdesk-header-subtitle">{subtitle}</span>}
+        </div>
       </div>
 
       <div className="bdesk-header-right">
@@ -261,8 +275,14 @@ export function Header({
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <path d="M18 6L6 18M6 6l12 12" />
+              {closeIcon === "minimize" ? (
+                <path d="M6 9l6 6 6-6" />
+              ) : (
+                <path d="M18 6L6 18M6 6l12 12" />
+              )}
             </svg>
           </button>
         )}

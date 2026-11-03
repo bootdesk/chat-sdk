@@ -108,6 +108,7 @@ class Attachment
             type: 'location',
             url: 'data:application/geo+json;base64,'.base64_encode(json_encode($geojson)),
             name: $name,
+            mimeType: 'application/geo+json',
             lat: $lat,
             lng: $lng,
             address: $address,

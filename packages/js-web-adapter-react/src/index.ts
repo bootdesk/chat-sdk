@@ -1,13 +1,17 @@
 export { ChatWidget } from "./components/ChatWidget";
 export type {
   ChatWidgetProps,
+  ChatWidgetRef,
   PreEntryConfig,
   PreEntryHelpers,
   ThemeMode,
+  WelcomeConfig,
+  WelcomeSuggestion,
 } from "./types/components";
 
 export { Header } from "./components/Header";
 export { MessageList } from "./components/MessageList";
+export { WelcomePanel } from "./components/WelcomePanel";
 export { MessageContent } from "./components/MessageContent";
 export { InputArea } from "./components/InputArea";
 export { TypingIndicator } from "./components/TypingIndicator";

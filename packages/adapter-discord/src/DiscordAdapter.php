@@ -27,6 +27,8 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 class DiscordAdapter implements Adapter, HandlesReactions, HandlesSlashCommands, RequiresSyncResponse, SupportsMessageMutability
 {
@@ -38,6 +40,8 @@ class DiscordAdapter implements Adapter, HandlesReactions, HandlesSlashCommands,
 
     protected EmojiResolver $emojiResolver;
 
+    protected readonly ?LoggerInterface $logger;
+
     public function __construct(
         protected readonly string $botToken,
         protected readonly ClientInterface $httpClient,
@@ -46,7 +50,9 @@ class DiscordAdapter implements Adapter, HandlesReactions, HandlesSlashCommands,
         protected readonly string $apiUrl = 'https://discord.com/api/v10',
         protected readonly ?Psr17Factory $psrFactory = null,
         ?EmojiResolver $emojiResolver = null,
+        ?LoggerInterface $logger = null,
     ) {
+        $this->logger = $logger ?? new NullLogger;
         $this->formatConverter = new DiscordFormatConverter;
         $this->emojiResolver = $emojiResolver ?? EmojiResolver::default();
         $this->webhookVerifier = new DiscordWebhookVerifier($publicKey);
@@ -211,6 +217,7 @@ class DiscordAdapter implements Adapter, HandlesReactions, HandlesSlashCommands,
         $interaction = json_decode($body, true);
 
         if ($interaction === null) {
+            $this->logger->error('[Discord] Invalid JSON payload');
             throw new AdapterException('Invalid JSON payload from Discord');
         }
 
@@ -235,6 +242,13 @@ class DiscordAdapter implements Adapter, HandlesReactions, HandlesSlashCommands,
         $threadId = $this->encodeThreadId([
             'channelId' => $channelId,
             'guildId' => $guildId,
+        ]);
+
+        $this->logger->info('[Discord] Message parsed', [
+            'channelId' => $channelId,
+            'guildId' => $guildId,
+            'text_preview' => mb_substr($text, 0, 100),
+            'body' => mb_substr($body, 0, 500),
         ]);
 
         return new Message(
@@ -288,6 +302,13 @@ class DiscordAdapter implements Adapter, HandlesReactions, HandlesSlashCommands,
     {
         $decoded = $this->decodeThreadId($threadId);
         $channelId = $decoded['threadId'] ?? $decoded['channelId'];
+
+        $this->logger->info('[Discord] Posting message', [
+            'threadId' => $threadId,
+            'has_files' => $message->files !== [] ? 'yes' : 'no',
+            'has_attachments' => $message->attachments !== [] ? 'yes' : 'no',
+            'text_preview' => mb_substr($message->getTextContent(), 0, 100),
+        ]);
 
         if ($message->files !== []) {
             return $this->postMessageWithFiles($channelId, $message);
@@ -442,7 +463,7 @@ class DiscordAdapter implements Adapter, HandlesReactions, HandlesSlashCommands,
 
         $params = ['limit' => $options->limit ?? 50];
 
-        $response = $this->apiCall("/channels/{$channelId}/messages?".http_build_query($params), [], 'GET');
+        $response = $this->apiCall("/channels/{$channelId}/messages", $params, 'GET');
 
         $messages = [];
         foreach ($response as $msg) {
@@ -638,6 +659,7 @@ class DiscordAdapter implements Adapter, HandlesReactions, HandlesSlashCommands,
             $attachments[] = new Attachment(
                 type: 'sticker',
                 name: $sticker['name'] ?? null,
+                mimeType: 'image/png',
                 fetchMetadata: [
                     'sticker_id' => $sticker['id'] ?? null,
                     'format_type' => $sticker['format_type'] ?? null,
@@ -775,7 +797,16 @@ class DiscordAdapter implements Adapter, HandlesReactions, HandlesSlashCommands,
         $factory = $this->psrFactory ?? new Psr17Factory;
         $url = "{$this->apiUrl}{$endpoint}";
 
+        $this->logger->debug('[Discord] API call', [
+            'method' => $method,
+            'url' => $url,
+        ]);
+
         if ($method === 'GET') {
+            if ($params !== []) {
+                $url .= (str_contains($url, '?') ? '&' : '?').http_build_query($params);
+            }
+
             $request = $factory->createRequest('GET', $url)
                 ->withHeader('Authorization', "Bot {$this->botToken}");
         } else {
@@ -803,9 +834,19 @@ class DiscordAdapter implements Adapter, HandlesReactions, HandlesSlashCommands,
             $error = $data['message'] ?? $data['code'];
 
             if (in_array($data['code'], [401, 403], true)) {
+                $this->logger->error('[Discord] API auth error', [
+                    'endpoint' => $endpoint,
+                    'code' => $data['code'],
+                    'error' => $error,
+                ]);
                 throw new AuthenticationException("Discord API authentication error ({$endpoint}): {$error}");
             }
 
+            $this->logger->error('[Discord] API error', [
+                'endpoint' => $endpoint,
+                'code' => $data['code'],
+                'error' => $error,
+            ]);
             throw new AdapterException("Discord API error ({$endpoint}): {$error}");
         }
 
